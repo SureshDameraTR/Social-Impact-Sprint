@@ -1,0 +1,89 @@
+project:
+  name: PashuRaksha ERP
+  description: >
+    Farmer-centric integrated animal husbandry ERP & telemedicine platform
+    for rural India. Prototype targeting RDO stakeholder demo on April 27, 2026.
+  type: fullstack
+  language: [python, typescript]
+
+architecture:
+  style: monorepo-with-future-repo-split
+  packages:
+    api:
+      language: python
+      framework: FastAPI
+      description: Backend REST API (single monolith for prototype, microservices later)
+    admin:
+      language: typescript
+      framework: Next.js 14 + Refine + MUI
+      description: Admin dashboard for RDO staff
+    mobile:
+      language: typescript
+      framework: Expo (React Native) + Expo Router
+      description: Farmer-facing mobile app
+
+tech_stack:
+  backend:
+    runtime: python 3.12
+    framework: FastAPI
+    orm: SQLAlchemy 2.0 (async)
+    migrations: Alembic
+    auth: JWT HS256 (prototype) → RS256 (production)
+    validation: Pydantic v2
+    settings: pydantic-settings
+  database:
+    primary: PostgreSQL 16
+    cache: none (prototype)
+  frontend_mobile:
+    framework: Expo SDK 52 (managed workflow)
+    router: expo-router
+    ui: react-native-paper
+    i18n: i18next + react-i18next
+    charts: react-native-chart-kit
+    voice: Sarvam AI (Kannada STT)
+  frontend_admin:
+    framework: Next.js 14 (App Router)
+    crud: Refine v4 (REST data provider)
+    ui: MUI v5
+    charts: Recharts
+    maps: react-leaflet + OpenStreetMap
+  devops:
+    containers: Docker + docker-compose
+    deploy_api: Railway.app (free tier)
+    deploy_admin: Vercel (free tier)
+    ci: GitHub Actions
+
+constraints:
+  - Monorepo now, but each package must be independently extractable to its own repo
+  - Each package has its own dependency management (pyproject.toml / package.json)
+  - Shared types/contracts via OpenAPI spec (not shared code packages)
+  - No cross-package imports; packages communicate only via HTTP API
+  - Environment config via .env files at root (docker-compose) and per-package
+  - Prototype simplifications: mock OTP, no offline sync, rule-based AI, no payments
+
+conventions:
+  python:
+    - async/await everywhere (async SQLAlchemy sessions, async route handlers)
+    - Type hints on all function signatures
+    - Pydantic models for all request/response schemas
+    - One router file per domain (animals.py, health.py, milk.py, etc.)
+    - SQLAlchemy models in models/ directory, one file per entity group
+    - Use uv for package management if available, else pip
+  typescript:
+    - Strict TypeScript
+    - Functional components only
+    - Named exports preferred
+    - API client generated from OpenAPI spec or manual typed client
+
+rules:
+  traceability: Always reference architecture.md section numbers (§N.N) in design docs and use CLAUDE-* labels
+  prototype_scope: 10 entities only - users, animals, health_events, vaccinations, yield_logs, milk_collection_centers, milk_collection_records, transactions, shg_groups, govt_schemes
+  ai_approach: Disease triage uses rule-based expert system (§9.4 Phase 0), not ML
+  i18n: Kannada (kn) is primary language, English (en) secondary
+  api_versioning: All API endpoints under /v1/ prefix
+  demo_driven: Demo scenarios drive feature priority (6 scenarios in plan)
+
+blueprints:
+  architecture: docs/architecture.md
+  compliance: docs/compliance.md
+  data_flow: docs/data-flow.md

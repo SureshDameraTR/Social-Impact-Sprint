@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PashuRaksha ERP — Blueprint Presentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,400;12..96,600;12..96,700&family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  /* ============ THEME: Paper/Ink — Warm agricultural ============ */
+  :root {
+    --font-body: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-mono: 'Fragment Mono', 'SF Mono', Consolas, monospace;
+    --bg: #faf7f2;
+    --surface: #ffffff;
+    --surface2: #f3ede4;
+    --surface-elevated: #fffdf8;
+    --border: rgba(60, 40, 20, 0.08);
+    --border-bright: rgba(60, 40, 20, 0.16);
+    --text: #2c2418;
+    --text-dim: #8a7e6e;
+    --accent: #b5450a;
+    --accent-dim: rgba(181, 69, 10, 0.07);
+    --code-bg: #2c2418;
+    --code-text: #f3ede4;
+    --green: #4d7c0f;
+    --green-dim: rgba(77, 124, 15, 0.08);
+    --red: #b91c1c;
+    --red-dim: rgba(185, 28, 28, 0.08);
+    --blue: #1d6fa5;
+    --blue-dim: rgba(29, 111, 165, 0.08);
+    --sage: #65a30d;
+    --sage-dim: rgba(101, 163, 13, 0.08);
+    --amber: #b45309;
+    --amber-dim: rgba(180, 83, 9, 0.08);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1610;
+      --surface: #241f18;
+      --surface2: #2e2820;
+      --surface-elevated: #332c22;
+      --border: rgba(220, 200, 170, 0.08);
+      --border-bright: rgba(220, 200, 170, 0.16);
+      --text: #ede6d8;
+      --text-dim: #9a8e7a;
+      --accent: #e8763a;
+      --accent-dim: rgba(232, 118, 58, 0.1);
+      --code-bg: #141110;
+      --code-text: #ede6d8;
+      --green: #84cc16;
+      --green-dim: rgba(132, 204, 22, 0.1);
+      --red: #f87171;
+      --red-dim: rgba(248, 113, 113, 0.1);
+      --blue: #60a5fa;
+      --blue-dim: rgba(96, 165, 250, 0.1);
+      --sage: #a3e635;
+      --sage-dim: rgba(163, 230, 53, 0.1);
+      --amber: #fbbf24;
+      --amber-dim: rgba(251, 191, 36, 0.1);
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--text);
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  /* ============ DECK ENGINE ============ */
+  .deck {
+    height: 100dvh;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .slide {
+    height: 100dvh;
+    scroll-snap-align: start;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(40px, 6vh, 80px) clamp(40px, 8vw, 120px);
+    isolation: isolate;
+    opacity: 0;
+    transform: translateY(40px) scale(0.98);
+    transition:
+      opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .slide.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .slide .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition:
+      opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .slide.visible .reveal { opacity: 1; transform: none; }
+  .slide.visible .reveal:nth-child(1) { transition-delay: 0.1s; }
+  .slide.visible .reveal:nth-child(2) { transition-delay: 0.2s; }
+  .slide.visible .reveal:nth-child(3) { transition-delay: 0.3s; }
+  .slide.visible .reveal:nth-child(4) { transition-delay: 0.4s; }
+  .slide.visible .reveal:nth-child(5) { transition-delay: 0.5s; }
+  .slide.visible .reveal:nth-child(6) { transition-delay: 0.6s; }
+  .slide.visible .reveal:nth-child(7) { transition-delay: 0.7s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide, .slide .reveal {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
+  }
+
+  /* ============ NAV CHROME ============ */
+  .deck-progress {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: var(--accent); z-index: 100;
+    transition: width 0.3s ease; pointer-events: none;
+  }
+
+  .deck-dots {
+    position: fixed; right: clamp(12px, 2vw, 24px); top: 50%;
+    transform: translateY(-50%); display: flex; flex-direction: column;
+    gap: 8px; z-index: 100; padding: 8px;
+    background: color-mix(in srgb, var(--bg) 60%, transparent 40%);
+    border-radius: 20px;
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  }
+
+  .deck-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text-dim); opacity: 0.3; border: none; padding: 0;
+    cursor: pointer; transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .deck-dot:hover { opacity: 0.6; }
+  .deck-dot.active { opacity: 1; transform: scale(1.5); background: var(--accent); }
+
+  .deck-counter {
+    position: fixed; bottom: clamp(12px, 2vh, 24px); right: clamp(12px, 2vw, 24px);
+    font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);
+    z-index: 100; font-variant-numeric: tabular-nums;
+  }
+
+  .deck-hints {
+    position: fixed; bottom: clamp(12px, 2vh, 24px); left: 50%;
+    transform: translateX(-50%); font-family: var(--font-mono);
+    font-size: 11px; color: var(--text-dim); opacity: 0.6; z-index: 100;
+    transition: opacity 0.5s ease; white-space: nowrap;
+  }
+  .deck-hints.faded { opacity: 0; pointer-events: none; }
+
+  /* ============ SHARED SLIDE ELEMENTS ============ */
+  .slide__display {
+    font-size: clamp(48px, 10vw, 120px);
+    font-weight: 700;
+    letter-spacing: -2px;
+    line-height: 0.95;
+    text-wrap: balance;
+  }
+
+  .slide__heading {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  .slide__body {
+    font-size: clamp(16px, 2.2vw, 22px);
+    line-height: 1.6;
+    color: var(--text-dim);
+    text-wrap: pretty;
+  }
+
+  .slide__subtitle {
+    font-family: var(--font-mono);
+    font-size: clamp(12px, 1.5vw, 18px);
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .slide__label {
+    font-family: var(--font-mono);
+    font-size: clamp(10px, 1.2vw, 13px);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  /* ============ DECORATIVE SVG ============ */
+  .slide__decor {
+    position: absolute;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ============ SLIDE TYPE: TITLE ============ */
+  .slide--title {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-image: radial-gradient(ellipse at 50% 30%, var(--accent-dim) 0%, transparent 50%);
+  }
+  .slide--title .slide__display { color: var(--accent); }
+
+  /* ============ SLIDE TYPE: DIVIDER ============ */
+  .slide--divider { justify-content: center; }
+  .slide--divider .slide__number {
+    font-size: clamp(100px, 22vw, 260px);
+    font-weight: 200;
+    line-height: 0.85;
+    opacity: 0.06;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -55%);
+    pointer-events: none;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+  }
+
+  /* ============ SLIDE TYPE: CONTENT ============ */
+  .slide--content .slide__inner {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: clamp(24px, 4vw, 60px);
+    align-items: center;
+    width: 100%;
+  }
+
+  .slide__bullets { list-style: none; padding: 0; }
+  .slide__bullets li {
+    padding: 10px 0 10px 24px;
+    position: relative;
+    font-size: clamp(16px, 2vw, 22px);
+    line-height: 1.5;
+    color: var(--text-dim);
+  }
+  .slide__bullets li::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 20px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .slide__aside {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+  }
+
+  /* ============ SLIDE TYPE: SPLIT ============ */
+  .slide--split { padding: 0; }
+  .slide--split .slide__panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 100%;
+  }
+  .slide--split .slide__panel {
+    padding: clamp(40px, 6vh, 80px) clamp(32px, 4vw, 60px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .slide--split .slide__panel--primary { background: var(--surface); }
+  .slide--split .slide__panel--secondary {
+    background: var(--surface2);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ============ SLIDE TYPE: DIAGRAM ============ */
+  .slide--diagram {
+    padding: clamp(24px, 4vh, 48px) clamp(24px, 4vw, 60px);
+  }
+  .slide--diagram .slide__heading { margin-bottom: clamp(8px, 1.5vh, 20px); }
+
+  .mermaid-wrap {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    overflow: auto;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+    cursor: grab;
+  }
+  .mermaid-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+  .mermaid-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .mermaid-wrap.is-panning { cursor: grabbing; user-select: none; }
+
+  .zoom-controls {
+    position: absolute; top: 8px; right: 8px;
+    display: flex; gap: 2px; z-index: 10;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 2px;
+  }
+  .zoom-controls button {
+    width: 28px; height: 28px; border: none; background: transparent;
+    color: var(--text-dim); font-family: var(--font-mono); font-size: 14px;
+    cursor: pointer; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s;
+  }
+  .zoom-controls button:hover { background: var(--border); color: var(--text); }
+
+  .mermaid .nodeLabel { color: var(--text) !important; }
+  .mermaid .edgeLabel { color: var(--text-dim) !important; background-color: var(--bg) !important; }
+  .mermaid .edgeLabel rect { fill: var(--bg) !important; }
+  .slide--diagram .mermaid svg {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
+  }
+  .slide--diagram .mermaid .nodeLabel { font-size: 18px !important; }
+  .slide--diagram .mermaid .edgeLabel { font-family: var(--font-mono) !important; font-size: 14px !important; }
+  .slide--diagram .mermaid .node rect,
+  .slide--diagram .mermaid .node circle,
+  .slide--diagram .mermaid .node polygon { stroke-width: 2px; }
+  .slide--diagram .mermaid .edge-pattern-solid { stroke-width: 2px; }
+
+  /* ============ SLIDE TYPE: DASHBOARD ============ */
+  .slide--dashboard .slide__kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(clamp(140px, 20vw, 220px), 1fr));
+    gap: clamp(12px, 2vw, 24px);
+  }
+  .slide__kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: clamp(16px, 3vh, 32px) clamp(16px, 2vw, 24px);
+    min-width: 0;
+    overflow: hidden;
+  }
+  .slide__kpi-val {
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 700;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .slide__kpi-label {
+    font-family: var(--font-mono);
+    font-size: clamp(9px, 1.2vw, 13px);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+  .slide__kpi-trend {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  /* ============ SLIDE TYPE: TABLE ============ */
+  .slide--table { padding: clamp(24px, 4vh, 48px) clamp(24px, 4vw, 60px); }
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+  }
+  .table-scroll { overflow-x: auto; }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    background: var(--surface2);
+    font-family: var(--font-mono);
+    font-size: clamp(10px, 1.3vw, 14px);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    text-align: left;
+    padding: clamp(10px, 1.5vh, 16px) clamp(14px, 2vw, 24px);
+    border-bottom: 2px solid var(--border-bright);
+    white-space: nowrap;
+  }
+  .data-table td {
+    padding: clamp(10px, 1.5vh, 16px) clamp(14px, 2vw, 24px);
+    border-bottom: 1px solid var(--border);
+    font-size: clamp(14px, 1.8vw, 18px);
+    vertical-align: top;
+  }
+  .data-table tbody tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:nth-child(even) { background: var(--surface2); }
+  .data-table tbody tr { transition: background 0.15s; }
+  .data-table tbody tr:hover { background: var(--accent-dim); }
+  .data-table code {
+    font-family: var(--font-mono); font-size: 0.85em;
+    background: var(--accent-dim); color: var(--accent);
+    padding: 1px 5px; border-radius: 3px;
+  }
+
+  /* ============ SLIDE TYPE: CODE ============ */
+  .slide--code { align-items: center; }
+  .slide__code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: clamp(24px, 4vh, 48px) clamp(24px, 4vw, 48px);
+    max-width: 900px;
+    width: 100%;
+    position: relative;
+  }
+  .slide__code-filename {
+    position: absolute;
+    top: -12px; left: 24px;
+    font-family: var(--font-mono);
+    font-size: 11px; font-weight: 600;
+    padding: 4px 12px; border-radius: 4px;
+    background: var(--accent); color: var(--bg);
+  }
+  .slide__code-block pre { margin: 0; overflow-x: auto; }
+  .slide__code-block code {
+    font-family: var(--font-mono);
+    font-size: clamp(14px, 1.6vw, 18px);
+    line-height: 1.7;
+    color: var(--code-text);
+    white-space: pre-wrap;
+  }
+  .slide__code-block .hl { color: var(--accent); }
+  .slide__code-block .cm { color: var(--text-dim); }
+
+  /* ============ SLIDE TYPE: QUOTE ============ */
+  .slide--quote {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: clamp(60px, 10vh, 120px) clamp(60px, 12vw, 200px);
+  }
+  .slide__quote-mark {
+    font-size: clamp(80px, 14vw, 180px);
+    line-height: 0.5;
+    opacity: 0.06;
+    font-family: Georgia, serif;
+    pointer-events: none;
+    margin-bottom: -20px;
+    color: var(--accent);
+  }
+  .slide--quote blockquote {
+    font-size: clamp(24px, 4vw, 44px);
+    font-weight: 400;
+    line-height: 1.35;
+    font-style: italic;
+  }
+  .slide--quote cite {
+    font-family: var(--font-mono);
+    font-size: clamp(11px, 1.4vw, 14px);
+    font-style: normal;
+    margin-top: clamp(16px, 3vh, 32px);
+    display: block;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* ============ SLIDE TYPE: FULL-BLEED ============ */
+  .slide--bleed {
+    padding: 0;
+    justify-content: flex-end;
+  }
+  .slide__bg {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    z-index: 0;
+  }
+  .slide__bg--gradient {
+    background: linear-gradient(135deg, #3d1c0a 0%, #1a1610 40%, #2c2418 100%);
+  }
+  .slide__scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 40%, transparent 100%);
+    z-index: 1;
+  }
+  .slide--bleed .slide__content {
+    position: relative; z-index: 2;
+    padding: clamp(40px, 6vh, 80px) clamp(40px, 8vw, 120px);
+    color: #ffffff;
+  }
+  .slide--bleed .slide__heading { color: #ffffff; }
+  .slide--bleed .slide__subtitle { color: rgba(255,255,255,0.7); }
+
+  /* ============ PIPELINE CSS ============ */
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    flex: 1;
+    min-height: 0;
+    margin-top: clamp(12px, 2vh, 24px);
+  }
+  .pipeline__step {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: clamp(14px, 2.5vh, 28px) clamp(12px, 1.5vw, 22px);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  .pipeline__num {
+    font-family: var(--font-mono);
+    font-size: clamp(10px, 1.2vw, 13px);
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+  .pipeline__name {
+    font-size: clamp(16px, 2vw, 22px);
+    font-weight: 700;
+    margin: clamp(4px, 0.8vh, 8px) 0;
+  }
+  .pipeline__desc {
+    font-size: clamp(12px, 1.3vw, 16px);
+    color: var(--text-dim);
+    line-height: 1.5;
+    flex: 1;
+  }
+  .pipeline__tag {
+    font-family: var(--font-mono);
+    font-size: clamp(10px, 1.1vw, 12px);
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-top: clamp(8px, 1.5vh, 16px);
+    align-self: flex-start;
+  }
+  .pipeline__arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 clamp(3px, 0.4vw, 6px);
+    color: var(--accent);
+    flex-shrink: 0;
+    opacity: 0.4;
+  }
+
+  /* ============ SCENARIO CARDS ============ */
+  .scenario-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(12px, 1.5vw, 20px);
+    margin-top: clamp(12px, 2vh, 24px);
+  }
+  .scenario-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: clamp(16px, 2vh, 24px) clamp(14px, 1.5vw, 20px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .scenario-card__num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+  .scenario-card__title {
+    font-size: clamp(15px, 1.8vw, 20px);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .scenario-card__desc {
+    font-size: clamp(12px, 1.3vw, 15px);
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ============ TECH STACK GRID ============ */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(12px, 1.5vw, 20px);
+    margin-top: clamp(12px, 2vh, 24px);
+  }
+  .tech-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: clamp(16px, 2vh, 28px) clamp(14px, 1.5vw, 22px);
+  }
+  .tech-card__label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .tech-card__title {
+    font-size: clamp(18px, 2.2vw, 26px);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .tech-card__list {
+    list-style: none;
+    padding: 0;
+    font-size: clamp(12px, 1.3vw, 15px);
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  /* ============ VOICE FLOW ============ */
+  .voice-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-top: clamp(16px, 2.5vh, 32px);
+  }
+  .voice-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: clamp(14px, 2vh, 24px) clamp(12px, 1.5vw, 20px);
+    text-align: center;
+    flex: 1;
+    min-width: 0;
+  }
+  .voice-step__icon {
+    font-size: clamp(28px, 4vw, 44px);
+    margin-bottom: 8px;
+  }
+  .voice-step__label {
+    font-size: clamp(13px, 1.5vw, 17px);
+    font-weight: 600;
+  }
+  .voice-step__detail {
+    font-size: clamp(11px, 1.2vw, 14px);
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-family: var(--font-mono);
+  }
+  .voice-arrow {
+    padding: 0 clamp(4px, 0.6vw, 10px);
+    color: var(--accent);
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-height: 700px) {
+    .slide { padding: clamp(24px, 4vh, 40px) clamp(32px, 6vw, 80px); }
+    .slide__display { font-size: clamp(36px, 8vw, 72px); }
+    .slide--divider .slide__number { font-size: clamp(80px, 16vw, 160px); }
+  }
+  @media (max-height: 500px) {
+    .slide { padding: clamp(16px, 3vh, 24px) clamp(24px, 5vw, 48px); }
+    .deck-dots { display: none; }
+  }
+  @media (max-width: 768px) {
+    .slide--content .slide__inner { grid-template-columns: 1fr; }
+    .slide--content .slide__aside { display: none; }
+    .slide--split .slide__panels { grid-template-columns: 1fr; }
+    .slide--dashboard .slide__kpis { grid-template-columns: repeat(2, 1fr); }
+    .scenario-grid { grid-template-columns: 1fr 1fr; }
+    .tech-grid { grid-template-columns: 1fr; }
+    .pipeline { flex-direction: column; }
+    .pipeline__arrow { justify-content: center; padding: 4px 0; transform: rotate(90deg); }
+    .voice-flow { flex-direction: column; }
+    .voice-arrow { transform: rotate(90deg); padding: 4px 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- ============================================ -->
+  <!-- SLIDE 1: TITLE -->
+  <!-- ============================================ -->
+  <section class="slide slide--title">
+    <svg class="slide__decor" style="top:0;right:0;" width="120" height="120" viewBox="0 0 120 120">
+      <line x1="120" y1="0" x2="120" y2="40" stroke="var(--accent)" stroke-width="2" opacity="0.15"/>
+      <line x1="80" y1="0" x2="120" y2="0" stroke="var(--accent)" stroke-width="2" opacity="0.15"/>
+    </svg>
+    <svg class="slide__decor" style="bottom:0;left:0;" width="120" height="120" viewBox="0 0 120 120">
+      <line x1="0" y1="80" x2="0" y2="120" stroke="var(--accent)" stroke-width="2" opacity="0.15"/>
+      <line x1="0" y1="120" x2="40" y2="120" stroke="var(--accent)" stroke-width="2" opacity="0.15"/>
+    </svg>
+    <div class="reveal">
+      <p class="slide__subtitle" style="margin-bottom:clamp(16px,2vh,32px);">APAC Social Impact Sprint &mdash; April 27, 2026</p>
+    </div>
+    <h1 class="slide__display reveal">PashuRaksha ERP</h1>
+    <div class="reveal">
+      <p class="slide__subtitle" style="margin-top:clamp(16px,2vh,32px);">Farmer-centric livestock management for rural India</p>
+    </div>
+    <div class="reveal" style="margin-top:clamp(24px,3vh,40px);">
+      <p style="font-family:var(--font-mono);font-size:13px;color:var(--text-dim);letter-spacing:1px;">Thomson Reuters + Rural Development Organization, Bangalore</p>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 2: SECTION DIVIDER — THE PROBLEM -->
+  <!-- ============================================ -->
+  <section class="slide slide--divider" style="background-image:radial-gradient(ellipse at 80% 60%, var(--accent-dim) 0%, transparent 40%);">
+    <span class="slide__number">01</span>
+    <div>
+      <h2 class="slide__heading reveal">The Problem</h2>
+      <p class="slide__subtitle reveal" style="margin-top:12px;">Why India's smallholder farmers need a digital lifeline</p>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 3: PROBLEM CONTEXT -->
+  <!-- ============================================ -->
+  <section class="slide slide--content" style="background-image:radial-gradient(ellipse at 20% 80%, var(--accent-dim) 0%, transparent 45%);">
+    <div class="slide__inner">
+      <div>
+        <p class="slide__label reveal">Current State</p>
+        <h2 class="slide__heading reveal">Paper Records, Zero Visibility</h2>
+        <ul class="slide__bullets">
+          <li class="reveal">80M+ smallholder livestock farmers in India, most own 2&ndash;10 animals</li>
+          <li class="reveal">Health records are paper-based or non-existent &mdash; disease outbreaks go undetected</li>
+          <li class="reveal">Milk collection relies on manual ledgers with no pricing transparency</li>
+          <li class="reveal">Women-led SHG groups track savings in notebooks &mdash; no compliance visibility</li>
+          <li class="reveal">Government subsidies go unclaimed due to documentation barriers</li>
+        </ul>
+      </div>
+      <div class="slide__aside reveal">
+        <svg viewBox="0 0 180 180" width="180" height="180">
+          <rect x="30" y="20" width="120" height="140" rx="8" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity="0.2"/>
+          <line x1="50" y1="50" x2="130" y2="50" stroke="var(--accent)" stroke-width="1" opacity="0.15"/>
+          <line x1="50" y1="70" x2="130" y2="70" stroke="var(--accent)" stroke-width="1" opacity="0.15"/>
+          <line x1="50" y1="90" x2="110" y2="90" stroke="var(--accent)" stroke-width="1" opacity="0.15"/>
+          <line x1="50" y1="110" x2="120" y2="110" stroke="var(--accent)" stroke-width="1" opacity="0.15"/>
+          <line x1="60" y1="40" x2="60" y2="130" stroke="var(--red)" stroke-width="2" opacity="0.3" transform="rotate(-20 90 85)"/>
+          <text x="90" y="155" text-anchor="middle" font-family="var(--font-mono)" font-size="11" fill="var(--text-dim)">PAPER RECORDS</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 4: QUOTE -->
+  <!-- ============================================ -->
+  <section class="slide slide--quote" style="background-image:radial-gradient(ellipse at 50% 50%, var(--sage-dim) 0%, transparent 35%);">
+    <div class="slide__quote-mark reveal">&ldquo;</div>
+    <blockquote class="reveal">
+      If a farmer cannot read the form, the form does not exist. Voice is the only interface that works.
+    </blockquote>
+    <cite class="reveal">&mdash; Field research, Karnataka dairy cooperatives</cite>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 5: SECTION DIVIDER — THE VISION -->
+  <!-- ============================================ -->
+  <section class="slide slide--divider" style="background-image:radial-gradient(ellipse at 30% 40%, var(--sage-dim) 0%, transparent 40%);">
+    <span class="slide__number">02</span>
+    <div>
+      <h2 class="slide__heading reveal">The Vision</h2>
+      <p class="slide__subtitle reveal" style="margin-top:12px;">An integrated platform for the entire livestock ecosystem</p>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 6: DASHBOARD — KEY NUMBERS -->
+  <!-- ============================================ -->
+  <section class="slide slide--dashboard" style="background-image:radial-gradient(ellipse at 70% 30%, var(--accent-dim) 0%, transparent 40%);">
+    <p class="slide__label reveal">Prototype Scope</p>
+    <h2 class="slide__heading reveal" style="margin-bottom:clamp(16px,2.5vh,32px);">What We Are Building</h2>
+    <div class="slide__kpis">
+      <div class="slide__kpi reveal">
+        <div class="slide__kpi-val" style="color:var(--accent);">3</div>
+        <div class="slide__kpi-label">Applications</div>
+        <div class="slide__kpi-trend" style="color:var(--text-dim);">Mobile + Admin + API</div>
+      </div>
+      <div class="slide__kpi reveal">
+        <div class="slide__kpi-val" style="color:var(--green);">6</div>
+        <div class="slide__kpi-label">Demo Scenarios</div>
+        <div class="slide__kpi-trend" style="color:var(--text-dim);">End-to-end farmer journeys</div>
+      </div>
+      <div class="slide__kpi reveal">
+        <div class="slide__kpi-val" style="color:var(--blue);">10</div>
+        <div class="slide__kpi-label">Data Entities</div>
+        <div class="slide__kpi-trend" style="color:var(--text-dim);">From 25 blueprint entities</div>
+      </div>
+      <div class="slide__kpi reveal">
+        <div class="slide__kpi-val" style="color:var(--accent);">50+</div>
+        <div class="slide__kpi-label">Disease Rules</div>
+        <div class="slide__kpi-trend" style="color:var(--text-dim);">ICAR-IVRI veterinary</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 7: 6 DEMO SCENARIOS -->
+  <!-- ============================================ -->
+  <section class="slide" style="background-image:radial-gradient(ellipse at 60% 70%, var(--sage-dim) 0%, transparent 40%);">
+    <p class="slide__label reveal">Live Demo</p>
+    <h2 class="slide__heading reveal">6 Scenarios, 12 Minutes</h2>
+    <div class="scenario-grid">
+      <div class="scenario-card reveal">
+        <div class="scenario-card__num">01</div>
+        <div class="scenario-card__title">Farmer Registration</div>
+        <div class="scenario-card__desc">Phone OTP login, add cow "Lakshmi" with Pashu Aadhaar ID</div>
+      </div>
+      <div class="scenario-card reveal">
+        <div class="scenario-card__num">02</div>
+        <div class="scenario-card__title">Kannada Voice Input</div>
+        <div class="scenario-card__desc">"Aidu liter" spoken in Kannada &rarr; 5.0 L milk recorded</div>
+      </div>
+      <div class="scenario-card reveal">
+        <div class="scenario-card__num">03</div>
+        <div class="scenario-card__title">Milk History Chart</div>
+        <div class="scenario-card__desc">30-day bar chart showing daily yield trends per animal</div>
+      </div>
+      <div class="scenario-card reveal">
+        <div class="scenario-card__num">04</div>
+        <div class="scenario-card__title">Health Alert</div>
+        <div class="scenario-card__desc">Log symptoms &rarr; rule-based triage &rarr; "High risk &mdash; consult vet"</div>
+      </div>
+      <div class="scenario-card reveal">
+        <div class="scenario-card__num">05</div>
+        <div class="scenario-card__title">Admin Dashboard</div>
+        <div class="scenario-card__desc">Stats, milk totals, disease alert GIS map of Karnataka</div>
+      </div>
+      <div class="scenario-card reveal">
+        <div class="scenario-card__num">06</div>
+        <div class="scenario-card__title">Full Kannada UI</div>
+        <div class="scenario-card__desc">Every screen, label, and message in Kannada with Noto Sans font</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 8: SECTION DIVIDER — ARCHITECTURE -->
+  <!-- ============================================ -->
+  <section class="slide slide--divider" style="background-image:radial-gradient(ellipse at 70% 50%, var(--accent-dim) 0%, transparent 40%);">
+    <span class="slide__number">03</span>
+    <div>
+      <h2 class="slide__heading reveal">Architecture</h2>
+      <p class="slide__subtitle reveal" style="margin-top:12px;">Monorepo with clear boundaries for future extraction</p>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 9: SYSTEM ARCHITECTURE DIAGRAM -->
+  <!-- ============================================ -->
+  <section class="slide slide--diagram">
+    <h2 class="slide__heading reveal">System Architecture</h2>
+    <div class="mermaid-wrap reveal" style="flex:1; min-height:0;">
+      <div class="zoom-controls">
+        <button onclick="zoomDiagram(this,1.2)" title="Zoom in">+</button>
+        <button onclick="zoomDiagram(this,0.8)" title="Zoom out">&minus;</button>
+        <button onclick="resetZoom(this)" title="Reset">&#8634;</button>
+        <button onclick="openDiagramFullscreen(this)" title="Open full size in new tab">&#x26F6;</button>
+      </div>
+      <pre class="mermaid">
+graph TD
+  subgraph Mobile["Expo Mobile App"]
+    FA["Farmer App<br/>React Native Paper"]
+    VC["Sarvam AI<br/>Voice Input"]
+  end
+
+  subgraph Admin["Next.js Admin Panel"]
+    AD["Refine + MUI<br/>Dashboard"]
+    GIS["react-leaflet<br/>GIS Map"]
+  end
+
+  subgraph API["FastAPI Backend"]
+    GW["API Gateway<br/>JWT Auth"]
+    RT["Domain Routers<br/>animals, health, milk"]
+    DR["Disease Rules<br/>50+ ICAR rules"]
+    SD["Seed Data<br/>Karnataka demo"]
+  end
+
+  DB[("PostgreSQL 16<br/>10 entities")]
+  OSM["OpenStreetMap<br/>Tiles"]
+
+  FA --> GW
+  VC --> FA
+  AD --> GW
+  GIS --> OSM
+  GW --> RT
+  RT --> DR
+  RT --> DB
+  SD --> DB
+
+  classDef mobile fill:#65a30d22,stroke:#65a30d,stroke-width:2px
+  classDef admin fill:#1d6fa522,stroke:#1d6fa5,stroke-width:2px
+  classDef api fill:#b5450a22,stroke:#b5450a,stroke-width:2px
+  classDef db fill:#b4530922,stroke:#b45309,stroke-width:2px
+  classDef ext fill:#8a7e6e22,stroke:#8a7e6e,stroke-width:1px
+
+  class FA,VC mobile
+  class AD,GIS admin
+  class GW,RT,DR,SD api
+  class DB db
+  class OSM ext
+      </pre>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 10: BLUEPRINT vs PROTOTYPE -->
+  <!-- ============================================ -->
+  <section class="slide slide--split">
+    <div class="slide__panels">
+      <div class="slide__panel slide__panel--primary">
+        <p class="slide__label reveal" style="color:var(--blue);">Full Blueprint</p>
+        <h2 class="slide__heading reveal" style="font-size:clamp(22px,3.5vw,36px);">Production Target</h2>
+        <ul class="slide__bullets" style="margin-top:16px;">
+          <li class="reveal">11 microservices on Kubernetes</li>
+          <li class="reveal">PostgreSQL + MongoDB + Redis</li>
+          <li class="reveal">PowerSync + CRDT offline sync</li>
+          <li class="reveal">TensorFlow Lite on-device AI</li>
+          <li class="reveal">25 database entities</li>
+          <li class="reveal">Twilio SMS + video calling</li>
+        </ul>
+      </div>
+      <div class="slide__panel slide__panel--secondary">
+        <p class="slide__label reveal" style="color:var(--accent);">Prototype</p>
+        <h2 class="slide__heading reveal" style="font-size:clamp(22px,3.5vw,36px);">Demo-Ready Now</h2>
+        <ul class="slide__bullets" style="margin-top:16px;">
+          <li class="reveal">Single FastAPI monolith</li>
+          <li class="reveal">PostgreSQL only</li>
+          <li class="reveal">Online-only + Repository Pattern</li>
+          <li class="reveal">Rule-based triage (50+ rules)</li>
+          <li class="reveal">10 P0 entities</li>
+          <li class="reveal">Mock OTP ("123456")</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 11: SECTION DIVIDER — TECH STACK -->
+  <!-- ============================================ -->
+  <section class="slide slide--divider" style="background-image:radial-gradient(ellipse at 40% 60%, var(--sage-dim) 0%, transparent 40%);">
+    <span class="slide__number">04</span>
+    <div>
+      <h2 class="slide__heading reveal">Technology</h2>
+      <p class="slide__subtitle reveal" style="margin-top:12px;">Researched, validated, ready to build</p>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 12: TECH STACK CARDS -->
+  <!-- ============================================ -->
+  <section class="slide" style="background-image:radial-gradient(ellipse at 30% 30%, var(--accent-dim) 0%, transparent 40%);">
+    <p class="slide__label reveal">Confirmed Stack</p>
+    <h2 class="slide__heading reveal">Three Packages, Three Languages</h2>
+    <div class="tech-grid">
+      <div class="tech-card reveal" style="border-top:3px solid var(--accent);">
+        <div class="tech-card__label" style="color:var(--accent);">API Backend</div>
+        <div class="tech-card__title">Python + FastAPI</div>
+        <ul class="tech-card__list">
+          <li>SQLAlchemy 2.0 (async)</li>
+          <li>Alembic migrations</li>
+          <li>Pydantic v2 schemas</li>
+          <li>asyncpg + PostgreSQL 16</li>
+          <li>python-jose (JWT HS256)</li>
+        </ul>
+      </div>
+      <div class="tech-card reveal" style="border-top:3px solid var(--green);">
+        <div class="tech-card__label" style="color:var(--green);">Mobile App</div>
+        <div class="tech-card__title">Expo + React Native</div>
+        <ul class="tech-card__list">
+          <li>Expo SDK 52 + Dev Client</li>
+          <li>React Native Paper (MD3)</li>
+          <li>i18next (Kannada + English)</li>
+          <li>Sarvam AI STT/TTS</li>
+          <li>gifted-charts + MMKV</li>
+        </ul>
+      </div>
+      <div class="tech-card reveal" style="border-top:3px solid var(--blue);">
+        <div class="tech-card__label" style="color:var(--blue);">Admin Dashboard</div>
+        <div class="tech-card__title">Next.js + Refine</div>
+        <ul class="tech-card__list">
+          <li>Refine v4 + MUI v5</li>
+          <li>Recharts v3</li>
+          <li>react-leaflet + OSM</li>
+          <li>REST data provider</li>
+          <li>JWT auth provider</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 13: CONTRACT BRIDGE PIPELINE -->
+  <!-- ============================================ -->
+  <section class="slide" style="background-image:radial-gradient(ellipse at 50% 80%, var(--accent-dim) 0%, transparent 40%);">
+    <p class="slide__label reveal">Zero Type Duplication</p>
+    <h2 class="slide__heading reveal">Contract Bridge</h2>
+    <div class="pipeline reveal">
+      <div class="pipeline__step" style="border-top-color:var(--accent);">
+        <div class="pipeline__num">01</div>
+        <div class="pipeline__name">Pydantic Models</div>
+        <div class="pipeline__desc">Define schemas once in Python with full validation</div>
+        <div class="pipeline__tag">FastAPI</div>
+      </div>
+      <div class="pipeline__arrow">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M5 12h14m-4-4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="pipeline__step" style="border-top-color:var(--amber);">
+        <div class="pipeline__num">02</div>
+        <div class="pipeline__name">OpenAPI Spec</div>
+        <div class="pipeline__desc">Auto-generated JSON schema from FastAPI at /openapi.json</div>
+        <div class="pipeline__tag">openapi.json</div>
+      </div>
+      <div class="pipeline__arrow">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M5 12h14m-4-4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="pipeline__step" style="border-top-color:var(--green);">
+        <div class="pipeline__num">03</div>
+        <div class="pipeline__name">TS SDK</div>
+        <div class="pipeline__desc">@hey-api/openapi-ts generates typed client functions</div>
+        <div class="pipeline__tag">just generate-client</div>
+      </div>
+      <div class="pipeline__arrow">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M5 12h14m-4-4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="pipeline__step" style="border-top-color:var(--blue);">
+        <div class="pipeline__num">04</div>
+        <div class="pipeline__name">Both Frontends</div>
+        <div class="pipeline__desc">Mobile + Admin import the same typed SDK</div>
+        <div class="pipeline__tag">import { getAnimals }</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 14: SECTION DIVIDER — FARMER UX -->
+  <!-- ============================================ -->
+  <section class="slide slide--divider" style="background-image:radial-gradient(ellipse at 60% 40%, var(--accent-dim) 0%, transparent 40%);">
+    <span class="slide__number">05</span>
+    <div>
+      <h2 class="slide__heading reveal">Farmer Experience</h2>
+      <p class="slide__subtitle reveal" style="margin-top:12px;">Voice-first, icon-driven, Kannada-native</p>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 15: VOICE-FIRST UX PATTERNS -->
+  <!-- ============================================ -->
+  <section class="slide slide--content" style="background-image:radial-gradient(ellipse at 80% 20%, var(--sage-dim) 0%, transparent 45%);">
+    <div class="slide__inner">
+      <div>
+        <p class="slide__label reveal">Design Principles</p>
+        <h2 class="slide__heading reveal">Built for Low-Literacy Users</h2>
+        <ul class="slide__bullets">
+          <li class="reveal">Voice as PRIMARY input &mdash; not an add-on, the default interface</li>
+          <li class="reveal">64px+ pictographic icons &mdash; species, health status, actions</li>
+          <li class="reveal">Color-coded severity: green/yellow/red for instant comprehension</li>
+          <li class="reveal">Flat navigation: max 4 bottom tabs, max 2 taps to any screen</li>
+          <li class="reveal">48dp minimum touch targets (Material Design 3 built-in)</li>
+        </ul>
+      </div>
+      <div class="slide__aside reveal">
+        <svg viewBox="0 0 160 200" width="140" height="175">
+          <!-- Phone outline -->
+          <rect x="20" y="10" width="120" height="180" rx="16" fill="none" stroke="var(--text-dim)" stroke-width="1.5" opacity="0.3"/>
+          <!-- Screen -->
+          <rect x="28" y="30" width="104" height="140" rx="4" fill="var(--surface2)" opacity="0.5"/>
+          <!-- Tab bar -->
+          <rect x="28" y="150" width="104" height="20" rx="0" fill="var(--accent-dim)"/>
+          <!-- Tab icons -->
+          <circle cx="50" cy="160" r="4" fill="var(--accent)" opacity="0.6"/>
+          <circle cx="73" cy="160" r="4" fill="var(--accent)" opacity="0.3"/>
+          <circle cx="96" cy="160" r="4" fill="var(--accent)" opacity="0.3"/>
+          <circle cx="119" cy="160" r="4" fill="var(--accent)" opacity="0.3"/>
+          <!-- Mic button -->
+          <circle cx="80" cy="105" r="22" fill="var(--accent)" opacity="0.15"/>
+          <circle cx="80" cy="105" r="14" fill="var(--accent)" opacity="0.25"/>
+          <rect x="77" y="95" width="6" height="14" rx="3" fill="var(--accent)" opacity="0.6"/>
+          <path d="M72 105 a8 8 0 0 0 16 0" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity="0.6"/>
+          <line x1="80" y1="113" x2="80" y2="118" stroke="var(--accent)" stroke-width="1.5" opacity="0.6"/>
+          <!-- Kannada text label -->
+          <text x="80" y="55" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--text-dim)">VOICE INPUT</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 16: KANNADA VOICE FLOW -->
+  <!-- ============================================ -->
+  <section class="slide" style="background-image:radial-gradient(ellipse at 40% 70%, var(--accent-dim) 0%, transparent 40%);">
+    <p class="slide__label reveal">Sarvam AI Integration</p>
+    <h2 class="slide__heading reveal">Kannada Voice Milk Recording</h2>
+    <div class="voice-flow reveal">
+      <div class="voice-step" style="border-top:3px solid var(--accent);">
+        <div class="voice-step__icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0014 0"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div class="voice-step__label">Tap Mic</div>
+        <div class="voice-step__detail">Pulsing indicator</div>
+      </div>
+      <div class="voice-arrow">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M5 12h14m-4-4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="voice-step" style="border-top:3px solid var(--amber);">
+        <div class="voice-step__icon" style="font-size:24px; font-weight:700; color:var(--amber); line-height:36px;">STT</div>
+        <div class="voice-step__label">Sarvam Saaras V3</div>
+        <div class="voice-step__detail">Kannada kn-IN</div>
+      </div>
+      <div class="voice-arrow">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M5 12h14m-4-4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="voice-step" style="border-top:3px solid var(--green);">
+        <div class="voice-step__icon" style="font-family:var(--font-mono); font-size:20px; color:var(--green); line-height:36px;">PARSE</div>
+        <div class="voice-step__label">Number Parser</div>
+        <div class="voice-step__detail">Aidu &rarr; 5</div>
+      </div>
+      <div class="voice-arrow">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M5 12h14m-4-4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="voice-step" style="border-top:3px solid var(--blue);">
+        <div class="voice-step__icon" style="font-size:28px; font-weight:700; color:var(--blue); line-height:36px;">5.0 L</div>
+        <div class="voice-step__label">Field Populated</div>
+        <div class="voice-step__detail">Auto-saved</div>
+      </div>
+    </div>
+    <p class="reveal" style="margin-top:clamp(12px,2vh,20px);font-size:clamp(13px,1.4vw,16px);color:var(--text-dim);font-family:var(--font-mono);">Fallback: manual numpad always visible &bull; $0.35/hr STT cost &bull; 85%+ Kannada accuracy</p>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 17: SECTION DIVIDER — ADMIN -->
+  <!-- ============================================ -->
+  <section class="slide slide--divider" style="background-image:radial-gradient(ellipse at 20% 60%, var(--blue-dim) 0%, transparent 40%);">
+    <span class="slide__number">06</span>
+    <div>
+      <h2 class="slide__heading reveal">Admin Dashboard</h2>
+      <p class="slide__subtitle reveal" style="margin-top:12px;">District-level visibility for program officers</p>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 18: ADMIN DASHBOARD FEATURES -->
+  <!-- ============================================ -->
+  <section class="slide slide--content" style="background-image:radial-gradient(ellipse at 70% 20%, var(--blue-dim) 0%, transparent 45%);">
+    <div class="slide__inner">
+      <div>
+        <p class="slide__label reveal" style="color:var(--blue);">Refine v4 + MUI v5</p>
+        <h2 class="slide__heading reveal">One View for Everything</h2>
+        <ul class="slide__bullets">
+          <li class="reveal"><strong>4 stat cards</strong> &mdash; total farmers, animals, today's milk, active alerts</li>
+          <li class="reveal"><strong>Recharts line chart</strong> &mdash; 30-day milk collection trend</li>
+          <li class="reveal"><strong>GIS disease map</strong> &mdash; Karnataka pins color-coded by risk level</li>
+          <li class="reveal"><strong>CRUD tables</strong> &mdash; farmers, animals, health alerts, SHG groups</li>
+          <li class="reveal"><strong>Schemes catalog</strong> &mdash; govt subsidies with eligibility matching</li>
+        </ul>
+      </div>
+      <div class="slide__aside reveal">
+        <svg viewBox="0 0 180 140" width="180" height="140">
+          <!-- Dashboard wireframe -->
+          <rect x="5" y="5" width="170" height="130" rx="6" fill="var(--surface2)" stroke="var(--border-bright)" stroke-width="1"/>
+          <!-- Sidebar -->
+          <rect x="5" y="5" width="35" height="130" rx="6" fill="var(--surface)" stroke="var(--border)" stroke-width="0.5"/>
+          <circle cx="22" cy="25" r="4" fill="var(--accent)" opacity="0.4"/>
+          <line x1="12" y1="40" x2="32" y2="40" stroke="var(--text-dim)" stroke-width="1" opacity="0.2"/>
+          <line x1="12" y1="52" x2="32" y2="52" stroke="var(--text-dim)" stroke-width="1" opacity="0.2"/>
+          <line x1="12" y1="64" x2="32" y2="64" stroke="var(--text-dim)" stroke-width="1" opacity="0.2"/>
+          <!-- Stat cards -->
+          <rect x="48" y="12" width="28" height="20" rx="3" fill="var(--accent-dim)" stroke="var(--accent)" stroke-width="0.5" opacity="0.6"/>
+          <rect x="80" y="12" width="28" height="20" rx="3" fill="var(--sage-dim)" stroke="var(--sage)" stroke-width="0.5" opacity="0.6"/>
+          <rect x="112" y="12" width="28" height="20" rx="3" fill="var(--blue-dim)" stroke="var(--blue)" stroke-width="0.5" opacity="0.6"/>
+          <rect x="144" y="12" width="28" height="20" rx="3" fill="var(--red-dim)" stroke="var(--red)" stroke-width="0.5" opacity="0.6"/>
+          <!-- Chart area -->
+          <rect x="48" y="38" width="56" height="45" rx="3" fill="var(--surface)" stroke="var(--border)" stroke-width="0.5"/>
+          <polyline points="54,75 62,65 70,70 78,55 86,60 94,50 98,52" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+          <!-- Map area -->
+          <rect x="108" y="38" width="64" height="45" rx="3" fill="var(--sage-dim)" stroke="var(--border)" stroke-width="0.5"/>
+          <circle cx="130" cy="58" r="3" fill="var(--red)" opacity="0.6"/>
+          <circle cx="145" cy="52" r="2" fill="var(--amber)" opacity="0.6"/>
+          <circle cx="155" cy="65" r="2" fill="var(--green)" opacity="0.6"/>
+          <!-- Table -->
+          <rect x="48" y="88" width="124" height="40" rx="3" fill="var(--surface)" stroke="var(--border)" stroke-width="0.5"/>
+          <line x1="48" y1="98" x2="172" y2="98" stroke="var(--border)" stroke-width="0.5"/>
+          <line x1="48" y1="108" x2="172" y2="108" stroke="var(--border)" stroke-width="0.5"/>
+          <line x1="48" y1="118" x2="172" y2="118" stroke="var(--border)" stroke-width="0.5"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 19: SECTION DIVIDER — DATA MODEL -->
+  <!-- ============================================ -->
+  <section class="slide slide--divider" style="background-image:radial-gradient(ellipse at 50% 50%, var(--amber-dim) 0%, transparent 40%);">
+    <span class="slide__number">07</span>
+    <div>
+      <h2 class="slide__heading reveal">Data Model</h2>
+      <p class="slide__subtitle reveal" style="margin-top:12px;">10 entities covering all 6 demo scenarios</p>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 20: ENTITY TABLE -->
+  <!-- ============================================ -->
+  <section class="slide slide--table">
+    <p class="slide__label reveal">P0 Prototype Entities</p>
+    <h2 class="slide__heading reveal">Database Schema</h2>
+    <div class="table-wrap reveal" style="flex:1; min-height:0; margin-top:clamp(8px,1.5vh,20px);">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Entity</th><th>Key Fields</th><th>Demo Scenario</th></tr></thead>
+          <tbody>
+            <tr><td><code>users</code></td><td>phone, role, lang_pref, district, village_code</td><td>#1 Registration</td></tr>
+            <tr><td><code>animals</code></td><td>pashu_aadhaar_id, species, breed, owner FK</td><td>#1 Add animal</td></tr>
+            <tr><td><code>health_events</code></td><td>symptoms JSONB, ai_risk_score, event_type</td><td>#4 Health alert</td></tr>
+            <tr><td><code>vaccinations</code></td><td>vaccine_name, next_due, batch_number</td><td>#4 Health history</td></tr>
+            <tr><td><code>yield_logs</code></td><td>quantity, session (AM/PM), animal FK</td><td>#2 Milk recording</td></tr>
+            <tr><td><code>milk_collection_records</code></td><td>fat_pct, snf_pct, rate, total_amount</td><td>#3 Milk history</td></tr>
+            <tr><td><code>milk_collection_centers</code></td><td>name, location, capacity</td><td>#5 Admin view</td></tr>
+            <tr><td><code>transactions</code></td><td>type, amount, category, status</td><td>#5 Finance tab</td></tr>
+            <tr><td><code>shg_groups</code></td><td>panchsutra_compliance JSONB, grading</td><td>#5 SHG page</td></tr>
+            <tr><td><code>govt_schemes</code></td><td>eligibility_criteria, subsidy_amount</td><td>#5 Schemes catalog</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 21: SECTION DIVIDER — IMPLEMENTATION -->
+  <!-- ============================================ -->
+  <section class="slide slide--divider" style="background-image:radial-gradient(ellipse at 30% 70%, var(--green-dim) 0%, transparent 40%);">
+    <span class="slide__number">08</span>
+    <div>
+      <h2 class="slide__heading reveal">Implementation</h2>
+      <p class="slide__subtitle reveal" style="margin-top:12px;">5 phases, 65 tasks, 30 days</p>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 22: BUILD PHASES TABLE -->
+  <!-- ============================================ -->
+  <section class="slide slide--table">
+    <p class="slide__label reveal">Build Timeline</p>
+    <h2 class="slide__heading reveal">Five Phases to Demo</h2>
+    <div class="table-wrap reveal" style="flex:1; min-height:0; margin-top:clamp(8px,1.5vh,20px);">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Phase</th><th>What</th><th>Days</th><th>Key Deliverable</th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="color:var(--accent);font-weight:600;">1. Backend</td>
+              <td>FastAPI + 10 models + auth + CRUD + seed</td>
+              <td>1&ndash;3</td>
+              <td>localhost:8000/docs shows all endpoints</td>
+            </tr>
+            <tr>
+              <td style="color:var(--green);font-weight:600;">2. Mobile</td>
+              <td>Expo app + auth + animals + milk + voice + health</td>
+              <td>4&ndash;8</td>
+              <td>Demo scenarios 1&ndash;4 on Android</td>
+            </tr>
+            <tr>
+              <td style="color:var(--blue);font-weight:600;">3. Admin</td>
+              <td>Next.js + Refine + charts + GIS map + tables</td>
+              <td>9&ndash;12</td>
+              <td>Demo scenario 5 in browser</td>
+            </tr>
+            <tr>
+              <td style="color:var(--amber);font-weight:600;">4. Polish</td>
+              <td>Kannada review + splash + errors + APK build</td>
+              <td>13&ndash;16</td>
+              <td>Android APK + demo video</td>
+            </tr>
+            <tr>
+              <td style="color:var(--text-dim);font-weight:600;">5. Deploy</td>
+              <td>Railway (API) + Vercel (admin) + warm-up</td>
+              <td>17&ndash;20</td>
+              <td>Public URLs for live demo</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 23: RISK MITIGATIONS -->
+  <!-- ============================================ -->
+  <section class="slide slide--table" style="background-image:radial-gradient(ellipse at 60% 80%, var(--red-dim) 0%, transparent 40%);">
+    <p class="slide__label reveal" style="color:var(--red);">Risk Register</p>
+    <h2 class="slide__heading reveal">Mitigations in Place</h2>
+    <div class="table-wrap reveal" style="flex:1; min-height:0; margin-top:clamp(8px,1.5vh,20px);">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Risk</th><th>Impact</th><th>Mitigation</th></tr></thead>
+          <tbody>
+            <tr><td>Sarvam AI accuracy &lt; 85%</td><td style="color:var(--red);">Voice demo fails</td><td>Manual numpad always available; pre-test 5 phrases</td></tr>
+            <tr><td>Railway cold start &gt; 30s</td><td style="color:var(--amber);">Demo feels slow</td><td>Warm-up script 5 min before; local Docker backup</td></tr>
+            <tr><td>Expo build fails</td><td style="color:var(--amber);">No APK</td><td>Build by Day 8; backup via emulator screen share</td></tr>
+            <tr><td>Kannada translations wrong</td><td style="color:var(--amber);">Credibility issue</td><td>Native speaker reviews top 50 strings</td></tr>
+            <tr><td>Internet drops during demo</td><td style="color:var(--red);">All features fail</td><td>Record 3&ndash;5 min backup video by Day 14</td></tr>
+            <tr><td>DB corruption from testing</td><td style="color:var(--green);">Low</td><td>Idempotent seed script; re-run in 30 seconds</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 24: AGRITECH VALIDATION -->
+  <!-- ============================================ -->
+  <section class="slide slide--content" style="background-image:radial-gradient(ellipse at 80% 70%, var(--sage-dim) 0%, transparent 45%);">
+    <div class="slide__inner">
+      <div>
+        <p class="slide__label reveal" style="color:var(--green);">Real-World Validation</p>
+        <h2 class="slide__heading reveal">Patterns from Indian Agritech</h2>
+        <ul class="slide__bullets">
+          <li class="reveal"><strong>Stellapps SmartMoo</strong> &mdash; proves milk digitization at 8M liters/day across 2M farmers</li>
+          <li class="reveal"><strong>CropIn</strong> &mdash; three-layer architecture (Apps/Data Hub/Intelligence) maps to our stack</li>
+          <li class="reveal"><strong>NABARD e-Shakti</strong> &mdash; SHG management with auto-grading and 31+ MIS reports</li>
+          <li class="reveal"><strong>DigiCow / iCow</strong> &mdash; voice notes and audio tutorials for low-literacy users</li>
+        </ul>
+      </div>
+      <div class="slide__aside reveal">
+        <svg viewBox="0 0 140 140" width="140" height="140">
+          <circle cx="70" cy="70" r="55" fill="none" stroke="var(--green)" stroke-width="1" opacity="0.2"/>
+          <circle cx="70" cy="70" r="35" fill="none" stroke="var(--green)" stroke-width="1" opacity="0.15" stroke-dasharray="4 4"/>
+          <circle cx="45" cy="50" r="8" fill="var(--green)" opacity="0.15"/><text x="45" y="53" text-anchor="middle" font-family="var(--font-mono)" font-size="7" fill="var(--green)">SM</text>
+          <circle cx="95" cy="50" r="8" fill="var(--green)" opacity="0.15"/><text x="95" y="53" text-anchor="middle" font-family="var(--font-mono)" font-size="7" fill="var(--green)">CI</text>
+          <circle cx="50" cy="95" r="8" fill="var(--green)" opacity="0.15"/><text x="50" y="98" text-anchor="middle" font-family="var(--font-mono)" font-size="7" fill="var(--green)">NB</text>
+          <circle cx="90" cy="90" r="8" fill="var(--green)" opacity="0.15"/><text x="90" y="93" text-anchor="middle" font-family="var(--font-mono)" font-size="7" fill="var(--green)">DC</text>
+          <circle cx="70" cy="70" r="12" fill="var(--accent)" opacity="0.15"/><text x="70" y="73" text-anchor="middle" font-family="var(--font-mono)" font-size="7" fill="var(--accent)">PR</text>
+          <text x="70" y="135" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--text-dim)">VALIDATED PATTERNS</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 25: MONOREPO STRUCTURE CODE -->
+  <!-- ============================================ -->
+  <section class="slide slide--code" style="background-image:radial-gradient(ellipse at 50% 80%, var(--accent-dim) 0%, transparent 40%);">
+    <h2 class="slide__heading reveal" style="text-align:center;">Monorepo Structure</h2>
+    <div class="slide__code-block reveal" style="margin-top:clamp(12px,2vh,24px);">
+      <span class="slide__code-filename">pashu-erp/</span>
+      <pre><code><span class="hl">pashu-erp/</span>
+<span class="cm">+-- docker-compose.yml        # Postgres 16 + API</span>
+<span class="cm">+-- .env.example</span>
+<span class="cm">+-- justfile                   # dev, test, seed, generate-client</span>
+<span class="cm">+-- pnpm-workspace.yaml</span>
++-- <span class="hl">packages/</span>
+    +-- <span class="hl">api/</span>                   <span class="cm"># Python 3.12 + FastAPI</span>
+    |   +-- pyproject.toml
+    |   +-- alembic/            <span class="cm"># DB migrations</span>
+    |   +-- app/
+    |       +-- models/         <span class="cm"># 10 ORM models</span>
+    |       +-- routers/        <span class="cm"># Domain routers + admin</span>
+    |       +-- services/       <span class="cm"># disease_rules.py</span>
+    |       +-- seed/           <span class="cm"># demo_data.py</span>
+    +-- <span class="hl">admin/</span>                 <span class="cm"># Next.js 14 + Refine + MUI</span>
+    +-- <span class="hl">mobile/</span>                <span class="cm"># Expo SDK 52 + React Native</span></code></pre>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 26: QUOTE — CALL TO ACTION -->
+  <!-- ============================================ -->
+  <section class="slide slide--quote" style="background-image:radial-gradient(ellipse at 50% 50%, var(--accent-dim) 0%, transparent 35%);">
+    <div class="slide__quote-mark reveal">&ldquo;</div>
+    <blockquote class="reveal">
+      A working prototype in the hands of three farmers teaches more than a thousand pages of architecture.
+    </blockquote>
+    <cite class="reveal">&mdash; Our design philosophy</cite>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 27: FULL-BLEED — NEXT STEPS -->
+  <!-- ============================================ -->
+  <section class="slide slide--bleed">
+    <div class="slide__bg slide__bg--gradient"></div>
+    <div class="slide__scrim"></div>
+    <div class="slide__content">
+      <p class="slide__label reveal" style="color:rgba(255,255,255,0.6);">Next Steps</p>
+      <h2 class="slide__heading reveal" style="font-size:clamp(32px,6vw,56px);">Ready to Build</h2>
+      <ul class="slide__bullets" style="margin-top:20px;">
+        <li class="reveal" style="color:rgba(255,255,255,0.8);">65 tasks scoped across 13 dependency-ordered groups</li>
+        <li class="reveal" style="color:rgba(255,255,255,0.8);">Sarvam AI API key + developer account registration</li>
+        <li class="reveal" style="color:rgba(255,255,255,0.8);">Native Kannada speaker for translation review</li>
+        <li class="reveal" style="color:rgba(255,255,255,0.8);">Demo device selection for APK testing</li>
+        <li class="reveal" style="color:rgba(255,255,255,0.8);">April 27 scoping call &mdash; 12 minutes, 6 live scenarios</li>
+      </ul>
+      <p class="reveal" style="margin-top:clamp(24px,3vh,40px);font-family:var(--font-mono);font-size:14px;color:rgba(255,255,255,0.5);letter-spacing:1px;">
+        pashu-erp/ &bull; FastAPI + Expo + Next.js &bull; Kannada-first &bull; Voice-first
+      </p>
+    </div>
+  </section>
+
+</div><!-- /deck -->
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    look: 'classic',
+    themeVariables: {
+      primaryColor: isDark ? '#332c22' : '#fef3e0',
+      primaryBorderColor: isDark ? '#e8763a' : '#b5450a',
+      primaryTextColor: isDark ? '#ede6d8' : '#2c2418',
+      secondaryColor: isDark ? '#2e2820' : '#f0fdf4',
+      secondaryBorderColor: isDark ? '#84cc16' : '#65a30d',
+      secondaryTextColor: isDark ? '#ede6d8' : '#2c2418',
+      tertiaryColor: isDark ? '#1a2030' : '#eff6ff',
+      tertiaryBorderColor: isDark ? '#60a5fa' : '#1d6fa5',
+      tertiaryTextColor: isDark ? '#ede6d8' : '#2c2418',
+      lineColor: isDark ? '#9a8e7a' : '#8a7e6e',
+      fontSize: '18px',
+      fontFamily: 'var(--font-body)',
+      noteBkgColor: isDark ? '#332c22' : '#fef3e0',
+      noteTextColor: isDark ? '#ede6d8' : '#2c2418',
+      noteBorderColor: isDark ? '#e8763a' : '#b5450a',
+    }
+  });
+
+  function autoFit() {
+    document.querySelectorAll('.mermaid svg').forEach(function(svg) {
+      svg.removeAttribute('height');
+      svg.style.width = '100%';
+      svg.style.maxWidth = '100%';
+      svg.style.height = 'auto';
+      svg.parentElement.style.width = '100%';
+    });
+    document.querySelectorAll('.slide__kpi-val').forEach(function(el) {
+      if (el.scrollWidth > el.clientWidth) {
+        var s = el.clientWidth / el.scrollWidth;
+        el.style.transform = 'scale(' + s + ')';
+        el.style.transformOrigin = 'left top';
+      }
+    });
+    document.querySelectorAll('.slide--quote blockquote').forEach(function(el) {
+      var len = el.textContent.trim().length;
+      if (len > 100) {
+        var scale = Math.max(0.5, 100 / len);
+        var fs = parseFloat(getComputedStyle(el).fontSize);
+        el.style.fontSize = Math.max(16, Math.round(fs * scale)) + 'px';
+      }
+    });
+  }
+
+  mermaid.run().then(function() {
+    autoFit();
+    new SlideEngine();
+  });
+</script>
+
+<script>
+  // Mermaid zoom controls + click-to-expand
+  var INITIAL_ZOOM=1;
+  function zoomDiagram(b,f){var w=b.closest('.mermaid-wrap');var t=w.querySelector('.mermaid');var c=parseFloat(t.dataset.zoom||INITIAL_ZOOM);var n=Math.min(Math.max(c*f,0.5),5);t.dataset.zoom=n;t.style.zoom=n;}
+  function resetZoom(b){var w=b.closest('.mermaid-wrap');var t=w.querySelector('.mermaid');t.dataset.zoom=INITIAL_ZOOM;t.style.zoom=INITIAL_ZOOM;}
+  function openDiagramFullscreen(b){openMermaidInNewTab(b.closest('.mermaid-wrap'));}
+  function openMermaidInNewTab(w){var svg=w.querySelector('.mermaid svg');if(!svg)return;var clone=svg.cloneNode(true);clone.style.zoom='';clone.style.transform='';var styles=getComputedStyle(document.documentElement);var bg=styles.getPropertyValue('--bg').trim()||'#ffffff';var html='<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Diagram</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:'+bg+';padding:40px;box-sizing:border-box}svg{max-width:100%;max-height:90vh;height:auto}</style></head><body>'+clone.outerHTML+'</body></html>';window.open(URL.createObjectURL(new Blob([html],{type:'text/html'})),'_blank');}
+  document.querySelectorAll('.mermaid-wrap').forEach(function(w){w.addEventListener('wheel',function(e){if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();var t=w.querySelector('.mermaid');var c=parseFloat(t.dataset.zoom||INITIAL_ZOOM);var f=e.deltaY<0?1.1:0.9;var n=Math.min(Math.max(c*f,0.5),5);t.dataset.zoom=n;t.style.zoom=n;},{passive:false});var sX,sY,sL,sT,sTime,didPan;w.addEventListener('mousedown',function(e){if(e.target.closest('.zoom-controls'))return;w.classList.add('is-panning');sX=e.clientX;sY=e.clientY;sL=w.scrollLeft;sT=w.scrollTop;sTime=Date.now();didPan=false;});window.addEventListener('mousemove',function(e){if(!w.classList.contains('is-panning'))return;var dx=e.clientX-sX,dy=e.clientY-sY;if(Math.abs(dx)>5||Math.abs(dy)>5)didPan=true;w.scrollLeft=sL-dx;w.scrollTop=sT-dy;});window.addEventListener('mouseup',function(){if(!w.classList.contains('is-panning'))return;w.classList.remove('is-panning');if(!didPan&&Date.now()-sTime<300)openMermaidInNewTab(w);});});
+
+  // SlideEngine
+  function SlideEngine(){
+    this.deck=document.querySelector('.deck');
+    this.slides=[].slice.call(document.querySelectorAll('.slide'));
+    this.current=0;
+    this.total=this.slides.length;
+    this.buildChrome();
+    this.bindEvents();
+    this.observe();
+    this.update();
+  }
+  SlideEngine.prototype.buildChrome=function(){
+    var bar=document.createElement('div');bar.className='deck-progress';document.body.appendChild(bar);this.bar=bar;
+    var dots=document.createElement('div');dots.className='deck-dots';var self=this;
+    this.slides.forEach(function(_,i){var d=document.createElement('button');d.className='deck-dot';d.title='Slide '+(i+1);d.onclick=function(){self.goTo(i);};dots.appendChild(d);});
+    document.body.appendChild(dots);this.dots=[].slice.call(dots.children);
+    var ctr=document.createElement('div');ctr.className='deck-counter';document.body.appendChild(ctr);this.counter=ctr;
+    var hints=document.createElement('div');hints.className='deck-hints';hints.textContent='\u2190 \u2192 or scroll to navigate';document.body.appendChild(hints);this.hints=hints;
+    this.hintTimer=setTimeout(function(){hints.classList.add('faded');},4000);
+  };
+  SlideEngine.prototype.bindEvents=function(){
+    var self=this;
+    document.addEventListener('keydown',function(e){
+      if(e.target.closest('.mermaid-wrap,.table-scroll,.code-scroll,input,textarea,[contenteditable]'))return;
+      if(['ArrowDown','ArrowRight',' ','PageDown'].indexOf(e.key)>-1){e.preventDefault();self.next();}
+      else if(['ArrowUp','ArrowLeft','PageUp'].indexOf(e.key)>-1){e.preventDefault();self.prev();}
+      else if(e.key==='Home'){e.preventDefault();self.goTo(0);}
+      else if(e.key==='End'){e.preventDefault();self.goTo(self.total-1);}
+      self.fadeHints();
+    });
+    var tY;
+    this.deck.addEventListener('touchstart',function(e){tY=e.touches[0].clientY;},{passive:true});
+    this.deck.addEventListener('touchend',function(e){var dy=tY-e.changedTouches[0].clientY;if(Math.abs(dy)>50){dy>0?self.next():self.prev();}});
+  };
+  SlideEngine.prototype.observe=function(){
+    var self=this;
+    var obs=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add('visible');self.current=self.slides.indexOf(entry.target);self.update();}});},{threshold:0.5});
+    this.slides.forEach(function(s){obs.observe(s);});
+  };
+  SlideEngine.prototype.goTo=function(i){this.slides[Math.max(0,Math.min(i,this.total-1))].scrollIntoView({behavior:'smooth'});};
+  SlideEngine.prototype.next=function(){if(this.current<this.total-1)this.goTo(this.current+1);};
+  SlideEngine.prototype.prev=function(){if(this.current>0)this.goTo(this.current-1);};
+  SlideEngine.prototype.update=function(){
+    this.bar.style.width=((this.current+1)/this.total*100)+'%';
+    var c=this.current;this.dots.forEach(function(d,i){d.classList.toggle('active',i===c);});
+    this.counter.textContent=(this.current+1)+' / '+this.total;
+  };
+  SlideEngine.prototype.fadeHints=function(){clearTimeout(this.hintTimer);this.hints.classList.add('faded');};
+</script>
+
+</body>
+</html>
