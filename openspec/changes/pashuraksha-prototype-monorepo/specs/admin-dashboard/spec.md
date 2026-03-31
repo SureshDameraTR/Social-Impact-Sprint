@@ -70,3 +70,58 @@ The admin panel SHALL use Refine's `ThemedLayoutV2` with a sidebar containing na
 #### Scenario: Sidebar navigation works
 - **WHEN** the admin clicks "Alerts" in the sidebar
 - **THEN** the alerts page is rendered in the main content area
+
+### Requirement: IoT device management page
+The admin panel SHALL display an IoT device management page listing all registered devices with status, firmware version, and last sync time.
+
+#### Scenario: Admin views IoT device list
+- **WHEN** the admin navigates to the IoT Devices page
+- **THEN** a table displays all devices with columns: device ID, type, assigned farmer, village, status (online/offline badge), firmware version, and last sync timestamp
+
+#### Scenario: Admin filters offline devices
+- **WHEN** the admin filters by status "offline"
+- **THEN** only devices that have not synced within the expected interval are shown
+
+### Requirement: Disease surveillance map
+The admin panel SHALL display a disease surveillance map showing outbreak report markers and hotspot circles on GIS (react-leaflet with OpenStreetMap tiles).
+
+#### Scenario: Map shows outbreak report markers
+- **WHEN** the admin navigates to the Disease Surveillance page
+- **THEN** the map displays red markers for active outbreak reports with popup details (affected animals, probable diseases, status)
+
+#### Scenario: Map shows hotspot circles
+- **WHEN** active hotspots exist
+- **THEN** semi-transparent red circles overlay the map showing the affected radius area for each hotspot
+
+### Requirement: Income analytics page
+The admin panel SHALL display an income analytics page with farmer income distribution chart, revenue breakdown by product category, and trend charts.
+
+#### Scenario: Admin views income distribution
+- **WHEN** the admin navigates to the Income Analytics page
+- **THEN** a bar chart shows farmer count by income range (0-5K, 5K-10K, 10K-20K, 20K+) and a pie chart shows revenue by product type (milk, eggs, goat milk, wool, manure)
+
+#### Scenario: Admin views income trend
+- **WHEN** the admin selects a 6-month view
+- **THEN** a line chart shows monthly total farmer income over the selected period
+
+### Requirement: Vaccination coverage page
+The admin panel SHALL display a vaccination coverage page with a heatmap by village and overdue alerts list.
+
+#### Scenario: Admin views vaccination heatmap
+- **WHEN** the admin navigates to the Vaccination Coverage page
+- **THEN** a color-coded table or map shows vaccination coverage percentage per village (green >= 80%, yellow 50-79%, red < 50%)
+
+#### Scenario: Admin views overdue vaccination alerts
+- **WHEN** overdue vaccinations exist
+- **THEN** a list below the heatmap shows animals with overdue vaccinations including farmer name, animal name, vaccine name, and days overdue
+
+### Requirement: Impact dashboard
+The admin panel SHALL display a high-level impact dashboard with platform metrics suitable for government reporting.
+
+#### Scenario: Admin views impact dashboard
+- **WHEN** the admin navigates to the Impact Dashboard page
+- **THEN** large metric cards display: total farmers registered, total animals tracked, total farmer income generated, scheme applications processed, SHG groups active, and villages covered
+
+#### Scenario: Impact metrics are exportable
+- **WHEN** the admin clicks "Export Report"
+- **THEN** a PDF summary of impact metrics is generated for government stakeholder sharing

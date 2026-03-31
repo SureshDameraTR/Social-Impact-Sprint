@@ -36,6 +36,20 @@ The PashuRaksha ERP has comprehensive architecture blueprints (3,622 lines acros
 - `admin-dashboard`: Next.js + Refine admin panel — stats cards, charts, GIS map, CRUD tables, marketplace stats, IoT monitoring
 - `deploy-local`: Docker Compose for local development
 - `deploy-cloud`: Railway (API) + Vercel (admin) free-tier deployment
+- `api-weather`: IMD weather alerts integration — fetch district-level forecasts, push extreme weather warnings to farmers (§future)
+- `api-market-prices`: Agmarknet APMC mandi price integration — daily rates for milk, eggs, goat meat, wool, manure by district (§future)
+- `api-feed-nutrition`: Feed/ration optimization — calculate balanced rations from locally available ingredients per species, breed, lactation stage (§future)
+- `api-ethno-vet`: Ethno-veterinary medicine database — traditional remedies from ICAR documentation with dosage, species applicability, and evidence rating (§future)
+- `api-bharat-pashudhan`: Bharat Pashudhan integration — sync Pashu Aadhaar IDs, pull vaccination history, push health records via open APIs (§7.1 ANIMAL entity)
+- `api-vaccination`: Enhanced vaccination management — schedule reminders, batch tracking, coverage reports, cold chain compliance (§6.3)
+- `api-insurance`: Livestock insurance integration — premium calculation, claim filing, Nandi AI biometric verification hooks (§future)
+- `api-community-alerts`: Community disease alerts — outbreak notifications to farmers within configurable radius, crowd-sourced disease reporting (§future)
+- `api-medicine-withdrawal`: Medicine withdrawal period calculator — track administered medicines, calculate safe milk/meat withdrawal dates per drug (§future)
+- `milk-center`: Milk collection center operations — BMC management, quality testing (FAT/SNF/adulteration), rate calculation, farmer payment settlement (§6.9)
+- `mobile-onboarding`: Guided farmer onboarding — progressive profile building, first animal registration, language preference, accessibility settings (§future)
+- `mobile-weather`: Weather screen — 5-day forecast, rainfall alerts, heat stress warnings with Kannada voice summaries (§future)
+- `mobile-advisory`: Advisory/tips feed — seasonal animal care tips, feeding recommendations, government announcements in Kannada (§future)
+- `mobile-insurance`: Insurance screen — policy status, premium due, claim filing with photo upload, Nandi AI animal photo verification (§future)
 
 ### Modified Capabilities
 <!-- None — greenfield prototype -->
@@ -43,8 +57,8 @@ The PashuRaksha ERP has comprehensive architecture blueprints (3,622 lines acros
 ## Impact
 
 - **Code**: Entirely new codebase under `pashu-erp/` — no existing code modified
-- **APIs**: 25+ new REST endpoints under `/v1/` (animals, health, milk, finance, shg, schemes, auth, admin, marketplace, income, iot)
+- **APIs**: 40+ new REST endpoints under `/v1/` (animals, health, milk, finance, shg, schemes, auth, admin, marketplace, income, iot, weather, market-prices, feed, ethno-vet, vaccination, insurance, community-alerts, withdrawal)
 - **Dependencies**: Python (FastAPI, SQLAlchemy, Alembic, asyncpg, pydantic-settings, python-jose, passlib), TypeScript (Next.js, Refine, MUI, Expo, react-native-paper, i18next, react-leaflet, Recharts)
 - **Infrastructure**: PostgreSQL 16 (Docker), Railway.app, Vercel
-- **External services**: Sarvam AI (voice), OpenStreetMap (maps)
+- **External services**: Sarvam AI (voice), OpenStreetMap (maps), IMD (weather), Agmarknet (prices), Bharat Pashudhan (national animal registry), Nandi AI (biometric verification)
 - **Blueprint refs**: architecture.md §6-7, §9.4, §14-15; data-flow.md §1-5, §9; compliance.md §1-6

@@ -1,6 +1,6 @@
 # PashuRaksha ERP — Research Synthesis
 
-## Research Completed (4 parallel agents)
+## Research Completed (4 parallel agents + 3 research streams)
 
 ### 1. Monorepo Tooling (monorepo-research)
 
@@ -86,6 +86,69 @@
 - JS SDK available, Vercel AI SDK provider exists
 - **Correction**: No dedicated RN SDK found in admin research (but mobile research found `sarvam-conv-ai-sdk` with RN entry point)
 - Rate limits: 60 req/min per key, token bucket model
+
+### 5. Dairy Cooperative Technology Landscape
+
+India's dairy cooperative ecosystem is rapidly digitizing at the top tier but remains fragmented for smallholder farmers. Amul leads with its AMCS platform powered by Prompt Dairy Tech across 28 states, and recently launched the Sarlaben AI assistant with Gujarati voice support (Feb 2026). However, no solution addresses the critical combination of offline capability and Kannada language support needed for Karnataka's dairy farmers, where 60% of milk flows through the unorganized sector without reliable connectivity.
+
+**Key Findings**:
+- Amul's AMCS with Sarlaben AI assistant provides Gujarati voice support (launched Feb 2026), powered by Prompt Dairy Tech across 28 states
+- KMF/Nandini has achieved partial digitization but significant farmer-side gaps remain
+- Bharat Pashudhan: 35.96 crore animals tagged with Pashu Aadhaar 12-digit unique IDs
+- INAPH provides national health tracking; NDERP serves as the cooperative ERP backbone
+- Stellapps IoT deployment spans 42,000 villages for milk collection digitization
+- Critical gap: zero offline capability and no Kannada language support across Karnataka's cooperative tech stack
+- 60% of India's milk is in the unorganized sector operating without connectivity infrastructure
+
+**Implications for PashuRaksha**:
+- Offline-first architecture is a non-negotiable differentiator — no competitor addresses this
+- Kannada voice interface fills a gap that even Amul's Sarlaben (Gujarati-only) does not cover
+- Bharat Pashudhan's Pashu Aadhaar 12-digit IDs are the natural integration point for animal identity
+- Transparent disease detection rules (not black-box AI) build trust with cooperative societies
+- Multi-species support and SHG integration are unaddressed by any existing platform
+- INAPH and NDERP APIs should be P1 integration targets for health records and cooperative data
+
+### 6. Global Competitor Analysis
+
+A comprehensive analysis of 30+ livestock management apps across 6 regions (New Zealand, Australia, Ireland/UK, East Africa, India, Global) reveals that no single competitor offers the combination of voice-first Kannada interface, SHG financial workflows, and government scheme integration. The analysis also surfaces critical adoption lessons: complexity kills uptake among smallholder farmers, offline support is mandatory, and farmers in developing markets prefer paper over complex digital tools.
+
+**Key Findings**:
+- 30+ apps analyzed across 6 regions (NZ, AU, IE/UK, East Africa, India, Global)
+- No competitor offers all three: voice-first Kannada, SHG workflows, and government scheme integration
+- FarmFlow features absorbed into PashuRaksha: sell tab, income dashboard, IoT mockup, multi-species support, 5-tab navigation
+- 15 P0/P1 features recommended: feed optimization, weather alerts (IMD API), mandi prices (Agmarknet), ethno-vet medicine DB, withdrawal calculator
+- Common pain points: complexity kills adoption, offline is mandatory, paper preference persists over complex apps
+- MoooFarm marketplace failed due to fake listings — trust is the critical issue in tier-3 markets
+- Stellapps B2B2C model (free-for-farmer) is the most sustainable commercial approach
+- Herdwatch per-species pricing creates friction and churn among multi-species farmers
+- African apps (FlockWise) validate voice AI and animation-based advisory as effective for low-literacy users
+
+**Implications for PashuRaksha**:
+- Voice-first + Kannada + SHG + govt schemes is a unique value proposition with no direct competitor
+- FarmFlow's proven UX patterns (5-tab nav, sell tab, income dashboard) should be adopted rather than reinvented
+- Free-for-farmer (B2B2C via cooperatives) is the right commercial model — avoid per-user or per-species pricing
+- Trust mechanisms (verified listings, cooperative endorsement) are essential for any marketplace features
+- Feed optimization and weather alerts are high-value, low-complexity features to prioritize for P1
+- Animation-based advisory (validated in East Africa) should be considered for health education modules
+
+### 7. Accessibility and Compliance
+
+Rural India's digital literacy gap (76.6% lacking digital literacy) makes accessibility the foundation of PashuRaksha's design, not an afterthought. The 10 crore women in Self-Help Groups represent an existing financial network that lacks livestock integration — a direct opportunity. Compliance with the DPDP Act 2023 and integration with Bharat Pashudhan's open APIs are regulatory and technical prerequisites for any agricultural data platform operating in India.
+
+**Key Findings**:
+- 76.6% of rural Indians lack digital literacy — voice interfaces and local language support are essential, not optional
+- 10 crore SHG women have access to financial tools but no livestock management integration exists
+- DPDP Act 2023 imposes specific requirements for agricultural data collection, storage, and consent
+- Bharat Pashudhan open APIs provide the P0 integration foundation for animal identity and health records
+- Accessibility checklist created for rural Indian users: large touch targets (48dp+), high contrast ratios, Kannada-first UI, minimal text reliance
+
+**Implications for PashuRaksha**:
+- Kannada-first (not Kannada-as-translation) must be the default language, with English as secondary
+- Voice input/output is the primary interface — text is supplementary for low-literacy users
+- SHG integration creates a distribution channel (10 crore women) and solves the last-mile adoption problem
+- DPDP Act compliance must be designed into the data layer from day one (consent flows, data minimization, right to erasure)
+- Bharat Pashudhan API integration is P0 — animal identity is the foundation for all health, breeding, and insurance features
+- All UI components must meet the rural accessibility checklist: 48dp+ touch targets, high contrast, pictographic navigation
 
 ## Research Gaps / Contradictions
 

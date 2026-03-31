@@ -39,13 +39,14 @@
 
 body {
   font-family: var(--font-body);
-  background: var(--bg);
+  background: #F5F5F0;
   color: var(--text);
   display: flex;
   justify-content: center;
   align-items: flex-start;
   min-height: 100vh;
   padding: 24px;
+  font-size: 16px;
 }
 
 /* Tablet frame */
@@ -172,7 +173,18 @@ body {
   cursor: pointer;
   transition: all 0.15s;
   margin-bottom: 4px;
+  animation: queueReveal 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+@keyframes queueReveal {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.queue-item:nth-child(1) { animation-delay: 0ms; }
+.queue-item:nth-child(2) { animation-delay: 40ms; }
+.queue-item:nth-child(3) { animation-delay: 80ms; }
+.queue-item:nth-child(4) { animation-delay: 120ms; }
+.queue-item:nth-child(5) { animation-delay: 160ms; }
+.queue-item:nth-child(6) { animation-delay: 200ms; }
 .queue-item:hover { background: rgba(0,0,0,0.03); }
 .queue-item.active { background: var(--primary-light); border: 1.5px solid rgba(26,107,74,0.2); }
 .queue-item.done { opacity: 0.5; }
@@ -182,7 +194,7 @@ body {
   font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
 }
 .queue-item-info { flex: 1; min-width: 0; }
-.queue-item-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.queue-item-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .queue-item-sub { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
 .queue-item-time { font-size: 10px; color: var(--text-light); font-family: var(--font-mono); }
 .queue-done-check { color: var(--green); font-weight: 700; font-size: 16px; }
@@ -221,7 +233,7 @@ body {
 .farmer-balance {
   text-align: right;
 }
-.farmer-balance .amount { font-size: 22px; font-weight: 700; color: var(--primary); font-family: var(--font-mono); }
+.farmer-balance .amount { font-size: 24px; font-weight: 700; color: var(--primary); font-family: var(--font-mono); }
 .farmer-balance .label { font-size: 11px; color: var(--text-dim); }
 
 /* Animal entry cards */
@@ -232,7 +244,10 @@ body {
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow: var(--shadow);
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.animal-entry-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
 }
 .animal-entry-card.recording { border-color: var(--amber); }
 .animal-entry-card.recorded { border-color: var(--green); background: var(--green-light); }
@@ -263,8 +278,8 @@ body {
 .entry-field { }
 .entry-field label {
   display: block;
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-dim);
@@ -272,17 +287,18 @@ body {
 }
 .entry-input {
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px 12px;
   border: 1.5px solid var(--border-bright);
   border-radius: 8px;
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--text);
   text-align: center;
   background: var(--surface);
   outline: none;
   transition: border-color 0.2s;
+  min-height: 48px;
 }
 .entry-input:focus { border-color: var(--primary); }
 .entry-input.filled { border-color: var(--green); background: var(--green-light); color: var(--primary-dark); }
@@ -332,10 +348,10 @@ body {
 }
 .footer-totals { display: flex; gap: 28px; }
 .footer-total { }
-.footer-total .val { font-size: 18px; font-weight: 700; font-family: var(--font-mono); }
+.footer-total .val { font-size: 20px; font-weight: 700; font-family: var(--font-mono); }
 .footer-total .val.primary { color: var(--primary); }
 .footer-total .val.amber { color: var(--amber); }
-.footer-total .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+.footer-total .lbl { font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
 .footer-actions { display: flex; gap: 8px; }
 .footer-btn {
   padding: 9px 18px; border-radius: 8px;
@@ -468,6 +484,139 @@ body {
 .guide-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-bright); flex-shrink: 0; }
 .guide-item.active .guide-dot { background: var(--primary); }
 
+/* Offline Sync Indicator */
+.sync-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px;
+  background: rgba(255,255,255,0.15);
+  font-size: 12px; font-weight: 600; color: #fff;
+  white-space: nowrap;
+}
+.sync-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+}
+
+/* Withdrawal Warning */
+.withdrawal-warning {
+  background: var(--amber-light);
+  border: 1.5px solid #e0a040;
+  border-left: 5px solid var(--amber);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  display: flex; align-items: flex-start; gap: 12px;
+  font-size: 14px; line-height: 1.5;
+  color: #6b3a00;
+}
+.withdrawal-warning .warn-icon {
+  font-size: 22px; flex-shrink: 0; line-height: 1;
+}
+.withdrawal-warning strong { font-weight: 700; color: #4a2600; }
+.withdrawal-warning .warn-id { font-family: var(--font-mono); font-size: 12px; color: var(--amber); }
+.withdrawal-warning .warn-action {
+  display: inline-block; margin-top: 6px; padding: 4px 10px;
+  background: #d97706; color: #fff; border-radius: 6px;
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+}
+
+/* Quality-Based Pricing Card */
+.pricing-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.pricing-card-header {
+  padding: 12px 18px;
+  background: var(--surface-warm);
+  border-bottom: 1px solid var(--border);
+  font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+.pricing-table {
+  width: 100%; border-collapse: collapse;
+}
+.pricing-table th {
+  padding: 8px 18px; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--text-dim); text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.pricing-table td {
+  padding: 8px 18px; font-size: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.pricing-table tr:last-child td { border-bottom: none; }
+.pricing-table .mono { font-family: var(--font-mono); font-size: 16px; font-weight: 600; }
+.pricing-table .total-row td {
+  font-weight: 700; background: var(--primary-light);
+  border-top: 2px solid var(--primary); font-size: 16px;
+}
+.pricing-table .total-row .mono { font-size: 20px; color: var(--primary); }
+.pricing-table .rate-impact { font-size: 13px; color: var(--green); font-weight: 600; }
+.pricing-table .rate-standard { font-size: 13px; color: var(--text-dim); }
+
+/* Route Optimization Panel */
+.route-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.route-card-header {
+  padding: 12px 18px;
+  background: var(--surface-warm);
+  border-bottom: 1px solid var(--border);
+  font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+.route-list { padding: 6px 18px; }
+.route-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  position: relative;
+  padding-left: 28px;
+}
+.route-item::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-bright);
+}
+.route-item:last-child::before {
+  display: none;
+}
+.route-item:last-child { border-bottom: none; }
+.route-status { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
+.route-farmer { font-weight: 600; flex: 1; }
+.route-farmer .village { font-weight: 400; color: var(--text-dim); font-size: 13px; }
+.route-detail { font-family: var(--font-mono); font-size: 13px; color: var(--text-dim); text-align: right; white-space: nowrap; }
+.route-detail.done { color: var(--green); }
+.route-detail.current { color: var(--blue); font-weight: 600; }
+.route-summary {
+  padding: 10px 18px; font-size: 13px; font-weight: 600;
+  color: var(--text-dim); background: var(--surface-warm);
+  border-top: 1px solid var(--border);
+  display: flex; gap: 16px; flex-wrap: wrap;
+}
+
+/* Accessibility: min touch targets */
+button, .session-btn, .footer-btn, .record-btn, .login-submit, .guide-item {
+  min-height: 48px;
+}
+.queue-item { min-height: 48px; }
+
 @media (max-width: 860px) {
   body { padding: 0; }
   .tablet-frame { width: 100%; border-radius: 0; padding: 0; min-height: 100vh; }
@@ -550,6 +699,9 @@ body {
         <div class="header-stat">
           <div class="header-stat-value">&#x20B9;1,150</div>
           <div class="header-stat-label">Payable</div>
+        </div>
+        <div class="sync-pill" title="All data synced to server">
+          <span class="sync-dot"></span> ✓ Synced
         </div>
       </div>
     </div>
@@ -638,6 +790,102 @@ body {
           <div class="farmer-balance">
             <div class="amount">&#x20B9;2,340</div>
             <div class="label">This month earnings</div>
+          </div>
+        </div>
+
+        <!-- Withdrawal Period Warning -->
+        <div class="withdrawal-warning" role="alert">
+          <span class="warn-icon">⚠️</span>
+          <div>
+            <strong>Withdrawal Alert: Lakshmi</strong> <span class="warn-id">(PA-KA-2024-00847)</span><br>
+            Oxytetracycline administered 3 days ago. Withdrawal period: 7 days.<br>
+            <strong>DO NOT collect milk from this animal until Mar 28.</strong>
+            <div><span class="warn-action">4 days remaining</span></div>
+          </div>
+        </div>
+
+        <!-- Quality-Based Pricing (Stellapps model) -->
+        <div class="pricing-card">
+          <div class="pricing-card-header">
+            <svg viewBox="0 0 18 18" fill="none" stroke="var(--primary)" stroke-width="1.5" width="18" height="18"><rect x="2" y="2" width="14" height="14" rx="2"/><path d="M6 9h6M6 6h6M6 12h4"/></svg>
+            Quality-Based Pricing — Nandini (Current Entry)
+          </div>
+          <table class="pricing-table">
+            <thead>
+              <tr><th>Parameter</th><th>Value</th><th>Rate Impact</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Quantity</strong></td>
+                <td class="mono">5.2 L</td>
+                <td class="rate-standard">Base</td>
+              </tr>
+              <tr>
+                <td><strong>FAT %</strong></td>
+                <td class="mono">4.2%</td>
+                <td class="rate-impact">+₹2.1/L</td>
+              </tr>
+              <tr>
+                <td><strong>SNF %</strong></td>
+                <td class="mono">8.5%</td>
+                <td class="rate-standard">Standard</td>
+              </tr>
+              <tr>
+                <td><strong>Total Rate</strong></td>
+                <td class="mono">₹36.1/L</td>
+                <td></td>
+              </tr>
+              <tr class="total-row">
+                <td><strong>Payment</strong></td>
+                <td class="mono">₹187.72</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Route Optimization Panel (Hamari Dairy model) -->
+        <div class="route-card">
+          <div class="route-card-header">
+            <svg viewBox="0 0 18 18" fill="none" stroke="var(--blue)" stroke-width="1.5" width="18" height="18"><circle cx="9" cy="9" r="7"/><path d="M9 5v4l3 2"/></svg>
+            Today's Collection Route
+          </div>
+          <div class="route-list">
+            <div class="route-item">
+              <span class="route-status">✅</span>
+              <div class="route-farmer">Kavitha M. <span class="village">— Maddur</span></div>
+              <div class="route-detail done">5.2L &bull; 6:15 AM</div>
+            </div>
+            <div class="route-item">
+              <span class="route-status">✅</span>
+              <div class="route-farmer">Ramesh K. <span class="village">— Maddur</span></div>
+              <div class="route-detail done">3.8L &bull; 6:25 AM</div>
+            </div>
+            <div class="route-item" style="background:var(--blue-light);border-radius:8px;padding:9px 8px;">
+              <span class="route-status">🔵</span>
+              <div class="route-farmer">Lakshmi D. <span class="village">— Maddur</span></div>
+              <div class="route-detail current">Current stop</div>
+            </div>
+            <div class="route-item">
+              <span class="route-status" style="opacity:0.4;">⬜</span>
+              <div class="route-farmer" style="color:var(--text-dim);">Anjali R. <span class="village">— Malavalli</span></div>
+              <div class="route-detail">Next &bull; ~6:45 AM</div>
+            </div>
+            <div class="route-item">
+              <span class="route-status" style="opacity:0.4;">⬜</span>
+              <div class="route-farmer" style="color:var(--text-dim);">Suresh N. <span class="village">— Malavalli</span></div>
+              <div class="route-detail">Est. 7:00 AM</div>
+            </div>
+            <div class="route-item">
+              <span class="route-status" style="opacity:0.4;">⬜</span>
+              <div class="route-farmer" style="color:var(--text-dim);">Gowramma H. <span class="village">— Nagamangala</span></div>
+              <div class="route-detail">Est. 7:30 AM</div>
+            </div>
+          </div>
+          <div class="route-summary">
+            <span>4 remaining</span>
+            <span>Est. completion: 7:45 AM</span>
+            <span>Total: 32.5 km</span>
           </div>
         </div>
 

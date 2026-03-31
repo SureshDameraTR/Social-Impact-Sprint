@@ -20,6 +20,14 @@
 11. [Risk Register](#11-risk-register)
 12. [Compliance Roadmap](#12-compliance-roadmap)
 13. [Checklist: Sprint Deliverable Summary](#13-checklist-sprint-deliverable-summary)
+14. [IoT Device Identity & Registration](#14-iot-device-identity--registration)
+15. [Location Tracking Consent](#15-location-tracking-consent)
+16. [Telemetry Data Retention](#16-telemetry-data-retention)
+17. [GPS Data Minimization](#17-gps-data-minimization)
+18. [Outbreak Map Access Control](#18-outbreak-map-access-control)
+19. [Disease Reporting Audit Trail](#19-disease-reporting-audit-trail)
+20. [Marketplace Buyer QR Privacy](#20-marketplace-buyer-qr-privacy)
+21. [Health Surveillance Data Sharing](#21-health-surveillance-data-sharing)
 
 ---
 
@@ -753,6 +761,331 @@ The platform starts with rule-based expert systems and transitions to ML models 
 - [x] AI training data sourcing strategy (open data → app collection → govt partnerships)
 - [x] Risk register (technical + compliance + business)
 - [x] Compliance roadmap (3 phases)
+
+---
+
+## 14. IoT Device Identity & Registration
+
+**CLAUDE-COMP-014**
+
+### 14.1 Device Identity Requirements
+
+| Requirement | Implementation | Regulation |
+|-------------|---------------|------------|
+| **Unique serial number** | Every IoT device (temperature sensor, milk quality meter, GPS collar) MUST have a globally unique serial number assigned at provisioning | IT Act 2000 §43A — reasonable security practices |
+| **Device registration** | Registration requires explicit owner (farmer) consent via in-app confirmation (DPDP Act §6) | DPDP Act 2023 §6 — consent before processing |
+| **Firmware integrity** | All firmware updates MUST be code-signed using RS256; device verifies signature before applying | ISO 27001:2022 A.8.24 — cryptographic controls |
+| **Decommissioning** | Device decommissioning procedure MUST wipe all locally stored data (telemetry cache, WiFi credentials, farmer association) | DPDP Act 2023 §8(7) — erasure on purpose completion |
+
+### 14.2 Device Lifecycle
+
+```
+Provisioning → Registration (farmer consent) → Active → Firmware Update (signed) → Active → Decommission (data wipe)
+```
+
+### 14.3 Device Registry Schema
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `device_serial` | string | Globally unique, factory-assigned |
+| `device_type` | enum | `temperature_sensor`, `milk_quality_meter`, `gps_collar`, `humidity_sensor` |
+| `owner_farmer_id` | UUID | FK to farmer profile; set at registration |
+| `consent_id` | UUID | FK to consent record authorizing this device |
+| `firmware_version` | string | Current firmware version (semver) |
+| `provisioned_at` | timestamp | Factory provisioning date |
+| `registered_at` | timestamp | Farmer registration date |
+| `decommissioned_at` | timestamp | Nullable; set on decommission |
+| `decommission_reason` | string | Nullable; reason for decommission |
+
+### 14.4 Decommission Retention
+
+Decommissioned device registry records (serial number, owner, registration date, decommission date, reason) SHALL be retained for **3 years** after decommission for audit purposes, then permanently deleted per DPDP Act §8(7).
+
+---
+
+## 15. Location Tracking Consent
+
+**CLAUDE-COMP-015**
+
+### 15.1 Consent Requirements (DPDP Act §6)
+
+GPS tracking of animals via IoT collars is classified as personal data processing under DPDP Act 2023, as location data can identify the farmer's property and movement patterns.
+
+| Requirement | Implementation |
+|-------------|---------------|
+| **Explicit consent** | GPS tracking requires explicit farmer consent per DPDP Act §6; cannot be bundled with general app consent |
+| **Granular opt-in** | Consent must be per-animal — farmer can enable tracking for some animals and not others |
+| **Revocation** | Farmers can revoke tracking consent at any time via Settings → Privacy → Location; revocation takes effect within 15 minutes (next ping cycle) |
+| **No third-party sharing** | Location data MUST NOT be shared with third parties (buyers, insurers, govt agencies) without separate, specific consent |
+| **Purpose limitation** | GPS data used only for: geofence alerts, grazing route analysis, theft detection — stated at consent time |
+
+### 15.2 Consent Flow
+
+```mermaid
+flowchart TD
+    A[Farmer adds GPS collar to animal] --> B[Consent screen: location tracking purpose explained]
+    B --> C{Farmer consents?}
+    C -->|Yes| D[GPS tracking enabled for this animal]
+    C -->|No| E[Collar functions without GPS — temperature/health only]
+    D --> F[Consent record: animal_id + farmer_id + timestamp + purpose]
+    F --> G[Farmer can revoke anytime in Settings → Privacy]
+    G --> H[Revocation: GPS pings stop within 15 min; historical data retained per §16 retention policy]
+```
+
+---
+
+## 16. Telemetry Data Retention
+
+**CLAUDE-COMP-016**
+
+### 16.1 Retention Policy
+
+Raw device telemetry generates high volumes. Retention is tiered to balance operational needs with DPDP Act §8(5) storage limitation principle.
+
+| Data Type | Hot Storage (ap-south-1) | Aggregation | Archive | Deletion |
+|-----------|------------------------|-------------|---------|----------|
+| **Temperature readings** | 90 days (raw, per-reading) | Daily min/max/avg after 90 days | Aggregated metrics in S3 Glacier | Raw points deleted after 1 year |
+| **Humidity readings** | 90 days (raw) | Daily min/max/avg after 90 days | Aggregated metrics in S3 Glacier | Raw points deleted after 1 year |
+| **Milk quality metrics** (fat%, SNF, SCC) | 90 days (raw, per-collection) | Daily averages after 90 days | Aggregated metrics in S3 Glacier | Raw points deleted after 1 year |
+| **GPS pings** | See §17 (GPS Data Minimization) | Route simplification | Simplified routes only | Per §17 schedule |
+| **Device health** (battery, signal) | 30 days | Weekly summary | Not archived | Deleted after 30 days |
+
+### 16.2 Aggregated Metric Retention
+
+| Aggregation Level | Retention | Purpose |
+|-------------------|-----------|---------|
+| Daily aggregates | 5 years | Trend analysis, seasonal patterns, breed benchmarking |
+| Monthly aggregates | 5 years | Long-term yield forecasting, cooperative reporting |
+| Annual aggregates | Indefinite (anonymized) | Research, NDDB/ICAR data sharing |
+
+### 16.3 Implementation
+
+- **Celery scheduled task** runs nightly at 03:00 IST to aggregate and purge expired raw telemetry
+- Aggregation preserves `animal_id` for the 5-year retention window; anonymized after
+- Farmer can request early deletion of raw telemetry via data erasure API (DPDP Act §8(3))
+
+---
+
+## 17. GPS Data Minimization
+
+**CLAUDE-COMP-017**
+
+DPDP Act §4(2) requires data minimization — collect and store only what is necessary for the stated purpose.
+
+### 17.1 Precision Reduction
+
+| Use Case | Precision | Accuracy | Justification |
+|----------|-----------|----------|---------------|
+| **Analytics & reporting** | 3 decimal places (e.g., 12.972°N, 77.594°E) | ~110 meters | Sufficient for district-level herd movement analysis |
+| **Geofence alerts** (active) | Full precision (6 decimal places) | ~0.11 meters | Required for accurate boundary detection |
+| **Geofence alerts** (expired) | Reduced to 3 decimal places after 7 days | ~110 meters | Full precision no longer needed once alert window passes |
+
+### 17.2 Route Simplification
+
+| Rule | Implementation |
+|------|---------------|
+| **Douglas-Peucker algorithm** | Applied to grazing session routes before long-term storage; tolerance = 50m |
+| **Ping interval** | Minimum 15 minutes between GPS pings — no continuous tracking |
+| **Session-based storage** | GPS pings grouped into grazing sessions; individual pings discarded after route simplification |
+| **No real-time streaming** | GPS data is batch-uploaded at session end, not streamed continuously |
+
+### 17.3 Retention Schedule
+
+| Data | Retention | After Expiry |
+|------|-----------|-------------|
+| Full-precision GPS pings | 7 days | Reduced to 3 decimal places |
+| Reduced-precision pings | 90 days | Aggregated into simplified routes |
+| Simplified routes | 1 year | Deleted (anonymized route stats retained) |
+| Geofence boundary definitions | Duration of consent | Deleted on consent revocation |
+
+---
+
+## 18. Outbreak Map Access Control
+
+**CLAUDE-COMP-018**
+
+Disease hotspot maps aggregate individual animal health reports into geographic visualizations. Access must be restricted to prevent misuse while enabling public health response.
+
+### 18.1 Access Control Matrix
+
+| Role | Visible Data | Restrictions |
+|------|-------------|-------------|
+| **Admin users** | Full hotspot maps with district-level drill-down | Cannot see individual farmer identity |
+| **Veterinary officers** | Hotspot maps for their assigned districts | Filtered to assigned geography; audit logged |
+| **District agriculture department** | Aggregated outbreak statistics + hotspot overlay | Read-only; no export without admin approval |
+| **Farmers** | General disease advisory for their district | No hotspot map access; receive alerts only |
+| **Buyers / public** | No access | Outbreak maps are not public-facing |
+
+### 18.2 Anonymization Rules
+
+| Rule | Implementation | Regulation |
+|------|---------------|------------|
+| **Individual data anonymized** | Farmer identity stripped before hotspot aggregation; only disease type + GPS (3 decimal places) retained | DPDP Act §2(1) — anonymized data outside scope |
+| **k-anonymity threshold** | Minimum **5 reports** required in a geographic cell before creating a visible hotspot | Prevents re-identification in sparse areas |
+| **Farmer identity never shown** | Outbreak maps display disease type, count, and approximate location only — never farmer name, phone, or animal ID | DPDP Act §4(2) — purpose limitation |
+| **Temporal aggregation** | Hotspot data aggregated to weekly buckets; no exact timestamps shown on maps | Prevents correlation with individual visit logs |
+
+### 18.3 Hotspot Visibility Logic
+
+```
+IF reports_in_cell >= 5:
+    hotspot_visible = True
+    display: disease_type, count, cell_centroid (3 decimal GPS)
+ELSE:
+    hotspot_visible = False
+    data retained for internal monitoring only
+```
+
+---
+
+## 19. Disease Reporting Audit Trail
+
+**CLAUDE-COMP-019**
+
+Every disease outbreak report must maintain a complete, tamper-evident audit trail for regulatory compliance and epidemiological traceability.
+
+### 19.1 Outbreak Report Requirements
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `report_id` | Yes | UUID, immutable |
+| `reporter_id` | Yes | FK to user profile (farmer or vet) |
+| `reporter_role` | Yes | `farmer`, `veterinary_officer`, `admin` |
+| `timestamp` | Yes | UTC timestamp of report submission |
+| `gps_coordinates` | Yes | Location of affected animal(s) — full precision at submission |
+| `disease_type` | Yes | Standardized code from ICAR disease classification |
+| `animal_ids` | Yes | Array of affected Pashu Aadhaar IDs |
+| `confirmation_status` | Yes | `unconfirmed`, `vet_confirmed`, `lab_confirmed`, `retracted` |
+| `confirmed_by` | Conditional | Veterinary officer ID (required for `vet_confirmed` status) |
+| `retraction_reason` | Conditional | Required if status changed to `retracted` |
+
+### 19.2 Immutability Rules
+
+| Rule | Implementation |
+|------|---------------|
+| **No deletion** | Reports cannot be deleted — only marked as `retracted` with mandatory reason field |
+| **Append-only log** | All status changes recorded in `outbreak_report_audit` table (append-only, no UPDATE/DELETE) |
+| **Vet sign-off** | Confirmation requires veterinary officer authentication + digital signature |
+| **Retraction audit** | Retraction records: who retracted, when, reason, original report snapshot |
+
+### 19.3 Retention
+
+| Data | Retention | Regulation |
+|------|-----------|------------|
+| Outbreak reports | **7 years** | Livestock Disease Reporting rules; DPDP Act §8(5) (retention obligations for legal compliance); consistent with health data retention in §5.2 |
+| Audit trail entries | **7 years** | Same as parent report |
+| Retraction records | **7 years** | Preserved alongside original report for legal defensibility |
+
+---
+
+## 20. Marketplace Buyer QR Privacy
+
+**CLAUDE-COMP-020**
+
+Product traceability QR codes enable buyers to verify product origin and quality without exposing farmer personal information.
+
+### 20.1 QR Code Data Policy
+
+| Principle | Implementation | Regulation |
+|-----------|---------------|------------|
+| **No farmer PII in QR** | QR codes MUST NOT contain farmer name, phone number, location, or any personally identifiable information | DPDP Act §4(2) — data minimization |
+| **Product batch info only** | QR links to: species, quantity, collection date, quality grade (fat%, SNF), batch ID | Purpose-limited to food safety traceability |
+| **Farmer identity gated** | Farmer identity revealed only after mutual consent: buyer requests → farmer approves via in-app notification | DPDP Act §6 — consent for disclosure |
+| **QR data retention** | QR-linked product data retained for **2 years** from product date for food safety traceability | FSSAI traceability recommendations |
+
+### 20.2 QR Payload Schema
+
+```json
+{
+  "batch_id": "BATCH-2026-04-001",
+  "species": "cow",
+  "breed": "Holstein Friesian",
+  "product_type": "raw_milk",
+  "quantity_liters": 10.5,
+  "collection_date": "2026-04-15",
+  "quality": {
+    "fat_pct": 4.2,
+    "snf_pct": 8.5,
+    "grade": "A"
+  },
+  "milk_center_id": "MC-KA-BLR-042",
+  "verify_url": "https://pashuraksha.in/verify/BATCH-2026-04-001"
+}
+```
+
+**Note**: No farmer PII in the payload. The `verify_url` resolves to a public product page showing batch details only. Farmer contact requires in-app mutual consent flow.
+
+### 20.3 Mutual Consent Flow for Farmer Identity
+
+```mermaid
+sequenceDiagram
+    participant B as 🛒 Buyer
+    participant APP as 📱 Platform
+    participant F as 👤 Farmer
+
+    B->>APP: Scans QR → views product batch info
+    B->>APP: "Request farmer contact" (optional)
+    APP->>F: Push notification: "Buyer wants to connect"
+    F->>APP: Approve / Decline
+    alt Farmer approves
+        APP->>B: Farmer's name + preferred contact method shared
+    else Farmer declines
+        APP->>B: "Farmer prefers not to share contact info"
+    end
+```
+
+---
+
+## 21. Health Surveillance Data Sharing
+
+**CLAUDE-COMP-021**
+
+Aggregated animal health data supports national disease surveillance, breed improvement programs, and dairy development initiatives. Data sharing must balance public health needs with farmer privacy.
+
+### 21.1 Authorized Data Recipients
+
+| Recipient | Data Shared | Basis | Consent Required |
+|-----------|------------|-------|-----------------|
+| **ICAR** (Indian Council of Agricultural Research) | Aggregated disease trends, breed health statistics | Research collaboration MoU | No individual consent — anonymized aggregates only |
+| **State Animal Husbandry Departments** | District-level disease statistics, vaccination coverage | State govt data sharing policy | No individual consent — anonymized aggregates only |
+| **NDDB** (National Dairy Development Board) | Milk yield trends, breed performance benchmarks | NDDB data partnership MoU | No individual consent — anonymized aggregates only |
+| **Bharat Pashudhan Portal** | Individual animal health records (via API) | Govt digital livestock platform integration | **Yes** — farmer consent required per DPDP Act §6 |
+
+### 21.2 Data Sharing Agreement Requirements
+
+Every data sharing agreement MUST specify:
+
+| Clause | Requirement |
+|--------|-------------|
+| **Purpose** | Specific, documented purpose for the data (e.g., "national disease surveillance", "breed improvement research") |
+| **Retention** | Maximum retention period; data must be deleted by recipient after expiry |
+| **Deletion timeline** | Explicit timeline and procedure for data deletion upon agreement termination |
+| **Re-sharing prohibition** | Recipient must not share data with further third parties without written consent |
+| **Audit rights** | Platform retains right to audit recipient's data handling practices |
+| **Breach notification** | Recipient must notify platform within 24 hours of any data breach |
+
+### 21.3 Individual Record Sharing (Bharat Pashudhan API)
+
+Individual animal health records may be shared with government systems only via the Bharat Pashudhan API with the following controls:
+
+| Control | Implementation |
+|---------|---------------|
+| **Farmer consent** | Explicit opt-in per DPDP Act §6; recorded in consent registry |
+| **API authentication** | Mutual TLS + API key; all requests audit-logged |
+| **Data scope** | Only health records for animals registered in Bharat Pashudhan (Pashu Aadhaar linked) |
+| **Audit trail** | Every API call logged: timestamp, animal_id, fields shared, requesting authority |
+
+### 21.4 Emergency Disease Outbreak Exception
+
+In the event of a notifiable disease outbreak (e.g., Foot-and-Mouth Disease, Brucellosis), aggregated health data may be shared with government authorities **without individual farmer consent** under the following conditions:
+
+| Condition | Requirement |
+|-----------|-------------|
+| **Legal basis** | Livestock Importation Act 1898 §3 (power to regulate in case of epidemic disease); DPDP Act §7(i) — processing for medical emergency |
+| **Scope** | Only data relevant to the specific outbreak (disease type, affected geography, animal count) |
+| **Duration** | Emergency sharing ceases when outbreak is officially declared contained |
+| **Notification** | Affected farmers notified within 72 hours that their data was shared and with whom |
+| **Audit** | Complete audit trail of emergency data sharing, retained for 7 years |
 
 ---
 

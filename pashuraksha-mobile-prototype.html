@@ -23,11 +23,11 @@
   --md-secondary-container: #D1E8D6;
   --md-tertiary: #3B6470;
   --md-tertiary-container: #BFE9F7;
-  --md-surface: #FCFDF7;
+  --md-surface: #F5F5F0;
   --md-surface-variant: #DCE5DB;
   --md-surface-container: #F0F4EC;
   --md-surface-container-high: #EAEEE6;
-  --md-on-surface: #191D19;
+  --md-on-surface: #1A1A1A;
   --md-on-surface-variant: #414941;
   --md-outline: #717971;
   --md-outline-variant: #C1C9BF;
@@ -600,7 +600,7 @@ body {
 .qa-icon.rose { background: #AD1457; }
 .quick-action span {
   font-family: var(--font-kn);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--md-on-surface-variant);
   text-align: center;
@@ -1644,6 +1644,458 @@ body {
 .floating-mic.recording { background: var(--status-urgent); animation: micPulse 1s ease-in-out infinite; }
 @keyframes micPulse { 0%,100% { box-shadow: 0 4px 12px rgba(198,40,40,0.3); } 50% { box-shadow: 0 4px 24px rgba(198,40,40,0.6); } }
 
+/* ============ ACCESSIBILITY ENHANCEMENTS ============ */
+.listen-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--md-surface-container);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.15s;
+}
+.listen-btn:active { background: var(--md-primary-container); }
+.listen-btn svg { width: 20px; height: 20px; fill: var(--md-on-surface-variant); }
+.listen-btn .listen-tooltip {
+  display: none;
+  position: absolute;
+  top: 44px;
+  right: 0;
+  background: var(--md-primary);
+  color: white;
+  font-size: 12px;
+  font-family: var(--font-kn);
+  padding: 4px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  z-index: 200;
+}
+.listen-btn.active .listen-tooltip { display: block; }
+.listen-btn.active svg { fill: var(--md-primary); }
+
+.help-fab {
+  position: absolute;
+  bottom: 84px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--md-secondary);
+  color: white;
+  border: none;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  z-index: 100;
+  transition: all 0.15s;
+}
+.help-fab:active { transform: scale(0.9); }
+
+.offline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--status-healthy-bg);
+  color: var(--status-healthy);
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.btn-primary {
+  min-height: 56px;
+}
+
+/* ============ ONBOARDING ============ */
+.onboarding-step {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 32px;
+  flex: 1;
+}
+.onboarding-step.active { display: flex; }
+.onboarding-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 16px 0 24px;
+}
+.onboarding-dots .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--md-outline-variant);
+  transition: all 0.2s;
+}
+.onboarding-dots .dot.active {
+  background: var(--md-primary);
+  width: 24px;
+  border-radius: 5px;
+}
+.onboarding-illustration {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  margin-bottom: 24px;
+}
+
+/* ============ LANG PICKER ============ */
+.lang-card {
+  width: 100%;
+  min-height: 80px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--md-outline-variant);
+  background: var(--md-surface-container);
+  display: flex;
+  align-items: center;
+  padding: 16px 24px;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 12px;
+}
+.lang-card:active { transform: scale(0.98); border-color: var(--md-primary); }
+.lang-card .lang-script {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--md-primary);
+  font-family: var(--font-kn);
+}
+.lang-card .lang-name {
+  font-family: var(--font-kn);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.lang-card .lang-sample {
+  font-size: 13px;
+  color: var(--md-on-surface-variant);
+}
+
+/* ============ ETHNOVET OVERLAY ============ */
+.ethnovet-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 300;
+  align-items: flex-end;
+}
+.ethnovet-overlay.active { display: flex; }
+.ethnovet-sheet {
+  background: var(--md-surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 24px;
+  width: 100%;
+  max-height: 70%;
+  overflow-y: auto;
+  animation: sheetSlideUp 0.3s ease-out;
+}
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* ============ VACCINATION TIMELINE ============ */
+.vacc-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  align-items: center;
+}
+.vacc-item .vacc-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.vacc-item .vacc-info { flex: 1; }
+.vacc-item .vacc-name {
+  font-family: var(--font-kn);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.vacc-item .vacc-animal {
+  font-family: var(--font-kn);
+  font-size: 12px;
+  color: var(--md-on-surface-variant);
+}
+.vacc-item .vacc-date {
+  font-size: 12px;
+  color: var(--md-on-surface-variant);
+}
+.vacc-done-btn {
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1.5px solid var(--md-primary);
+  background: transparent;
+  color: var(--md-primary);
+  font-family: var(--font-kn);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.vacc-done-btn:active { background: var(--md-primary-container); }
+
+/* ============ SCHEME CARD ============ */
+.scheme-card {
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.scheme-card .scheme-name {
+  font-family: var(--font-kn);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.scheme-card .scheme-desc {
+  font-family: var(--font-kn);
+  font-size: 13px;
+  color: var(--md-on-surface-variant);
+  margin: 4px 0 8px;
+  line-height: 1.4;
+}
+.scheme-card .scheme-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.scheme-eligible {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+.scheme-eligible.yes { background: var(--status-healthy-bg); color: var(--status-healthy); }
+.scheme-eligible.check { background: var(--md-surface-container-high); color: var(--md-on-surface-variant); }
+.scheme-apply-btn {
+  margin-left: auto;
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: none;
+  background: var(--md-primary);
+  color: white;
+  font-family: var(--font-kn);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.scheme-apply-btn:active { opacity: 0.8; }
+
+/* ============ INSURANCE ============ */
+.insurance-step {
+  margin-bottom: 16px;
+}
+.insurance-step .step-label {
+  font-family: var(--font-kn);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.insurance-step .step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--md-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.incident-cards {
+  display: flex;
+  gap: 10px;
+}
+.incident-card {
+  flex: 1;
+  padding: 14px 8px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--md-outline-variant);
+  background: var(--md-surface);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.incident-card:active { transform: scale(0.95); }
+.incident-card.selected { border-color: var(--md-primary); background: var(--md-primary-container); }
+.incident-card .ic-icon { font-size: 28px; margin-bottom: 4px; }
+.incident-card .ic-label {
+  font-family: var(--font-kn);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+
+/* ============ WEATHER ============ */
+.weather-card {
+  background: linear-gradient(135deg, var(--md-tertiary-container) 0%, #A8D8E8 100%);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.weather-card .temp {
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--md-on-surface);
+}
+.weather-card .location {
+  font-family: var(--font-kn);
+  font-size: 14px;
+  color: var(--md-on-surface-variant);
+}
+.forecast-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.forecast-day {
+  flex: 1;
+  background: var(--md-surface-container);
+  border-radius: var(--radius-sm);
+  padding: 12px 8px;
+  text-align: center;
+}
+.forecast-day .fd-day {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-on-surface-variant);
+}
+.forecast-day .fd-icon { font-size: 24px; margin: 4px 0; }
+.forecast-day .fd-temp {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+
+/* ============ MANDI PRICES ============ */
+.mandi-card {
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mandi-card .mandi-icon { font-size: 28px; }
+.mandi-card .mandi-info { flex: 1; }
+.mandi-card .mandi-name {
+  font-family: var(--font-kn);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.mandi-card .mandi-price {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 800;
+}
+.mandi-card .mandi-trend {
+  font-size: 13px;
+  font-weight: 600;
+}
+.trend-up { color: var(--status-healthy); }
+.trend-down { color: var(--status-urgent); }
+
+/* ============ FEED CALC ============ */
+.feed-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--md-outline-variant);
+}
+.feed-row .feed-name {
+  font-family: var(--font-kn);
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+  color: var(--md-on-surface);
+}
+.feed-row .feed-qty {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--md-primary);
+}
+
+/* ============ ETHNOVET GRID ============ */
+.ethnovet-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.ethnovet-card {
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ethnovet-card:active { transform: scale(0.96); }
+.ethnovet-card .ev-icon { font-size: 28px; margin-bottom: 4px; }
+.ethnovet-card .ev-kn {
+  font-family: var(--font-kn);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.ethnovet-card .ev-en {
+  font-size: 11px;
+  color: var(--md-on-surface-variant);
+}
+
+/* ============ EMERGENCY VET BUTTON ============ */
+.emergency-vet-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--status-urgent);
+  background: var(--status-urgent-bg);
+  color: var(--status-urgent);
+  font-family: var(--font-kn);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: all 0.15s;
+}
+.emergency-vet-btn:active { background: #FFCDD2; transform: scale(0.98); }
+
 /* ============ RESPONSIVE ============ */
 @media (max-width: 800px) {
   .phone-container { flex-direction: column; align-items: center; }
@@ -1657,6 +2109,90 @@ body {
   .page-header, .guide-panel { display: none; }
   body { padding: 0; }
 }
+/* ============ STAGGERED CARD ANIMATIONS ============ */
+@keyframes cardReveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.screen.active .animal-card {
+  animation: cardReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.screen.active .animal-card:nth-child(1) { animation-delay: 0ms; }
+.screen.active .animal-card:nth-child(2) { animation-delay: 50ms; }
+.screen.active .animal-card:nth-child(3) { animation-delay: 100ms; }
+.screen.active .animal-card:nth-child(4) { animation-delay: 150ms; }
+.screen.active .animal-card:nth-child(5) { animation-delay: 200ms; }
+.screen.active .animal-card:nth-child(6) { animation-delay: 250ms; }
+.screen.active .animal-card:nth-child(7) { animation-delay: 300ms; }
+.screen.active .animal-card:nth-child(8) { animation-delay: 350ms; }
+
+.screen.active .quick-action {
+  animation: cardReveal 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.screen.active .quick-action:nth-child(1) { animation-delay: 0ms; }
+.screen.active .quick-action:nth-child(2) { animation-delay: 40ms; }
+.screen.active .quick-action:nth-child(3) { animation-delay: 80ms; }
+.screen.active .quick-action:nth-child(4) { animation-delay: 120ms; }
+.screen.active .quick-action:nth-child(5) { animation-delay: 160ms; }
+.screen.active .quick-action:nth-child(6) { animation-delay: 200ms; }
+.screen.active .quick-action:nth-child(7) { animation-delay: 240ms; }
+
+.screen.active .scheme-card { animation: cardReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.screen.active .scheme-card:nth-child(1) { animation-delay: 50ms; }
+.screen.active .scheme-card:nth-child(2) { animation-delay: 100ms; }
+.screen.active .scheme-card:nth-child(3) { animation-delay: 150ms; }
+.screen.active .scheme-card:nth-child(4) { animation-delay: 200ms; }
+
+.screen.active .vacc-item { animation: cardReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.screen.active .vacc-item:nth-child(1) { animation-delay: 50ms; }
+.screen.active .vacc-item:nth-child(2) { animation-delay: 100ms; }
+.screen.active .vacc-item:nth-child(3) { animation-delay: 150ms; }
+.screen.active .vacc-item:nth-child(4) { animation-delay: 200ms; }
+
+.screen.active .mandi-card { animation: cardReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.screen.active .mandi-card:nth-child(1) { animation-delay: 50ms; }
+.screen.active .mandi-card:nth-child(2) { animation-delay: 100ms; }
+.screen.active .mandi-card:nth-child(3) { animation-delay: 150ms; }
+.screen.active .mandi-card:nth-child(4) { animation-delay: 200ms; }
+
+/* ============ KANNADA LINE HEIGHT ============ */
+[lang="kn"], .font-kn, *[style*="font-kn"] {
+  line-height: 1.6;
+}
+.animal-info .animal-name { line-height: 1.5; }
+.animal-info .animal-meta { line-height: 1.5; }
+.scheme-card .scheme-desc { line-height: 1.6; }
+
+/* ============ HOVER/ACTIVE STATES ============ */
+.mandi-card { transition: all 0.15s; cursor: pointer; }
+.mandi-card:active { transform: scale(0.98); background: var(--md-surface-container); }
+
+.scheme-card { transition: all 0.15s; cursor: pointer; }
+.scheme-card:active { transform: scale(0.98); }
+
+.feed-row { transition: background 0.15s; }
+
+.vacc-item { transition: all 0.15s; cursor: pointer; }
+.vacc-item:active { transform: scale(0.98); }
+
+/* ============ SPLASH SCREEN ANIMATION ============ */
+#splash .logo-icon {
+  animation: splashLogo 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+@keyframes splashLogo {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+#splash h1 {
+  animation: splashLogo 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+}
+#splash .kn-name {
+  animation: splashLogo 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+}
+#splash .tagline {
+  animation: splashLogo 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
+}
+
 </style>
 </head>
 <body>
@@ -1676,6 +2212,7 @@ body {
     <div class="notch"></div>
     <span class="time">9:41</span>
     <div class="icons">
+      <span class="offline-badge">&#10003; Synced</span>
       <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
       <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
     </div>
@@ -1734,6 +2271,10 @@ body {
           <h2>ಮನೆ <span class="en-sub">Home</span></h2>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
+          <button class="listen-btn" onclick="toggleListen(this)">
+            <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            <span class="listen-tooltip">Listening...</span>
+          </button>
           <button onclick="navigateTo('smartFarm')" style="width:40px;height:40px;border-radius:12px;border:none;background:var(--md-tertiary-container);cursor:pointer;display:flex;align-items:center;justify-content:center" title="Smart Farm">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--md-tertiary)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
           </button>
@@ -1777,6 +2318,24 @@ body {
               <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2z"/></svg>
             </div>
             <span>ಸಹಾಯ</span>
+          </div>
+          <div class="quick-action" onclick="navigateTo('weather')">
+            <div class="qa-icon" style="background:#1565C0">
+              <svg viewBox="0 0 24 24" fill="white"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+            </div>
+            <span>ಹವಾಮಾನ</span>
+          </div>
+          <div class="quick-action" onclick="navigateTo('schemes')">
+            <div class="qa-icon" style="background:#6A1B9A">
+              <svg viewBox="0 0 24 24" fill="white"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"/></svg>
+            </div>
+            <span>ಯೋಜನೆಗಳು</span>
+          </div>
+          <div class="quick-action" onclick="navigateTo('feedCalc')">
+            <div class="qa-icon" style="background:#F57F17">
+              <svg viewBox="0 0 24 24" fill="white"><path d="M17.12 10c.94-1.46 1.88-3.45 1.88-5.5C19 2.01 16.99 0 14.5 0S10 2.01 10 4.5c0 2.05.94 4.04 1.88 5.5H2v14h20V10h-4.88zM14.5 2c1.38 0 2.5 1.12 2.5 2.5 0 1.42-.78 3.08-1.5 4.17-.72-1.09-1.5-2.75-1.5-4.17C14 3.12 15.12 2 14.5 2zM20 22H4V12h16v10z"/></svg>
+            </div>
+            <span>ಆಹಾರ</span>
           </div>
         </div>
 
@@ -2094,6 +2653,10 @@ body {
     <div id="milk" class="screen">
       <div class="app-header">
         <h2>ಹಾಲು ದಾಖಲೆ <span class="en-sub">Record Milk</span></h2>
+        <button class="listen-btn" onclick="toggleListen(this)" style="margin-left:auto">
+          <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          <span class="listen-tooltip">Listening...</span>
+        </button>
       </div>
       <div class="scroll-content">
         <!-- Selected animal -->
@@ -2211,8 +2774,17 @@ body {
     <div id="health" class="screen">
       <div class="app-header">
         <h2>ಆರೋಗ್ಯ ತಪಾಸಣೆ <span class="en-sub">Health Check</span></h2>
+        <button class="listen-btn" onclick="toggleListen(this)" style="margin-left:auto">
+          <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          <span class="listen-tooltip">Listening...</span>
+        </button>
       </div>
       <div class="scroll-content">
+        <!-- Emergency Vet Call -->
+        <button class="emergency-vet-btn" onclick="alert('Calling emergency vet: 1800-XXX-XXXX')">
+          &#128680; ತುರ್ತು ಪಶುವೈದ್ಯರನ್ನು ಕರೆಮಾಡಿ (Emergency Vet Call)
+        </button>
+
         <div class="milk-header-card" style="background:linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)">
           <div class="icon-wrap" style="background:var(--accent-amber)">
             <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg>
@@ -2649,6 +3221,470 @@ body {
       </div>
     </div>
 
+    <!-- ONBOARDING -->
+    <div id="onboarding" class="screen" style="z-index:190">
+      <div style="display:flex;flex-direction:column;height:100%;background:linear-gradient(160deg, #E8F5E9 0%, #F5F5F0 100%)">
+        <div class="onboarding-step active" id="onbStep1">
+          <div class="onboarding-illustration" style="background:var(--md-primary-container)">&#128004;</div>
+          <div style="font-family:var(--font-kn);font-size:24px;font-weight:700;color:var(--md-primary);margin-bottom:8px">ಪಶುರಕ್ಷಾಗೆ ಸ್ವಾಗತ</div>
+          <div style="font-size:16px;color:var(--md-on-surface-variant);margin-bottom:4px">Welcome to PashuRaksha</div>
+          <div style="font-family:var(--font-kn);font-size:14px;color:var(--md-on-surface-variant);line-height:1.6;max-width:280px;margin-top:12px">ನಿಮ್ಮ ಜಾನುವಾರುಗಳನ್ನು ಸುಲಭವಾಗಿ ನಿರ್ವಹಿಸಿ<br>Manage your livestock easily</div>
+        </div>
+        <div class="onboarding-step" id="onbStep2">
+          <div class="onboarding-illustration" style="background:#FFEBEE">&#10084;&#65039;</div>
+          <div style="font-family:var(--font-kn);font-size:24px;font-weight:700;color:var(--md-primary);margin-bottom:8px">ನಿಮ್ಮ ಪ್ರಾಣಿಗಳನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಿ</div>
+          <div style="font-size:16px;color:var(--md-on-surface-variant);margin-bottom:4px">Track your animals</div>
+          <div style="font-family:var(--font-kn);font-size:14px;color:var(--md-on-surface-variant);line-height:1.6;max-width:280px;margin-top:12px">ಹಾಲು, ಆರೋಗ್ಯ, ಆದಾಯ ಎಲ್ಲವನ್ನೂ ಒಂದೇ ಆ್ಯಪ್‌ನಲ್ಲಿ<br>Milk, health, income - all in one app</div>
+        </div>
+        <div class="onboarding-step" id="onbStep3">
+          <div class="onboarding-illustration" style="background:var(--md-primary-container)">&#127793;</div>
+          <div style="font-family:var(--font-kn);font-size:24px;font-weight:700;color:var(--md-primary);margin-bottom:8px">ಪ್ರಾರಂಭಿಸೋಣ!</div>
+          <div style="font-size:16px;color:var(--md-on-surface-variant);margin-bottom:4px">Let's get started!</div>
+          <button class="btn-primary" onclick="navigateTo('langPicker')" style="margin-top:24px;max-width:260px">
+            ಮುಂದುವರಿಸಿ &rarr;
+          </button>
+        </div>
+        <div class="onboarding-dots" id="onbDots">
+          <div class="dot active" onclick="showOnbStep(1)"></div>
+          <div class="dot" onclick="showOnbStep(2)"></div>
+          <div class="dot" onclick="showOnbStep(3)"></div>
+        </div>
+        <div style="padding:0 32px 32px;display:flex;gap:12px">
+          <button class="btn-secondary" onclick="showOnbPrev()" id="onbPrevBtn" style="flex:1;visibility:hidden">&#8592; ಹಿಂದೆ</button>
+          <button class="btn-primary" onclick="showOnbNext()" id="onbNextBtn" style="flex:1">ಮುಂದೆ &rarr;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LANGUAGE PICKER -->
+    <div id="langPicker" class="screen" style="z-index:185">
+      <div style="display:flex;flex-direction:column;height:100%;padding:40px 24px">
+        <div style="text-align:center;margin-bottom:32px">
+          <div style="font-size:40px;margin-bottom:8px">&#127760;</div>
+          <div style="font-family:var(--font-kn);font-size:22px;font-weight:700;color:var(--md-on-surface)">ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ</div>
+          <div style="font-size:14px;color:var(--md-on-surface-variant)">Choose your language</div>
+        </div>
+        <div class="lang-card" onclick="navigateTo('login')">
+          <div class="lang-script">ಕ</div>
+          <div>
+            <div class="lang-name">ಕನ್ನಡ</div>
+            <div class="lang-sample">ನಿಮ್ಮ ಜಾನುವಾರುಗಳನ್ನು ನಿರ್ವಹಿಸಿ</div>
+          </div>
+        </div>
+        <div class="lang-card" onclick="navigateTo('login')">
+          <div class="lang-script" style="font-family:var(--font-body)">A</div>
+          <div>
+            <div class="lang-name" style="font-family:var(--font-body)">English</div>
+            <div class="lang-sample">Manage your livestock easily</div>
+          </div>
+        </div>
+        <div class="lang-card" onclick="navigateTo('login')">
+          <div class="lang-script">&#2361;</div>
+          <div>
+            <div class="lang-name">&#2361;&#2367;&#2306;&#2342;&#2368;</div>
+            <div class="lang-sample">&#2309;&#2346;&#2344;&#2375; &#2346;&#2358;&#2369;&#2343;&#2344; &#2325;&#2366; &#2346;&#2381;&#2352;&#2348;&#2306;&#2343;&#2344; &#2325;&#2352;&#2375;&#2306;</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WEATHER -->
+    <div id="weather" class="screen">
+      <div class="app-header">
+        <button class="back-btn" onclick="navigateTo('home')">
+          <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </button>
+        <h2>ಹವಾಮಾನ <span class="en-sub">Weather</span></h2>
+      </div>
+      <div class="scroll-content">
+        <div class="weather-card">
+          <div style="font-size:48px;margin-bottom:4px">&#9728;&#65039;</div>
+          <div class="temp">32&#176;C</div>
+          <div class="location">&#128205; ಮಂಡ್ಯ, ಕರ್ನಾಟಕ (Mandya)</div>
+          <div style="font-size:13px;color:var(--md-on-surface-variant);margin-top:4px">ಭಾಗಶಃ ಮೋಡ | Partly Cloudy</div>
+        </div>
+
+        <div style="font-family:var(--font-kn);font-size:15px;font-weight:700;margin-bottom:8px">3 ದಿನದ ಮುನ್ಸೂಚನೆ</div>
+        <div class="forecast-row">
+          <div class="forecast-day">
+            <div class="fd-day">ಇಂದು</div>
+            <div class="fd-icon">&#9728;&#65039;</div>
+            <div class="fd-temp">32&#176;C</div>
+          </div>
+          <div class="forecast-day">
+            <div class="fd-day">ನಾಳೆ</div>
+            <div class="fd-icon">&#9925;</div>
+            <div class="fd-temp">29&#176;C</div>
+          </div>
+          <div class="forecast-day">
+            <div class="fd-day">ನಾಡಿದ್ದು</div>
+            <div class="fd-icon">&#127782;&#65039;</div>
+            <div class="fd-temp">27&#176;C</div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:16px;background:linear-gradient(135deg, #FFF8E1 0%, #FFF3E0 100%);border-color:#FFD54F">
+          <div style="font-family:var(--font-kn);font-size:15px;font-weight:700;color:#E65100;margin-bottom:6px">&#128161; ಪ್ರಾಣಿ ಆರೈಕೆ ಸಲಹೆ</div>
+          <div style="font-family:var(--font-kn);font-size:14px;color:var(--md-on-surface);line-height:1.5">ಪ್ರಾಣಿಗಳಿಗೆ ನೆರಳು ಮತ್ತು ಹೆಚ್ಚಿನ ನೀರು ಒದಗಿಸಿ. ಬಿಸಿಲಿನ ಸಮಯದಲ್ಲಿ ಹಸುಗಳನ್ನು ಹೊರಗೆ ಕಳುಹಿಸಬೇಡಿ.</div>
+          <div style="font-size:12px;color:var(--md-on-surface-variant);margin-top:4px">Ensure shade and extra water for cattle during peak heat.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MANDI PRICES -->
+    <div id="mandiPrices" class="screen">
+      <div class="app-header">
+        <button class="back-btn" onclick="navigateTo('home')">
+          <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </button>
+        <h2>ಮಾರುಕಟ್ಟೆ ಬೆಲೆ <span class="en-sub">Market Prices</span></h2>
+      </div>
+      <div class="scroll-content">
+        <div class="card mandi-card">
+          <div class="mandi-icon">&#129371;</div>
+          <div class="mandi-info">
+            <div class="mandi-name">ಹಾಲು (Milk)</div>
+          </div>
+          <div style="text-align:right">
+            <div class="mandi-price" style="color:var(--md-primary)">&#8377;34/L</div>
+            <div class="mandi-trend trend-up">&#8593; 2%</div>
+          </div>
+        </div>
+        <div class="card mandi-card">
+          <div class="mandi-icon">&#127805;</div>
+          <div class="mandi-info">
+            <div class="mandi-name">ರಾಗಿ/ಮೇವು (Fodder/Ragi)</div>
+          </div>
+          <div style="text-align:right">
+            <div class="mandi-price" style="color:var(--md-on-surface)">&#8377;22/kg</div>
+            <div class="mandi-trend" style="color:var(--md-on-surface-variant)">&#8212;</div>
+          </div>
+        </div>
+        <div class="card mandi-card">
+          <div class="mandi-icon">&#127806;</div>
+          <div class="mandi-info">
+            <div class="mandi-name">ದನದ ಆಹಾರ (Cattle Feed)</div>
+          </div>
+          <div style="text-align:right">
+            <div class="mandi-price" style="color:var(--md-on-surface)">&#8377;18/kg</div>
+            <div class="mandi-trend trend-down">&#8595; 1%</div>
+          </div>
+        </div>
+        <div class="card mandi-card">
+          <div class="mandi-icon">&#129372;</div>
+          <div class="mandi-info">
+            <div class="mandi-name">ಕಡಲೆಕಾಯಿ ಹಿಂಡಿ (Groundnut cake)</div>
+          </div>
+          <div style="text-align:right">
+            <div class="mandi-price" style="color:var(--md-on-surface)">&#8377;45/kg</div>
+            <div class="mandi-trend" style="color:var(--md-on-surface-variant)">&#8212;</div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:14px 16px;margin-top:16px;background:var(--md-surface-container);text-align:center">
+          <div style="font-family:var(--font-kn);font-size:13px;color:var(--md-on-surface-variant)">&#128205; ಹತ್ತಿರದ ಮಂಡಿ: <strong style="color:var(--md-on-surface)">ಮಂಡ್ಯ APMC</strong></div>
+          <div style="font-size:11px;color:var(--md-outline);margin-top:2px">Nearest Mandi: Mandya APMC</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FEED CALCULATOR -->
+    <div id="feedCalc" class="screen">
+      <div class="app-header">
+        <button class="back-btn" onclick="navigateTo('home')">
+          <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </button>
+        <h2>ಆಹಾರ ಯೋಜನೆ <span class="en-sub">Feed Plan</span></h2>
+      </div>
+      <div class="scroll-content">
+        <div class="milk-header-card">
+          <div class="icon-wrap">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-1-6h4l-1 6h-2zm1-8c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1s1 .45 1 1v2c0 .55-.45 1-1 1z"/></svg>
+          </div>
+          <div class="info">
+            <h4>ಲಕ್ಷ್ಮಿ - ಹಳ್ಳಿಕಾರ್</h4>
+            <p>ಹಸು | 4 ವರ್ಷ | 5.2L/ದಿನ</p>
+          </div>
+        </div>
+
+        <div style="font-family:var(--font-kn);font-size:15px;font-weight:700;margin-bottom:8px">&#127807; ಶಿಫಾರಸು ದೈನಿಕ ಆಹಾರ</div>
+        <div class="card" style="padding:16px">
+          <div class="feed-row">
+            <span style="font-size:20px">&#127805;</span>
+            <div class="feed-name">ರಾಗಿ ಹುಲ್ಲು (Ragi Straw)</div>
+            <div class="feed-qty">4 kg</div>
+          </div>
+          <div class="feed-row">
+            <span style="font-size:20px">&#127807;</span>
+            <div class="feed-name">ಹಸಿರು ಮೇವು (Green Fodder)</div>
+            <div class="feed-qty">8 kg</div>
+          </div>
+          <div class="feed-row">
+            <span style="font-size:20px">&#129372;</span>
+            <div class="feed-name">ಕಡಲೆಕಾಯಿ ಹಿಂಡಿ (Groundnut cake)</div>
+            <div class="feed-qty">1 kg</div>
+          </div>
+          <div class="feed-row" style="border:none">
+            <span style="font-size:20px">&#128138;</span>
+            <div class="feed-name">ಖನಿಜ ಮಿಶ್ರಣ (Mineral mix)</div>
+            <div class="feed-qty">50 g</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <div class="card" style="flex:1;padding:14px;text-align:center;background:var(--md-primary-container)">
+            <div style="font-size:11px;color:var(--md-on-primary-container)">ದೈನಿಕ ವೆಚ್ಚ</div>
+            <div style="font-family:var(--font-mono);font-size:22px;font-weight:800;color:var(--md-primary)">&#8377;45/day</div>
+          </div>
+          <div class="card" style="flex:1;padding:14px;text-align:center;background:#E8F5E9">
+            <div style="font-size:11px;color:var(--status-healthy)">ಹಾಲು ಹೆಚ್ಚಳ (Expected)</div>
+            <div style="font-family:var(--font-mono);font-size:22px;font-weight:800;color:var(--status-healthy)">+1.2L/day</div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;padding:12px;background:var(--md-surface-container);border-radius:var(--radius-sm);font-size:12px;color:var(--md-on-surface-variant);text-align:center">
+          Based on e-GOPALA research for Hallikar breed
+        </div>
+      </div>
+    </div>
+
+    <!-- ETHNOVET - HOME REMEDIES -->
+    <div id="ethnoVet" class="screen">
+      <div class="app-header">
+        <button class="back-btn" onclick="navigateTo('health')">
+          <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </button>
+        <h2>ಮನೆಮದ್ದು <span class="en-sub">Home Remedies</span></h2>
+      </div>
+      <div class="scroll-content">
+        <div class="ethnovet-grid">
+          <div class="card ethnovet-card" onclick="showEthnoDetail('bloat')">
+            <div class="ev-icon">&#128168;</div>
+            <div class="ev-kn">ಹೊಟ್ಟೆ ಉಬ್ಬರ</div>
+            <div class="ev-en">Bloat</div>
+          </div>
+          <div class="card ethnovet-card" onclick="showEthnoDetail('diarrhea')">
+            <div class="ev-icon">&#128169;</div>
+            <div class="ev-kn">ಅತಿಸಾರ</div>
+            <div class="ev-en">Diarrhea</div>
+          </div>
+          <div class="card ethnovet-card" onclick="showEthnoDetail('mastitis')">
+            <div class="ev-icon">&#129371;</div>
+            <div class="ev-kn">ಕೆಚ್ಚಲು ಊತ</div>
+            <div class="ev-en">Mastitis</div>
+          </div>
+          <div class="card ethnovet-card" onclick="showEthnoDetail('footrot')">
+            <div class="ev-icon">&#129462;</div>
+            <div class="ev-kn">ಕಾಲು ಕೊಳೆತ</div>
+            <div class="ev-en">Foot Rot</div>
+          </div>
+          <div class="card ethnovet-card" onclick="showEthnoDetail('fever')">
+            <div class="ev-icon">&#129298;</div>
+            <div class="ev-kn">ಜ್ವರ</div>
+            <div class="ev-en">Fever</div>
+          </div>
+          <div class="card ethnovet-card" onclick="showEthnoDetail('ticks')">
+            <div class="ev-icon">&#128030;</div>
+            <div class="ev-kn">ಉಣ್ಣೆ ಹುಳು</div>
+            <div class="ev-en">Ticks</div>
+          </div>
+          <div class="card ethnovet-card" onclick="showEthnoDetail('wound')">
+            <div class="ev-icon">&#129656;</div>
+            <div class="ev-kn">ಗಾಯ</div>
+            <div class="ev-en">Wound</div>
+          </div>
+          <div class="card ethnovet-card" onclick="showEthnoDetail('cough')">
+            <div class="ev-icon">&#128567;</div>
+            <div class="ev-kn">ಕೆಮ್ಮು</div>
+            <div class="ev-en">Cough</div>
+          </div>
+        </div>
+      </div>
+      <!-- Ethnovet Detail Overlay -->
+      <div class="ethnovet-overlay" id="ethnoOverlay" onclick="if(event.target===this)closeEthnoDetail()">
+        <div class="ethnovet-sheet" id="ethnoSheet">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-family:var(--font-kn);font-size:18px;font-weight:700;color:var(--md-on-surface)" id="ethnoTitle"></div>
+            <button onclick="closeEthnoDetail()" style="width:32px;height:32px;border-radius:50%;border:none;background:var(--md-surface-container);cursor:pointer;font-size:16px">&#10005;</button>
+          </div>
+          <div id="ethnoContent" style="font-family:var(--font-kn);font-size:14px;color:var(--md-on-surface);line-height:1.6"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VACCINATION CALENDAR -->
+    <div id="vaccination" class="screen">
+      <div class="app-header">
+        <button class="back-btn" onclick="navigateTo('health')">
+          <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </button>
+        <h2>ಲಸಿಕೆ ಕ್ಯಾಲೆಂಡರ್ <span class="en-sub">Vaccination Calendar</span></h2>
+      </div>
+      <div class="scroll-content">
+        <!-- Overdue -->
+        <div style="font-family:var(--font-kn);font-size:13px;font-weight:700;color:var(--status-urgent);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">&#128308; ಮಿತಿ ಮೀರಿದೆ (Overdue)</div>
+        <div class="vacc-item" style="background:var(--status-urgent-bg)">
+          <div class="vacc-dot" style="background:var(--status-urgent)"></div>
+          <div class="vacc-info">
+            <div class="vacc-name">FMD Booster</div>
+            <div class="vacc-animal">&#128004; ಲಕ್ಷ್ಮಿ (Lakshmi)</div>
+            <div class="vacc-date" style="color:var(--status-urgent);font-weight:600">5 ದಿನ ಮಿತಿ ಮೀರಿದೆ</div>
+          </div>
+          <button class="vacc-done-btn" onclick="this.textContent='Done &#10003;';this.style.background='var(--md-primary)';this.style.color='white';this.style.borderColor='var(--md-primary)'">Mark Done &#10003;</button>
+        </div>
+
+        <!-- Upcoming -->
+        <div style="font-family:var(--font-kn);font-size:13px;font-weight:700;color:var(--status-watch);margin:16px 0 8px;text-transform:uppercase;letter-spacing:0.5px">&#128992; ಮುಂಬರುವ (Upcoming)</div>
+        <div class="vacc-item" style="background:var(--status-watch-bg)">
+          <div class="vacc-dot" style="background:var(--status-watch)"></div>
+          <div class="vacc-info">
+            <div class="vacc-name">HS Vaccine</div>
+            <div class="vacc-animal">&#128004; ಗಂಗಾ (Ganga)</div>
+            <div class="vacc-date">12 ದಿನಗಳಲ್ಲಿ (Due in 12 days)</div>
+          </div>
+          <button class="vacc-done-btn" onclick="this.textContent='Done &#10003;';this.style.background='var(--md-primary)';this.style.color='white';this.style.borderColor='var(--md-primary)'">Mark Done &#10003;</button>
+        </div>
+
+        <!-- Completed -->
+        <div style="font-family:var(--font-kn);font-size:13px;font-weight:700;color:var(--status-healthy);margin:16px 0 8px;text-transform:uppercase;letter-spacing:0.5px">&#128994; &#10003; ಪೂರ್ಣಗೊಂಡಿದೆ (Completed)</div>
+        <div class="vacc-item" style="background:var(--status-healthy-bg)">
+          <div class="vacc-dot" style="background:var(--status-healthy)"></div>
+          <div class="vacc-info">
+            <div class="vacc-name">Brucellosis</div>
+            <div class="vacc-animal">&#128004; ಲಕ್ಷ್ಮಿ (Lakshmi)</div>
+            <div class="vacc-date">2 ವಾರಗಳ ಹಿಂದೆ ಮುಗಿದಿದೆ</div>
+          </div>
+          <span style="font-size:20px;color:var(--status-healthy)">&#10003;</span>
+        </div>
+        <div class="vacc-item" style="background:var(--status-healthy-bg)">
+          <div class="vacc-dot" style="background:var(--status-healthy)"></div>
+          <div class="vacc-info">
+            <div class="vacc-name">FMD Primary</div>
+            <div class="vacc-animal">&#128004; ಮಂಜು (Manju)</div>
+            <div class="vacc-date">1 ತಿಂಗಳ ಹಿಂದೆ</div>
+          </div>
+          <span style="font-size:20px;color:var(--status-healthy)">&#10003;</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHEMES -->
+    <div id="schemes" class="screen">
+      <div class="app-header">
+        <button class="back-btn" onclick="navigateTo('home')">
+          <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </button>
+        <h2>ಸರ್ಕಾರಿ ಯೋಜನೆಗಳು <span class="en-sub">Govt Schemes</span></h2>
+        <button class="listen-btn" onclick="toggleListen(this)" style="margin-left:auto">
+          <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          <span class="listen-tooltip">Listening...</span>
+        </button>
+      </div>
+      <div class="scroll-content">
+        <div class="card scheme-card">
+          <div class="scheme-name">&#127963;&#65039; ರಾಷ್ಟ್ರೀಯ ಗೋಕುಲ್ ಮಿಷನ್</div>
+          <div class="scheme-desc">ತಳಿ ಸುಧಾರಣೆಗಾಗಿ &#8377;50,000 ಸಹಾಯಧನ<br><span style="font-size:12px">Breed improvement — up to &#8377;50K subsidy</span></div>
+          <div class="scheme-footer">
+            <span class="scheme-eligible yes">&#10003; Eligible</span>
+            <button class="scheme-apply-btn" onclick="alert('ಅರ್ಜಿ ಪ್ರಕ್ರಿಯೆ...')">Apply &rarr;</button>
+          </div>
+        </div>
+        <div class="card scheme-card">
+          <div class="scheme-name">&#129371; NADCP</div>
+          <div class="scheme-desc">ಹೈನುಗಾರಿಕೆ ಸಂಸ್ಕರಣೆಗೆ &#8377;3 ಲಕ್ಷದವರೆಗೆ<br><span style="font-size:12px">Dairy processing — up to &#8377;3L</span></div>
+          <div class="scheme-footer">
+            <span class="scheme-eligible yes">&#10003; Eligible</span>
+            <button class="scheme-apply-btn" onclick="alert('ಅರ್ಜಿ ಪ್ರಕ್ರಿಯೆ...')">Apply &rarr;</button>
+          </div>
+        </div>
+        <div class="card scheme-card">
+          <div class="scheme-name">&#128737;&#65039; KMF Insurance</div>
+          <div class="scheme-desc">&#8377;100 ಪ್ರೀಮಿಯಂ, &#8377;30,000 ಕವರ್<br><span style="font-size:12px">&#8377;100 premium, &#8377;30K cover</span></div>
+          <div class="scheme-footer">
+            <span class="scheme-eligible yes">&#10003; Eligible</span>
+            <button class="scheme-apply-btn" onclick="alert('ಅರ್ಜಿ ಪ್ರಕ್ರಿಯೆ...')">Apply &rarr;</button>
+          </div>
+        </div>
+        <div class="card scheme-card">
+          <div class="scheme-name">&#128179; Pashu Kisan Credit Card</div>
+          <div class="scheme-desc">&#8377;1.6 ಲಕ್ಷದವರೆಗೆ ಸಾಲ<br><span style="font-size:12px">Credit up to &#8377;1.6L</span></div>
+          <div class="scheme-footer">
+            <span class="scheme-eligible check">Check</span>
+            <button class="scheme-apply-btn" onclick="alert('ಅರ್ಜಿ ಪ್ರಕ್ರಿಯೆ...')">Apply &rarr;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSURANCE CLAIM -->
+    <div id="insurance" class="screen">
+      <div class="app-header">
+        <button class="back-btn" onclick="navigateTo('home')">
+          <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </button>
+        <h2>ವಿಮೆ ಕ್ಲೈಮ್ <span class="en-sub">Insurance Claim</span></h2>
+      </div>
+      <div class="scroll-content">
+        <!-- Step 1 -->
+        <div class="insurance-step">
+          <div class="step-label"><span class="step-num">1</span> ಪ್ರಾಣಿ ಆಯ್ಕೆ (Select Animal)</div>
+          <div class="card" style="padding:14px;display:flex;align-items:center;gap:12px;border-color:var(--md-primary)">
+            <div style="width:48px;height:48px;border-radius:14px;background:#FFF8E1;display:flex;align-items:center;justify-content:center;font-size:28px">&#128004;</div>
+            <div>
+              <div style="font-family:var(--font-kn);font-size:16px;font-weight:700">ಲಕ್ಷ್ಮಿ (Lakshmi)</div>
+              <div style="font-size:12px;color:var(--md-on-surface-variant)">ಹಳ್ಳಿಕಾರ್ | PA-KA-2024-00847</div>
+            </div>
+            <span style="margin-left:auto;color:var(--md-primary);font-size:18px">&#10003;</span>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="insurance-step">
+          <div class="step-label"><span class="step-num">2</span> ಘಟನೆ ಪ್ರಕಾರ (Incident Type)</div>
+          <div class="incident-cards">
+            <div class="incident-card" onclick="selectIncident(this)">
+              <div class="ic-icon">&#128128;</div>
+              <div class="ic-label">ಸಾವು<br><span style="font-size:11px;font-weight:400">Death</span></div>
+            </div>
+            <div class="incident-card selected" onclick="selectIncident(this)">
+              <div class="ic-icon">&#129656;</div>
+              <div class="ic-label">ಗಾಯ<br><span style="font-size:11px;font-weight:400">Injury</span></div>
+            </div>
+            <div class="incident-card" onclick="selectIncident(this)">
+              <div class="ic-icon">&#129298;</div>
+              <div class="ic-label">ರೋಗ<br><span style="font-size:11px;font-weight:400">Disease</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="insurance-step">
+          <div class="step-label"><span class="step-num">3</span> ಫೋಟೋ (Photo Evidence)</div>
+          <div class="card" style="padding:24px;text-align:center;border-style:dashed;cursor:pointer" onclick="this.innerHTML='<div style=font-size:40px>&#128247;</div><div style=font-family:var(--font-kn);font-size:14px;color:var(--status-healthy);font-weight:600;margin-top:8px>&#10003; ಫೋಟೋ ತೆಗೆಯಲಾಗಿದೆ</div>'">
+            <div style="font-size:40px">&#128247;</div>
+            <div style="font-family:var(--font-kn);font-size:14px;color:var(--md-on-surface-variant);margin-top:8px">ಫೋಟೋ ತೆಗೆಯಿರಿ (Take Photo)</div>
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="navigateTo('insuranceSuccess')" style="margin-top:8px">
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+          ಸಲ್ಲಿಸಿ (Submit Claim)
+        </button>
+      </div>
+    </div>
+
+    <!-- INSURANCE SUCCESS -->
+    <div id="insuranceSuccess" class="screen">
+      <div class="success-screen">
+        <div class="success-check">
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+        </div>
+        <div class="success-title">ವಿಮೆ ಕ್ಲೈಮ್ ಸಲ್ಲಿಸಲಾಗಿದೆ!</div>
+        <div class="success-desc">Insurance claim submitted successfully.<br>Claim ID: CLM-2026-04782</div>
+        <button class="btn-primary" onclick="navigateTo('home')" style="margin-top:32px;max-width:260px">ಮನೆಗೆ ಹಿಂತಿರುಗಿ</button>
+      </div>
+    </div>
+
     <!-- BOTTOM TABS (5 tabs: Home, Milk, Sell, Health, Income) -->
     <div class="bottom-tabs" id="bottomTabs">
       <div class="tab-item active" data-screen="home" onclick="switchTab(this,'home')">
@@ -2683,6 +3719,9 @@ body {
       </div>
     </div>
 
+    <!-- HELP FAB -->
+    <div class="help-fab" onclick="alert('Help: Call 1800-XXX-XXXX')">?</div>
+
   </div><!-- screen-area -->
 </div><!-- phone-frame -->
 
@@ -2703,6 +3742,15 @@ body {
     <li onclick="jumpTo('income')"><span class="num">10</span><div>Income<span class="kn">ಆದಾಯ</span></div></li>
     <li onclick="jumpTo('smartFarm')"><span class="num">11</span><div>Smart Farm<span class="kn">ಸ್ಮಾರ್ಟ್ ಫಾರ್ಮ್</span></div></li>
     <li onclick="jumpTo('profile')"><span class="num">12</span><div>Profile<span class="kn">ಪ್ರೊಫೈಲ್</span></div></li>
+    <li onclick="jumpTo('onboarding')"><span class="num">13</span><div>Onboarding<span class="kn">ಸ್ವಾಗತ</span></div></li>
+    <li onclick="jumpTo('langPicker')"><span class="num">14</span><div>Language<span class="kn">ಭಾಷೆ</span></div></li>
+    <li onclick="jumpTo('weather')"><span class="num">15</span><div>Weather<span class="kn">ಹವಾಮಾನ</span></div></li>
+    <li onclick="jumpTo('mandiPrices')"><span class="num">16</span><div>Market Prices<span class="kn">ಮಾರುಕಟ್ಟೆ</span></div></li>
+    <li onclick="jumpTo('feedCalc')"><span class="num">17</span><div>Feed Plan<span class="kn">ಆಹಾರ</span></div></li>
+    <li onclick="jumpTo('ethnoVet')"><span class="num">18</span><div>Home Remedies<span class="kn">ಮನೆಮದ್ದು</span></div></li>
+    <li onclick="jumpTo('vaccination')"><span class="num">19</span><div>Vaccination<span class="kn">ಲಸಿಕೆ</span></div></li>
+    <li onclick="jumpTo('schemes')"><span class="num">20</span><div>Schemes<span class="kn">ಯೋಜನೆಗಳು</span></div></li>
+    <li onclick="jumpTo('insurance')"><span class="num">21</span><div>Insurance<span class="kn">ವಿಮೆ</span></div></li>
   </ul>
 </div>
 
@@ -2712,11 +3760,11 @@ body {
 // ============ NAVIGATION ============
 let currentScreen = 'splash';
 const tabScreens = ['home', 'milk', 'sell', 'health', 'income'];
-const hiddenTabScreens = ['animalDetail', 'addAnimal', 'success', 'milkhistory', 'milkSuccess', 'healthAlert', 'sellSuccess', 'smartFarm', 'profile'];
+const hiddenTabScreens = ['animalDetail', 'addAnimal', 'success', 'milkhistory', 'milkSuccess', 'healthAlert', 'sellSuccess', 'smartFarm', 'profile', 'onboarding', 'langPicker', 'weather', 'mandiPrices', 'feedCalc', 'ethnoVet', 'vaccination', 'schemes', 'insurance', 'insuranceSuccess'];
 const bottomTabs = document.getElementById('bottomTabs');
 
 // Auto-advance splash
-setTimeout(() => navigateTo('login'), 2000);
+setTimeout(() => navigateTo('onboarding'), 2000);
 
 function navigateTo(screenId) {
   const curr = document.getElementById(currentScreen);
@@ -2758,7 +3806,7 @@ function updateTabHighlight(screenId) {
 
 function updateGuide(screenId) {
   const items = document.querySelectorAll('#screenList li');
-  const map = { splash:0, login:1, home:2, animalDetail:3, addAnimal:4, milk:5, milkhistory:6, sell:7, sellSuccess:7, health:8, healthAlert:9, income:10, smartFarm:11, profile:12, success:4, milkSuccess:5 };
+  const map = { splash:0, login:1, home:2, animalDetail:3, addAnimal:4, milk:5, milkhistory:6, sell:7, sellSuccess:7, health:8, healthAlert:9, income:10, smartFarm:11, profile:12, success:4, milkSuccess:5, onboarding:13, langPicker:14, weather:15, mandiPrices:16, feedCalc:17, ethnoVet:18, vaccination:19, schemes:20, insurance:21, insuranceSuccess:21 };
   items.forEach((li, i) => li.classList.toggle('active', i === (map[screenId] ?? -1)));
 }
 
@@ -2923,6 +3971,64 @@ document.querySelectorAll('.income-hero .period-btn')?.forEach(btn => {
     btn.classList.add('active');
   });
 });
+
+// ============ ONBOARDING ============
+let onbStep = 1;
+function showOnbStep(step) {
+  onbStep = step;
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById('onbStep' + i);
+    if (el) el.classList.toggle('active', i === step);
+  }
+  const dots = document.querySelectorAll('#onbDots .dot');
+  dots.forEach((d, i) => d.classList.toggle('active', i === step - 1));
+  const prevBtn = document.getElementById('onbPrevBtn');
+  const nextBtn = document.getElementById('onbNextBtn');
+  if (prevBtn) prevBtn.style.visibility = step === 1 ? 'hidden' : 'visible';
+  if (nextBtn) nextBtn.style.display = step === 3 ? 'none' : 'flex';
+}
+function showOnbNext() {
+  if (onbStep < 3) showOnbStep(onbStep + 1);
+}
+function showOnbPrev() {
+  if (onbStep > 1) showOnbStep(onbStep - 1);
+}
+
+// ============ LISTEN BUTTON ============
+function toggleListen(btn) {
+  btn.classList.toggle('active');
+  if (btn.classList.contains('active')) {
+    setTimeout(() => btn.classList.remove('active'), 2500);
+  }
+}
+
+// ============ ETHNOVET REMEDIES ============
+const ethnoRemedies = {
+  bloat: { title: 'ಹೊಟ್ಟೆ ಉಬ್ಬರ (Bloat)', content: '<strong>ಪರಿಹಾರ:</strong> ಅರಿಶಿನ + ಬೆಲ್ಲ<br><br><strong>ಸಾಮಗ್ರಿ:</strong><br>- ಅರಿಶಿನ ಪುಡಿ 2 ಚಮಚ (Turmeric 2 tsp)<br>- ಬೆಲ್ಲ 50g (Jaggery 50g)<br>- ಬೆಚ್ಚಗಿನ ನೀರು 500ml<br><br><strong>ವಿಧಾನ:</strong><br>1. ಬೆಲ್ಲವನ್ನು ಬೆಚ್ಚಗಿನ ನೀರಿನಲ್ಲಿ ಕರಗಿಸಿ<br>2. ಅರಿಶಿನ ಬೆರೆಸಿ ಚೆನ್ನಾಗಿ ಮಿಶ್ರ ಮಾಡಿ<br>3. ಪ್ರಾಣಿಗೆ ನಿಧಾನವಾಗಿ ಕುಡಿಸಿ' },
+  diarrhea: { title: 'ಅತಿಸಾರ (Diarrhea)', content: '<strong>ಪರಿಹಾರ:</strong> ದಾಳಿಂಬೆ ತೊಗಟೆ<br><br><strong>ಸಾಮಗ್ರಿ:</strong><br>- ದಾಳಿಂಬೆ ತೊಗಟೆ 100g (Pomegranate bark)<br>- ನೀರು 1L<br><br><strong>ವಿಧಾನ:</strong><br>1. ತೊಗಟೆಯನ್ನು ನೀರಿನಲ್ಲಿ ಕುದಿಸಿ<br>2. ತಂಪಾದ ನಂತರ ಸೋಸಿ<br>3. ದಿನಕ್ಕೆ 2 ಬಾರಿ ಕುಡಿಸಿ' },
+  mastitis: { title: 'ಕೆಚ್ಚಲು ಊತ (Mastitis)', content: '<strong>ಪರಿಹಾರ:</strong> ಬೆಚ್ಚಗಿನ ಒತ್ತಡ<br><br><strong>ವಿಧಾನ:</strong><br>1. ಬೆಚ್ಚಗಿನ ನೀರಿನಲ್ಲಿ ಬಟ್ಟೆ ನೆನೆಸಿ (Warm compress)<br>2. ಕೆಚ್ಚಲಿನ ಮೇಲೆ 15 ನಿಮಿಷ ಹಾಕಿ<br>3. ದಿನಕ್ಕೆ 3-4 ಬಾರಿ ಪುನರಾವರ್ತಿಸಿ' },
+  footrot: { title: 'ಕಾಲು ಕೊಳೆತ (Foot Rot)', content: '<strong>ಪರಿಹಾರ:</strong> ಬೇವಿನ ಲೇಪ<br><br><strong>ಸಾಮಗ್ರಿ:</strong><br>- ಬೇವಿನ ಎಲೆ (Neem leaves)<br>- ಅರಿಶಿನ (Turmeric)<br><br><strong>ವಿಧಾನ:</strong><br>1. ಬೇವಿನ ಎಲೆಯನ್ನು ಅರೆಯಿರಿ (Grind neem paste)<br>2. ಅರಿಶಿನ ಬೆರೆಸಿ<br>3. ಕಾಲಿಗೆ ಲೇಪಿಸಿ, ಬ್ಯಾಂಡೇಜ್ ಮಾಡಿ' },
+  fever: { title: 'ಜ್ವರ (Fever)', content: '<strong>ಪರಿಹಾರ:</strong> ತುಳಸಿ ಕಷಾಯ<br><br><strong>ಸಾಮಗ್ರಿ:</strong><br>- ತುಳಸಿ ಎಲೆ 50g (Tulsi leaves)<br>- ನೀರು 1L<br><br><strong>ವಿಧಾನ:</strong><br>1. ತುಳಸಿ ಎಲೆಯನ್ನು ನೀರಿನಲ್ಲಿ ಕುದಿಸಿ (Tulsi decoction)<br>2. 15 ನಿಮಿಷ ಕುದಿಸಿ<br>3. ತಂಪಾದ ನಂತರ ಕುಡಿಸಿ' },
+  ticks: { title: 'ಉಣ್ಣೆ ಹುಳು (Ticks)', content: '<strong>ಪರಿಹಾರ:</strong> ಬೇವಿನ ಎಣ್ಣೆ<br><br><strong>ಸಾಮಗ್ರಿ:</strong><br>- ಬೇವಿನ ಎಣ್ಣೆ 100ml (Neem oil)<br>- ತೆಂಗಿನ ಎಣ್ಣೆ 100ml<br><br><strong>ವಿಧಾನ:</strong><br>1. ಎರಡೂ ಎಣ್ಣೆಗಳನ್ನು ಬೆರೆಸಿ<br>2. ಪ್ರಾಣಿಯ ಮೈಗೆ ಹಚ್ಚಿ<br>3. ವಾರಕ್ಕೊಮ್ಮೆ ಪುನರಾವರ್ತಿಸಿ' },
+  wound: { title: 'ಗಾಯ (Wound)', content: '<strong>ಪರಿಹಾರ:</strong> ಅರಿಶಿನ ಲೇಪ<br><br><strong>ಸಾಮಗ್ರಿ:</strong><br>- ಅರಿಶಿನ ಪುಡಿ (Turmeric paste)<br>- ತೆಂಗಿನ ಎಣ್ಣೆ<br><br><strong>ವಿಧಾನ:</strong><br>1. ಗಾಯವನ್ನು ಶುದ್ಧ ನೀರಿನಿಂದ ತೊಳೆಯಿರಿ<br>2. ಅರಿಶಿನ + ತೆಂಗಿನ ಎಣ್ಣೆ ಲೇಪಿಸಿ<br>3. ದಿನಕ್ಕೆ 2 ಬಾರಿ ಬದಲಿಸಿ' },
+  cough: { title: 'ಕೆಮ್ಮು (Cough)', content: '<strong>ಪರಿಹಾರ:</strong> ಶುಂಠಿ + ಜೇನು<br><br><strong>ಸಾಮಗ್ರಿ:</strong><br>- ಶುಂಠಿ ರಸ 2 ಚಮಚ (Ginger juice)<br>- ಜೇನು 2 ಚಮಚ (Honey)<br>- ಬೆಚ್ಚಗಿನ ನೀರು<br><br><strong>ವಿಧಾನ:</strong><br>1. ಶುಂಠಿ ರಸ ತೆಗೆಯಿರಿ<br>2. ಜೇನು ಮತ್ತು ನೀರು ಬೆರೆಸಿ<br>3. ದಿನಕ್ಕೆ 2 ಬಾರಿ ಕುಡಿಸಿ' }
+};
+function showEthnoDetail(remedy) {
+  const data = ethnoRemedies[remedy];
+  if (!data) return;
+  document.getElementById('ethnoTitle').textContent = data.title;
+  document.getElementById('ethnoContent').innerHTML = data.content;
+  document.getElementById('ethnoOverlay').classList.add('active');
+}
+function closeEthnoDetail() {
+  document.getElementById('ethnoOverlay').classList.remove('active');
+}
+
+// ============ INSURANCE INCIDENT SELECT ============
+function selectIncident(el) {
+  document.querySelectorAll('.incident-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
 </script>
 
 </body>

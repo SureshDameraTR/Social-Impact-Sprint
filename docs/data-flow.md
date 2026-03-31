@@ -20,6 +20,10 @@
 11. [Admin & Reporting Flow](#11-admin--reporting-flow)
 12. [Data State Transitions](#12-data-state-transitions)
 13. [Disaster Recovery Failover Flow](#13-disaster-recovery-failover-flow)
+14. [Herd Tracking Flow](#14-herd-tracking-flow)
+15. [Disease Hotspot Flow](#15-disease-hotspot-flow)
+16. [Hatchery Monitoring Flow](#16-hatchery-monitoring-flow)
+17. [Credit Profile Flow](#17-credit-profile-flow)
 
 ---
 
@@ -386,7 +390,35 @@ sequenceDiagram
     SB->>F2: UI shows: Nandini fever (from Device A)
 ```
 
-### 6.2 Domain-Aware Merge Rules
+### 6.2 Telemetry Replay on Reconnect
+
+When a device with buffered IoT telemetry (e.g., GPS collar pings, hatchery sensor readings) comes back online, the sync engine replays all buffered `DEVICE_TELEMETRY` events to the server in chronological order. This ensures no sensor data is lost during connectivity gaps, and downstream aggregations (herd sessions, hatch rate calculations, disease hotspot feeds) receive the complete time-series.
+
+```mermaid
+sequenceDiagram
+    participant DEV as 📱 Device (Offline)
+    participant BUF as 💾 Local Telemetry Buffer
+    participant PS as ⚡ PowerSync Service
+    participant API as 🔧 FastAPI Backend
+    participant IOT as ⚙️ IoT Adapter Service
+
+    Note over DEV,IOT: Device offline — telemetry accumulates locally
+
+    DEV->>BUF: Buffer DEVICE_TELEMETRY events<br/>(GPS pings, sensor reads)
+    BUF->>BUF: Store with monotonic sequence IDs
+
+    Note over DEV,IOT: Device reconnects
+
+    BUF->>PS: Upload buffered telemetry batch<br/>(ordered by sequence ID)
+    PS->>API: POST /v1/sync/push (telemetry replay batch)
+    API->>API: Deduplicate by device_id + timestamp
+    API->>IOT: Forward replayed telemetry for processing
+    IOT->>IOT: Re-run threshold checks + aggregations
+    API-->>PS: Ack + checkpoint
+    PS-->>DEV: Replay complete ✓
+```
+
+### 6.3 Domain-Aware Merge Rules
 
 ```mermaid
 flowchart TD
@@ -406,7 +438,7 @@ flowchart TD
     L --> M[Push to all synced devices]
 ```
 
-### 6.3 Shared Device Sync (Family Members)
+### 6.4 Shared Device Sync (Family Members)
 
 ```mermaid
 sequenceDiagram
@@ -432,7 +464,7 @@ sequenceDiagram
     Note over PS: Each user's data syncs independently
 ```
 
-### 6.4 Sync Health Dashboard (for Admins)
+### 6.5 Sync Health Dashboard (for Admins)
 
 ```mermaid
 flowchart LR
@@ -896,6 +928,187 @@ gantt
     Backup integrity check (automated)  :verify, 04:00, 30m
     Monthly restore drill (manual)      :milestone, drill, 10:00, 0h
 ```
+
+---
+
+## 14. Herd Tracking Flow
+
+GPS-enabled collars transmit periodic location pings that are ingested as `ANIMAL_LOCATION_PING` events. Each ping is checked against the farmer's configured `GEOFENCE` boundaries. When an animal moves outside the geofence, an alert is dispatched immediately. All pings are aggregated into a `HERD_SESSION` that tracks grazing patterns, distance traveled, and time spent per zone.
+
+### 14.1 GPS Collar Ping to Geofence Alert Sequence
+
+```mermaid
+sequenceDiagram
+    participant COL as 📡 GPS Collar
+    participant MQTT as 🔄 MQTT Broker
+    participant IOT as ⚙️ IoT Adapter Service
+    participant GEO as 🗺️ Geofence Engine
+    participant DB as 💾 PostgreSQL
+    participant NS as 🔔 Notify Service
+    participant APP as 📱 Farmer App
+
+    COL->>MQTT: Publish {animal_id, lat, lng, timestamp, battery}
+    MQTT->>IOT: Topic: livestock/+/gps
+    IOT->>IOT: Validate + normalize coordinates
+    IOT->>DB: INSERT ANIMAL_LOCATION_PING
+
+    IOT->>GEO: Check point-in-polygon {lat, lng, farmer_id}
+    GEO->>DB: Fetch GEOFENCE boundaries for farmer
+    DB-->>GEO: {geofences: [{id, polygon, name}]}
+
+    alt Animal inside geofence
+        GEO-->>IOT: {inside: true, zone: "grazing_area_1"}
+        IOT->>DB: Update HERD_SESSION (add waypoint)
+    else Animal outside all geofences
+        GEO-->>IOT: {inside: false, nearest_fence: "grazing_area_1", distance_m: 340}
+        IOT->>DB: Update HERD_SESSION (mark breach)
+        IOT->>NS: CRITICAL alert: animal outside boundary
+        NS->>APP: Push: "Nandini is 340m outside grazing area"
+        NS->>APP: SMS fallback if offline
+    end
+
+    Note over IOT,DB: Every 15 min — aggregate into HERD_SESSION
+    IOT->>DB: UPDATE HERD_SESSION<br/>{distance_km, zones_visited, grazing_minutes}
+```
+
+**Key entities:** `ANIMAL_LOCATION_PING`, `GEOFENCE`, `HERD_SESSION` (push notification via Notify Service)
+
+---
+
+## 15. Disease Hotspot Flow
+
+When health events with high AI risk scores are logged across multiple animals in a geographic cluster, the system creates an `OUTBREAK_REPORT` and runs spatial clustering to identify `DISEASE_HOTSPOT` regions. Admin users see hotspot overlays on the GIS map, and farmers within the affected radius receive SMS alerts with preventive guidance.
+
+### 15.1 Outbreak Detection and Hotspot Aggregation
+
+```mermaid
+flowchart TD
+    subgraph Inputs["Health Event Sources"]
+        HE[HEALTH_EVENT logged<br/>risk_score > 0.7]
+        IOT_ALERT[IoT anomaly<br/>temp > 39.5C]
+        VET_REPORT[Vet consultation<br/>confirmed diagnosis]
+    end
+
+    HE & IOT_ALERT & VET_REPORT --> ENRICH[Enrich with location<br/>animal GPS + farmer village]
+
+    ENRICH --> CLUSTER[Spatial clustering<br/>DBSCAN: eps=5km, min_samples=3]
+
+    CLUSTER --> CHECK{Cluster found<br/>within 7-day window?}
+
+    CHECK -->|No| LOG[Log individual event<br/>continue monitoring]
+    CHECK -->|Yes| OUTBREAK[Create OUTBREAK_REPORT<br/>cluster_id, center_lat_lng, radius_km,<br/>affected_animals, disease_hypothesis]
+
+    OUTBREAK --> HOTSPOT[Upsert DISEASE_HOTSPOT<br/>severity, affected_count, trend]
+
+    HOTSPOT --> GIS[Admin GIS map overlay<br/>color-coded by severity]
+    HOTSPOT --> SMS_ALERT[SMS alerts to farmers<br/>within hotspot radius + 10km buffer]
+    HOTSPOT --> VET_DISPATCH[Auto-suggest veterinary camp recommendation<br/>at hotspot center via OUTBREAK_REPORT.recommended_action]
+
+    SMS_ALERT --> SARVAM[Localize via Sarvam AI<br/>Kannada / Hindi / Telugu]
+    SARVAM --> TWILIO[Deliver via Twilio SMS]
+
+    GIS --> ADMIN_ACTION{Admin action?}
+    ADMIN_ACTION -->|Confirm outbreak| GOVT_NOTIFY[Report to Dept. of<br/>Animal Husbandry]
+    ADMIN_ACTION -->|Dismiss false positive| CLOSE[Close OUTBREAK_REPORT<br/>update model feedback]
+```
+
+**Key entities:** `HEALTH_EVENT`, `OUTBREAK_REPORT`, `DISEASE_HOTSPOT` (push notification via Notify Service)
+
+---
+
+## 16. Hatchery Monitoring Flow
+
+Hatchery sensors continuously report temperature and humidity readings as `DEVICE_TELEMETRY` events via MQTT. Threshold violations trigger immediate alerts for the hatchery operator. Each egg batch is tracked as a `HATCHERY_BATCH` with lifecycle status updates, and the system calculates hatch rate upon batch completion.
+
+### 16.1 Sensor Ingestion to Batch Status Sequence
+
+```mermaid
+sequenceDiagram
+    participant SENSOR as 🌡️ Hatchery Sensor<br/>(Temp + Humidity)
+    participant MQTT as 🔄 MQTT Broker
+    participant IOT as ⚙️ IoT Adapter Service
+    participant DB as 💾 PostgreSQL
+    participant NS as 🔔 Notify Service
+    participant APP as 📱 Operator App
+    participant BATCH as ⚙️ Batch Service
+
+    SENSOR->>MQTT: Publish {hatchery_id, temp_c, humidity_pct, timestamp}
+    MQTT->>IOT: Topic: hatchery/+/telemetry
+    IOT->>IOT: Validate range (temp: 20-45C, humidity: 0-100%)
+    IOT->>DB: INSERT DEVICE_TELEMETRY
+
+    IOT->>IOT: Check thresholds for active HATCHERY_BATCH
+
+    alt Temperature out of range (< 37.2C or > 38.0C)
+        IOT->>NS: CRITICAL alert: temperature deviation
+        NS->>APP: Push: "Hatchery 3 temp 38.6C — above safe range"
+        NS->>APP: SMS fallback
+        IOT->>DB: UPDATE HATCHERY_BATCH set status = 'ALERT'
+    else Humidity out of range (< 55% or > 65%)
+        IOT->>NS: HIGH alert: humidity deviation
+        NS->>APP: Push: "Hatchery 3 humidity 48% — below safe range"
+        IOT->>DB: UPDATE HATCHERY_BATCH set status = 'ALERT'
+    else All readings normal
+        IOT->>DB: UPDATE HATCHERY_BATCH set status = 'INCUBATING'
+    end
+
+    Note over BATCH,DB: On batch completion (day 21 for chicken)
+
+    BATCH->>DB: Fetch HATCHERY_BATCH + all DEVICE_TELEMETRY
+    BATCH->>BATCH: Calculate hatch_rate =<br/>hatched_count / total_eggs * 100
+    BATCH->>DB: UPDATE HATCHERY_BATCH<br/>{status: 'COMPLETED', hatch_rate, avg_temp, avg_humidity}
+    BATCH->>APP: Summary: "Batch #42: 87% hatch rate (174/200)"
+```
+
+**Key entities:** `DEVICE_TELEMETRY`, `HATCHERY_BATCH` (push notification via Notify Service)
+
+---
+
+## 17. Credit Profile Flow
+
+The platform periodically aggregates a farmer's financial and social data to compute a `CREDIT_PROFILE` score. This score combines milk income, animal sale income, SHG membership status, active insurance policies, and government scheme participation. The resulting profile is displayed in the mobile app as a loan eligibility indicator and can be exported in NABARD/bank-compatible format for formal credit applications.
+
+### 17.1 Credit Profile Aggregation and Export
+
+```mermaid
+flowchart TD
+    subgraph DataSources["Periodic Data Aggregation (Weekly)"]
+        MILK[YIELD_LOG records<br/>→ total milk income (6 months)]
+        SALES[TRANSACTION records<br/>→ animal sale income]
+        SHG[SHG_GROUP<br/>→ attendance rate, savings balance]
+        INS[INSURANCE_POLICY<br/>→ active policies count]
+        SCHEME[SCHEME_APPLICATION<br/>→ approved schemes count]
+    end
+
+    MILK & SALES & SHG & INS & SCHEME --> AGG[Aggregation Job<br/>Celery Beat — weekly]
+
+    AGG --> SCORE[Credit Score Calculation<br/>weighted formula]
+
+    subgraph Weights["Score Components (0-100)"]
+        W1["Milk income consistency: 30%"]
+        W2["Sale income history: 20%"]
+        W3["SHG participation: 20%"]
+        W4["Insurance coverage: 15%"]
+        W5["Scheme utilization: 15%"]
+    end
+
+    SCORE --> PROFILE[Upsert CREDIT_PROFILE<br/>score, breakdown, tier, updated_at]
+
+    PROFILE --> MOBILE[Mobile App Display<br/>score gauge + eligibility tier]
+    PROFILE --> EXPORT[Export Module]
+
+    MOBILE --> ELIGIBLE{Tier?}
+    ELIGIBLE -->|A: score >= 75| LOAN_READY["Eligible for formal bank loan<br/>Show 'Apply Now' button"]
+    ELIGIBLE -->|B: score 50-74| SHG_LOAN["Eligible for SHG micro-loan<br/>Show SHG lending options"]
+    ELIGIBLE -->|C: score < 50| IMPROVE["Show improvement tips<br/>+ scheme recommendations"]
+
+    EXPORT --> NABARD[NABARD format export<br/>JSON / CSV]
+    EXPORT --> BANK[Partner bank API push<br/>with farmer consent]
+
+    LOAN_READY --> APPLY[POST /v1/finance/loan-apply<br/>attach CREDIT_PROFILE snapshot]
+```
+
+**Key entities:** `CREDIT_PROFILE`, `YIELD_LOG`, `TRANSACTION`, `SHG_GROUP`, `INSURANCE_POLICY`, `SCHEME_APPLICATION`
 
 ---
 

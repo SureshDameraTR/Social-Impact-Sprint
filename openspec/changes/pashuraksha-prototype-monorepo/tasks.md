@@ -172,3 +172,100 @@
 - [ ] 18.3 Demo scenario 9: Admin views Smart Farm / IoT device overview (mockup for future vision pitch)
 - [ ] 18.4 Update demo script to include all 9 scenarios (6 original + 3 new)
 - [ ] 18.5 Test multi-species flow: add goat "Meenu", record goat milk, log goat health event
+
+## 19. Farmer Onboarding Flow
+
+- [ ] 19.1 Mobile: Welcome screen with language picker (Kannada default, English) and large accessibility toggle
+- [ ] 19.2 Mobile: Progressive profile builder — name, phone (pre-filled from auth), district picker, village search
+- [ ] 19.3 Mobile: First animal registration prompt — "Add your first animal" with guided species + breed picker
+- [ ] 19.4 Mobile: Tutorial overlay — 3 swipe cards explaining key features (voice input, health check, sell products)
+- [ ] 19.5 API: `POST /v1/onboarding/complete` — mark onboarding done, set default preferences
+
+## 20. Weather Integration
+
+- [ ] 20.1 Create `app/models/weather.py` — WeatherAlert model (id, district, alert_type, severity, description, valid_from, valid_to, source)
+- [ ] 20.2 Create `app/services/weather_service.py` — IMD API client, fetch 5-day forecast by district, cache with 6h TTL
+- [ ] 20.3 Create `app/routers/weather.py` — `GET /v1/weather/forecast/{district}`, `GET /v1/weather/alerts/{district}`
+- [ ] 20.4 Mobile: Weather card on home screen — today's conditions, heat stress indicator, rainfall probability
+- [ ] 20.5 Mobile: Weather detail screen — 5-day forecast, alert history, Kannada voice summary
+- [ ] 20.6 Add mock weather data to seed script for Mysore and Mandya districts
+
+## 21. Feed/Ration Optimization
+
+- [ ] 21.1 Create `app/models/feed.py` — FeedIngredient model (id, name_en, name_kn, category, protein_pct, energy_kcal, cost_per_kg, availability_season, locally_available BOOL)
+- [ ] 21.2 Create `app/services/feed_calculator.py` — ration optimizer: input (species, breed, weight, lactation_stage, available_ingredients) → output (balanced_ration, daily_cost_estimate)
+- [ ] 21.3 Create `app/routers/feed.py` — `GET /v1/feed/ingredients`, `POST /v1/feed/calculate-ration`
+- [ ] 21.4 Mobile: Feed calculator screen — species/breed selector, weight input, ingredient checklist from local options
+- [ ] 21.5 Mobile: Ration result card — daily quantities per ingredient, estimated cost, nutritional balance meter
+- [ ] 21.6 Seed 30 common Karnataka feed ingredients with NDDB nutritional data
+
+## 22. Ethno-Veterinary Medicine Database
+
+- [ ] 22.1 Create `app/models/ethno_vet.py` — TraditionalRemedy model (id, name_en, name_kn, plant_ingredient, preparation_method, dosage_by_species JSONB, conditions_treated, evidence_rating enum[traditional|studied|icar_validated], safety_warnings, source_reference)
+- [ ] 22.2 Create `app/routers/ethno_vet.py` — `GET /v1/ethno-vet/remedies`, `GET /v1/ethno-vet/remedies/{condition}`, `GET /v1/ethno-vet/search?q=`
+- [ ] 22.3 Mobile: Remedies browser — search by condition or ingredient, filter by species and evidence rating
+- [ ] 22.4 Mobile: Remedy detail card — ingredients, preparation steps, dosage table, safety warnings, evidence badge
+- [ ] 22.5 Seed 25 common traditional remedies from ICAR ethno-vet documentation
+
+## 23. Bharat Pashudhan Integration
+
+- [ ] 23.1 Create `app/services/bharat_pashudhan.py` — API client for national animal registry (mock for prototype)
+- [ ] 23.2 Create `app/routers/bharat_pashudhan.py` — `GET /v1/registry/lookup/{pashu_aadhaar_id}`, `POST /v1/registry/sync/{animal_id}`
+- [ ] 23.3 Mobile: Pashu Aadhaar lookup screen — enter 12-digit ID → pull animal profile from national registry
+- [ ] 23.4 Mobile: Sync status indicator on animal detail — "Synced with Bharat Pashudhan ✓" or "Not registered"
+- [ ] 23.5 Update seed data with valid Pashu Aadhaar format IDs for demo animals
+
+## 24. Enhanced Vaccination Management
+
+- [ ] 24.1 Update `app/models/health.py` — add batch_number, manufacturer, was_refrigerated, next_reminder_date to Vaccination model
+- [ ] 24.2 Create `app/services/vaccination_scheduler.py` — species-specific ICAR vaccination calendar, auto-calculate next due dates
+- [ ] 24.3 Create `app/routers/vaccination.py` — `GET /v1/vaccinations/due/{user_id}`, `GET /v1/vaccinations/coverage/{village_code}`
+- [ ] 24.4 Mobile: Vaccination reminder cards on home screen — "Meenu (Goat) — PPR booster due in 3 days"
+- [ ] 24.5 Admin: Vaccination coverage dashboard — village-level coverage %, overdue counts, heatmap
+- [ ] 24.6 Seed ICAR vaccination schedule for cattle, goat, sheep, poultry
+
+## 25. Livestock Insurance
+
+- [ ] 25.1 Create `app/models/insurance.py` — InsurancePolicy model (id, animal_id FK, provider, policy_number, premium_amount, coverage_amount, valid_from, valid_to, status), InsuranceClaim model (id, policy_id FK, claim_type, description, photo_urls JSONB, status, filed_at)
+- [ ] 25.2 Create `app/routers/insurance.py` — `GET /v1/insurance/policies/{user_id}`, `POST /v1/insurance/claims`, `GET /v1/insurance/premium-estimate/{animal_id}`
+- [ ] 25.3 Mobile: Insurance status screen — active policies, premium due dates, claim filing with photo
+- [ ] 25.4 Mobile: Premium calculator — estimate based on species, breed, age, location
+- [ ] 25.5 Seed 3 insurance policies and 1 claim for demo data
+
+## 26. Community Disease Alerts
+
+- [ ] 26.1 Create `app/models/alerts.py` — CommunityAlert model (id, reported_by FK, disease_name, lat, lon, radius_km, severity, verified BOOL, created_at, expires_at)
+- [ ] 26.2 Create `app/services/alert_service.py` — spatial query for nearby alerts, notification dispatch (mock)
+- [ ] 26.3 Create `app/routers/alerts.py` — `POST /v1/alerts/report`, `GET /v1/alerts/nearby?lat=&lon=&radius=`, `PATCH /v1/alerts/{id}/verify`
+- [ ] 26.4 Mobile: Alert banner on home screen — "⚠ FMD reported 3km away — 2 days ago"
+- [ ] 26.5 Mobile: Report disease screen — select disease, GPS auto-fill, optional photo, submit
+- [ ] 26.6 Admin: Alert management — verify/dismiss reports, view outbreak map
+- [ ] 26.7 Seed 2 community alerts near demo farm locations
+
+## 27. Medicine Withdrawal Calculator
+
+- [ ] 27.1 Create `app/models/medicine.py` — Medicine model (id, name_en, name_kn, type, withdrawal_milk_days INT, withdrawal_meat_days INT, species_applicable JSONB), MedicineAdministration model (id, animal_id FK, medicine_id FK, administered_at, withdrawal_milk_until DATE, withdrawal_meat_until DATE)
+- [ ] 27.2 Create `app/routers/medicine.py` — `GET /v1/medicines`, `POST /v1/medicines/administer`, `GET /v1/medicines/withdrawal-status/{animal_id}`
+- [ ] 27.3 Mobile: Medicine log screen — select medicine from list, auto-calculate withdrawal dates
+- [ ] 27.4 Mobile: Withdrawal status badge on animal detail — "🔴 Milk unsafe until Apr 5" or "🟢 Safe to sell"
+- [ ] 27.5 Seed 15 common veterinary medicines with ICAR withdrawal periods
+
+## 28. Milk Collection Center Module
+
+- [ ] 28.1 Create `app/models/milk_center.py` — update MilkCollectionCenter and MilkCollectionRecord models with quality fields (fat_pct, snf_pct, clr, adulteration_test, temperature)
+- [ ] 28.2 Create `app/services/milk_pricing.py` — FAT/SNF slab-based rate calculator per Karnataka Milk Federation standards
+- [ ] 28.3 Create `app/routers/milk_center.py` — `POST /v1/milk-center/receive`, `GET /v1/milk-center/{id}/daily-report`, `GET /v1/milk-center/{id}/farmer-settlements`
+- [ ] 28.4 Update milk center HTML prototype or create spec for dedicated milk center interface
+- [ ] 28.5 Seed milk center with 30 days of collection records from 3 farmers with quality data
+- [ ] 28.6 Admin: Milk center analytics — daily collection volume, average FAT/SNF, payment settlement report
+
+## 29. Advisory Feed
+
+- [ ] 29.1 Create `app/models/advisory.py` — AdvisoryTip model (id, title_en, title_kn, body_en, body_kn, category enum[health|feeding|breeding|government], species_applicable JSONB, source enum[ICAR|KMF|NABARD|Community], priority, is_active, published_at)
+- [ ] 29.2 Create `app/routers/advisory.py` — `GET /v1/advisory/tips` (filter by species, category), `GET /v1/advisory/tips/{id}`
+- [ ] 29.3 Mobile: Advisory feed screen — scrollable card list filtered by farmer's animal species
+- [ ] 29.4 Mobile: Category filter chips — Health, Feeding, Breeding, Government
+- [ ] 29.5 Mobile: Bilingual toggle per card — switch between Kannada and English
+- [ ] 29.6 Mobile: Source badge on each card — "ICAR", "KMF", "NABARD", "Community" with distinct colors
+- [ ] 29.7 Mobile: Government scheme highlight card with "Apply Now" CTA linking to schemes screen
+- [ ] 29.8 Seed 15 advisory tips — mix of seasonal care, feeding, breeding, and government announcements

@@ -21,6 +21,8 @@ PashuRaksha ERP has comprehensive architecture blueprints (3,622 lines, 25 entit
 - Build admin dashboard with GIS map, charts, and CRUD tables
 - Auto-generate OpenAPI spec as the cross-package contract
 - Seed realistic Karnataka demo data (3 farmers, 8 animals, 30 days milk)
+**Future Goals (Post-Prototype):**
+- Support 14 additional capabilities covering weather, market prices, feed optimization, traditional medicine, national registry integration, insurance, and community disease alerts — these are NOT requirements for the April 27 demo and will be implemented in subsequent phases
 
 **Non-Goals:**
 - Offline sync (PowerSync deferred to post-prototype)
@@ -32,6 +34,8 @@ PashuRaksha ERP has comprehensive architecture blueprints (3,622 lines, 25 entit
 - Multi-tenancy or cooperative-level data isolation
 - Performance optimization or load testing
 - Automated CI/CD (manual deploy to Railway/Vercel free tier)
+- Real-time IoT device firmware OTA updates
+- Blockchain-based milk traceability
 
 ## Decisions
 
@@ -165,6 +169,122 @@ PashuRaksha ERP has comprehensive architecture blueprints (3,622 lines, 25 entit
 
 **Tab icons**: Each tab gets a distinctive 26px SVG icon with Kannada label below. Active tab gets filled icon + primary color. FarmFlow validated this 5-tab pattern.
 
+### Post-Prototype Decisions (Future Scope)
+
+The following decisions (D16-D25) document architectural choices for capabilities planned after the April 27 prototype demo. They are included here for completeness but are NOT in prototype scope.
+
+### D16: Weather Integration via IMD Open API
+
+**Decision**: Fetch district-level weather data from India Meteorological Department (IMD) open APIs for 5-day forecasts and extreme weather alerts. Cache locally with 6-hour TTL.
+
+**Alternatives considered**:
+- **OpenWeatherMap**: Good API but paid for district-level India coverage. Free tier lacks district granularity.
+- **AccuWeather**: Premium pricing, overkill for agricultural alerts.
+- **IMD Open API (chosen)**: Free, government-backed, covers all Indian districts, includes agricultural weather advisories.
+
+**Why**: Heat stress kills more cattle than disease in Karnataka summers. Farmers need advance warning for shelter/water planning. IMD data is free and covers all Indian districts.
+
+### D17: Market Price Integration via Agmarknet
+
+**Decision**: Pull daily APMC mandi commodity prices from Agmarknet for milk, eggs, goat meat, manure, wool. Display as reference rates in the Sell tab with district-level granularity.
+
+**Alternatives considered**:
+- **Manual price entry by admins**: High maintenance burden, stale data.
+- **Third-party commodity APIs**: Expensive, don't cover Indian mandis well.
+- **Agmarknet scraping (chosen)**: Government standard, freely available, covers 7,000+ mandis across India.
+
+**Why**: Farmers consistently underprice products without market reference data. Agmarknet is the government standard, freely available, and covers 7,000+ mandis.
+
+**Prototype note:** For the April 27 demo, task 14.4 uses a hardcoded Karnataka APMC rate table, not live Agmarknet scraping. Live integration is post-prototype.
+
+### D18: Feed/Ration Optimization Engine
+
+**Decision**: Build a rule-based ration calculator using NDDB/ICAR feeding standards. Input: species, breed, weight, lactation stage, locally available ingredients. Output: balanced daily ration with cost estimate.
+
+**Alternatives considered**:
+- **ML-based feed optimization**: Requires training data and compute resources beyond prototype scope.
+- **Static feed charts (PDF)**: Not interactive, can't adjust for local ingredient availability.
+- **Rule-based calculator (chosen)**: NDDB/ICAR standards are well-documented, deterministic, and immediately usable.
+
+**Why**: Feed is 60-70% of livestock maintenance cost. Optimized feeding from local ingredients (rice bran, groundnut cake, ragi straw) can reduce costs 15-20% while improving yield.
+
+### D19: Ethno-Veterinary Medicine Database
+
+**Decision**: Curate traditional remedies from ICAR ethno-vet documentation. Each remedy includes: plant/ingredient, preparation method, dosage by species/weight, conditions treated, evidence rating (traditional/studied/ICAR-validated), and safety warnings.
+
+**Alternatives considered**:
+- **Ignore traditional medicine**: Misses 70% of rural livestock keepers who use it first.
+- **Unvetted crowd-sourced remedies**: Safety risk without evidence rating.
+- **ICAR-curated database (chosen)**: Scientifically documented traditional remedies with evidence ratings and safety warnings.
+
+**Why**: 70% of rural livestock keepers use traditional remedies first. Providing evidence-rated traditional medicine builds trust and bridges modern + traditional approaches. No existing app does this.
+
+### D20: Bharat Pashudhan API Integration
+
+**Decision**: Use Bharat Pashudhan open APIs as the P0 national registry integration. Sync: pull Pashu Aadhaar animal profiles + vaccination history, push health records from PashuRaksha.
+
+**Alternatives considered**:
+- **Build standalone animal registry**: Duplicates national infrastructure, no government credibility.
+- **Manual Pashu Aadhaar entry only**: Works but misses vaccination history sync.
+- **Bharat Pashudhan API (chosen)**: 35.96 crore animals already tagged, bidirectional sync possible.
+
+**Why**: 35.96 crore animals already tagged with 12-digit Pashu Aadhaar IDs. PashuRaksha must interop with the national infrastructure to avoid parallel data entry and gain government credibility.
+
+### D21: Enhanced Vaccination Management
+
+**Decision**: Track vaccinations with batch numbers, manufacturer, cold chain compliance (was_refrigerated boolean), coverage reports by village. Auto-schedule reminders based on species-specific vaccination calendars (ICAR schedule).
+
+**Alternatives considered**:
+- **Simple vaccination log (current)**: Records date + vaccine name only. No batch tracking or scheduling.
+- **Full pharmacovigilance system**: Overkill for smallholder context.
+- **Enhanced tracking with auto-schedule (chosen)**: Adds batch/cold chain data and proactive reminders without excessive complexity.
+
+**Why**: India vaccinates 50+ crore animals annually under national programs. Digital tracking enables coverage gap analysis and reduces missed boosters.
+
+### D22: Community Disease Alert System
+
+**Decision**: When a disease event exceeds risk threshold, notify farmers within configurable radius (default 5km) via in-app notification + SMS fallback. Crowd-sourced reporting: farmers can flag suspected outbreaks.
+
+**Alternatives considered**:
+- **No alerting (current)**: Disease data stays siloed per farmer.
+- **Manual alert by admin**: Too slow for disease containment.
+- **Automated spatial alerting (chosen)**: Real-time geographic proximity alerts with crowd-sourced reporting.
+
+**Why**: Disease spreads geographically. Early warning to neighboring farms is the most effective containment. No existing app provides spatial disease alerting for smallholders.
+
+### D23: Medicine Withdrawal Period Calculator
+
+**Decision**: Track administered medicines per animal. Calculate and display safe withdrawal dates for milk and meat based on drug-specific withdrawal periods from ICAR/FDA databases.
+
+**Alternatives considered**:
+- **No withdrawal tracking**: Farmers risk selling contaminated milk/meat.
+- **Generic "wait 3 days" rule**: Inaccurate — withdrawal varies from 24 hours to 30 days by drug.
+- **Drug-specific calculator (chosen)**: Precise withdrawal dates per medicine from authoritative databases.
+
+**Why**: Antibiotic residue in milk is a major food safety and rejection issue at collection centers. Farmers need clear "safe to sell" dates.
+
+### D24: Milk Collection Center Operations Module
+
+**Decision**: Dedicated milk center interface for BMC operators: receive milk, run quality tests (FAT%, SNF%, adulteration), auto-calculate rate from slab table, generate farmer payment settlements. Separate from farmer mobile app.
+
+**Alternatives considered**:
+- **Farmer-side milk recording only**: Misses the cooperative aggregation point.
+- **Integrated into admin dashboard**: BMC operators need a focused, simple interface — not a full admin panel.
+- **Dedicated milk center module (chosen)**: Purpose-built for BMC workflow. Already have an HTML prototype (`pashuraksha-milk-center-prototype.html`).
+
+**Why**: The milk center is the critical aggregation point where farmer data meets cooperative data. A working center module proves PashuRaksha can replace paper registers at BMCs.
+
+### D25: Multi-Language Expansion Roadmap
+
+**Decision**: Phase 0: Kannada (kn) + English (en). Phase 1: Hindi (hi) + Telugu (te). Phase 2: Tamil (ta) + Marathi (mr). Use i18next with namespace-per-feature. Translation workflow: English base → professional translation → community review.
+
+**Alternatives considered**:
+- **English only**: Excludes 90%+ of target farmers.
+- **All 22 scheduled languages at once**: Unmanageable translation burden.
+- **Phased rollout by livestock farmer density (chosen)**: 6 languages cover 65% of India's livestock farmers, prioritized by state launch order.
+
+**Why**: Karnataka is the launch state (Kannada primary). Hindi covers northern belt. Telugu/Tamil/Marathi cover adjacent southern states where livestock farming is similar. 6 languages cover 65% of India's livestock farmers.
+
 ## Risks / Trade-offs
 
 | Risk | Impact | Mitigation |
@@ -181,6 +301,9 @@ PashuRaksha ERP has comprehensive architecture blueprints (3,622 lines, 25 entit
 | Marketplace pricing accuracy | Farmer confusion | Use district-level APMC mandal rates; allow manual override |
 | IoT mockup sets unrealistic expectations | Stakeholder over-promise | Clearly label as "Future Vision — Phase 2" on screen |
 | 5-tab navigation on small screens | Tab labels truncated | Use Kannada abbreviations; test on 4.5" screens |
+| IMD API rate limits / downtime | Weather alerts unavailable | Cache with 6h TTL, show stale data with timestamp |
+| Agmarknet scraping fragility | Market prices stale or missing | Daily cron job, fallback to last known prices |
+| Bharat Pashudhan API access approval | Can't sync with national registry | Start with manual Pashu Aadhaar entry, integrate when API approved |
 
 ## Open Questions
 

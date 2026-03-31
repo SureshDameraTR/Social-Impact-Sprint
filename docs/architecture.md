@@ -263,6 +263,97 @@ Key workflows:
 | **Features** | Moderated chat, shared analytics for NGO admins, knowledge base |
 | **Offline** | Cached forum content; queued posts sync on reconnect |
 
+### 4.8 IoT & Device Management Module
+
+**CLAUDE-API-014** — Phase 2
+
+| Aspect | Detail |
+|--------|--------|
+| **Service** | `device-service` |
+| **Responsibility** | Device registration, firmware OTA updates, telemetry ingestion, GPS tracking, geofence alerts |
+| **Database** | PostgreSQL (`devices`, `device_telemetry`, `animal_location_ping`, `geofence`, `herd_session`) |
+| **Protocol** | MQTT v2 (Mosquitto) for real-time ingestion; HTTP REST for management |
+| **Inputs** | Sensor data (RFID scans, GPS pings, temperature, humidity, milk meter readings) |
+| **Outputs** | Real-time device status dashboard, geofence breach alerts, herd movement routes, telemetry timeseries |
+| **Scaling** | TimescaleDB hypertable for telemetry (auto-partition by day); 100K pings/hour capacity |
+
+Key workflows:
+- **Device onboarding**: Admin scans device QR → registers serial + type → assigns to farmer/animal → device starts heartbeat
+- **Geofence alert**: GPS collar ping falls outside boundary_geojson → push notification to farmer + vet within 60s
+- **Herd session**: Farmer starts grazing session → all collared animals tracked → route + distance computed → session stored
+
+### 4.9 Disease Surveillance Module
+
+**CLAUDE-API-015** — Phase 1
+
+| Aspect | Detail |
+|--------|--------|
+| **Service** | `surveillance-service` |
+| **Responsibility** | Outbreak reporting, disease hotspot mapping, NADRS 2.0 integration, early warning alerts |
+| **Database** | PostgreSQL (`outbreak_report`, `disease_hotspot`) |
+| **AI** | Spatial clustering (DBSCAN) on outbreak reports to auto-generate hotspots; severity scoring via weather + density |
+| **Integrations** | NADRS 2.0 (National Animal Disease Reporting System), District AHD offices |
+| **Outputs** | Heatmap of active outbreaks, district-level severity dashboard, auto-generated NADRS reports |
+
+Key workflows:
+- **Outbreak report**: Farmer/vet reports suspected disease → geo-located → matched against known hotspots → if new cluster, auto-generates DISEASE_HOTSPOT
+- **Hotspot update**: New reports within radius_km of existing hotspot → severity recalculated → alerts pushed to all farmers in affected area
+- **NADRS sync**: Confirmed outbreaks auto-synced to NADRS 2.0 via govt API; reference ID stored back
+
+### 4.10 Credit Scoring Module
+
+**CLAUDE-API-016** — Phase 1
+
+| Aspect | Detail |
+|--------|--------|
+| **Service** | `credit-service` |
+| **Responsibility** | Farmer creditworthiness assessment, income aggregation, risk profiling for bank/NABARD linkage |
+| **Database** | PostgreSQL (`credit_profile`) |
+| **AI** | Weighted scoring model: animal count (20%), milk income (25%), sale income (15%), SHG membership (15%), insurance (10%), scheme participation (15%) |
+| **Integrations** | Finance Service (income data), Health Service (animal count), SHG Module (membership), Insurance Module (coverage) |
+| **Outputs** | Credit score (0–900), eligibility tier for bank loans, auto-generated credit report PDF |
+
+Key workflows:
+- **Score calculation**: Nightly batch job aggregates farmer data across modules → computes weighted score → stores in CREDIT_PROFILE
+- **Bank linkage**: Bank agent queries farmer credit profile → reviews score + supporting data → approves/rejects loan application
+- **SHG grading boost**: Active SHG membership with 90%+ meeting attendance adds 50–100 points to credit score
+
+### 4.11 Hatchery Management Module
+
+**CLAUDE-API-017** — Phase 2
+
+| Aspect | Detail |
+|--------|--------|
+| **Service** | `hatchery-service` |
+| **Responsibility** | Poultry egg incubation tracking, batch management, IoT sensor integration for temperature/humidity monitoring |
+| **Database** | PostgreSQL (`hatchery_batch`) |
+| **IoT** | Hatchery sensors (temperature, humidity) via DEVICE entity; alerts on out-of-range readings |
+| **Inputs** | Batch creation (eggs set, breed, hatch date), sensor telemetry (temp, humidity), manual fertility checks |
+| **Outputs** | Batch status dashboard, hatch rate analytics, breed performance comparison, alert on sensor anomalies |
+
+Key workflows:
+- **Batch creation**: Farmer sets eggs → creates HATCHERY_BATCH → optionally links incubator_device_id → system starts monitoring
+- **Incubation monitoring**: Device telemetry checked every 15 min → if temperature deviates >1°C from 37.5°C or humidity deviates >5% from 55%, push alert
+- **Hatch outcome**: Farmer records fertile_count and hatch_rate_pct → batch status updated → analytics feed updated
+
+### 4.12 Impact Metrics Module
+
+**CLAUDE-API-018** — Phase 1
+
+| Aspect | Detail |
+|--------|--------|
+| **Service** | `impact-service` |
+| **Responsibility** | Aggregated district/state-level impact reporting, donor dashboards, scheme effectiveness tracking |
+| **Database** | PostgreSQL (`impact_metric_snapshot`) |
+| **Data Sources** | All modules via event bus; periodic aggregation job (weekly/monthly) |
+| **Outputs** | District-level farmer count, animal count, total milk production, income trends, disease resolution rates, scheme uptake |
+| **Consumers** | NGO admins, govt officials, donor agencies, impact investors |
+
+Key workflows:
+- **Snapshot generation**: Weekly Celery job aggregates data per district → creates IMPACT_METRIC_SNAPSHOT → stores period totals
+- **Dashboard**: Admin panel shows trend charts (income growth, disease alerts resolved, scheme applications) filterable by district/period
+- **Export**: Auto-generated CSV/PDF reports for donor reporting cycles; API endpoint for external BI tools
+
 ---
 
 ## 5. Technology Stack
@@ -531,6 +622,18 @@ erDiagram
     GOVT_SCHEME ||--o{ SCHEME_APPLICATION : applied_via
     INSURANCE_POLICY ||--o{ INSURANCE_CLAIM : claims
     WEATHER_ALERT }o--|| DISEASE_REPORT : correlates
+    USER ||--o{ DEVICE : owns
+    DEVICE ||--o{ DEVICE_TELEMETRY : emits
+    ANIMAL ||--o{ ANIMAL_LOCATION_PING : tracked_by
+    DEVICE ||--o{ ANIMAL_LOCATION_PING : records
+    USER ||--o{ GEOFENCE : defines
+    USER ||--o{ HERD_SESSION : manages
+    USER ||--o{ OUTBREAK_REPORT : reports
+    OUTBREAK_REPORT }o--o{ DISEASE_HOTSPOT : aggregates_into
+    USER ||--o{ CREDIT_PROFILE : has
+    USER ||--o{ HATCHERY_BATCH : operates
+    HATCHERY_BATCH }o--o| DEVICE : monitored_by
+    IMPACT_METRIC_SNAPSHOT }o--|| USER : summarizes
 
     USER {
         int id PK
@@ -551,7 +654,7 @@ erDiagram
         int id PK
         int user_id FK
         varchar pashu_aadhaar_id "12-digit INAPH ear tag, nullable"
-        varchar species "cattle | buffalo | goat | sheep"
+        varchar species "cattle | buffalo | goat | sheep | poultry"
         varchar breed
         enum breed_type "indigenous | crossbred | exotic"
         varchar tag_id "ear tag or local ID"
@@ -930,6 +1033,132 @@ erDiagram
         float rating "0.0-5.0"
         int consultation_count
     }
+
+    DEVICE {
+        int id PK
+        enum device_type "rfid_scanner | milk_meter | gps_collar | smart_feeder | weather_station | hatchery_sensor"
+        varchar serial_number "unique"
+        varchar firmware_version
+        int owner_id FK "USER"
+        float location_lat
+        float location_lon
+        enum status "online | offline | maintenance"
+        timestamp last_ping_at
+        timestamp registered_at
+    }
+
+    DEVICE_TELEMETRY {
+        int id PK
+        int device_id FK "DEVICE"
+        varchar metric_type
+        float value
+        varchar unit
+        timestamp recorded_at
+    }
+
+    ANIMAL_LOCATION_PING {
+        int id PK
+        int animal_id FK "ANIMAL"
+        int device_id FK "DEVICE"
+        float lat
+        float lon
+        float altitude
+        float accuracy_m
+        float battery_pct
+        timestamp recorded_at
+    }
+
+    GEOFENCE {
+        int id PK
+        varchar name
+        int owner_id FK "USER"
+        jsonb boundary_geojson
+        bool alert_on_exit "default true"
+        timestamp created_at
+    }
+
+    HERD_SESSION {
+        int id PK
+        varchar herd_name
+        int owner_id FK "USER"
+        jsonb animal_ids "array of animal IDs"
+        timestamp start_time
+        timestamp end_time
+        jsonb route_geojson
+        float distance_km
+    }
+
+    OUTBREAK_REPORT {
+        int id PK
+        int reported_by FK "USER"
+        varchar disease_name
+        varchar species_affected
+        varchar district
+        varchar village_code
+        float lat
+        float lon
+        bool confirmed "default false"
+        int animal_count
+        enum severity "low | medium | high | critical"
+        timestamp reported_at
+        timestamp confirmed_at "nullable"
+    }
+
+    DISEASE_HOTSPOT {
+        int id PK
+        varchar disease_name
+        float center_lat
+        float center_lon
+        float radius_km
+        int active_reports
+        enum severity "low | medium | high | critical"
+        timestamp first_reported_at
+        timestamp last_updated_at
+    }
+
+    CREDIT_PROFILE {
+        int id PK
+        int user_id FK "USER"
+        int total_animals
+        decimal avg_monthly_milk_income
+        decimal avg_monthly_sale_income
+        bool shg_membership "default false"
+        float insurance_coverage_pct
+        int govt_scheme_count
+        int credit_score "0-900"
+        timestamp last_calculated_at
+    }
+
+    HATCHERY_BATCH {
+        int id PK
+        int owner_id FK "USER"
+        enum species "poultry"
+        varchar breed
+        int eggs_set
+        int fertile_count
+        date hatch_date
+        int incubator_device_id FK "DEVICE, nullable"
+        float temperature_avg
+        float humidity_avg
+        float hatch_rate_pct
+        enum status "incubating | hatched | failed"
+        timestamp created_at
+    }
+
+    IMPACT_METRIC_SNAPSHOT {
+        int id PK
+        date period_start
+        date period_end
+        varchar district
+        int total_farmers
+        int total_animals
+        float total_milk_liters
+        decimal total_income_inr
+        decimal avg_income_per_farmer
+        int disease_alerts_resolved
+        int scheme_applications
+        timestamp created_at
+    }
 ```
 
 ### 7.2 Entity Summary by Implementation Phase
@@ -946,7 +1175,13 @@ erDiagram
 | **P1 — Growth** | DISEASE_REPORT | High | NADRS 2.0 |
 | **P1 — Growth** | FODDER_PLAN | High | INAPH Nutrition Module |
 | **P2 — Scale** | WEATHER_ALERT | Medium | OpenWeatherMap, IMD, NADRES |
-| **Total** | **25 entities** (up from 15) | | |
+| **P1 — Growth** | OUTBREAK_REPORT, DISEASE_HOTSPOT | High | NADRS 2.0, District AHD |
+| **P1 — Growth** | CREDIT_PROFILE | High | NABARD, SHG Bank Linkage |
+| **P1 — Growth** | IMPACT_METRIC_SNAPSHOT | High | District dashboards |
+| **P2 — Scale** | DEVICE, DEVICE_TELEMETRY | Medium | MQTT Broker, IoT Hub |
+| **P2 — Scale** | ANIMAL_LOCATION_PING, GEOFENCE, HERD_SESSION | Medium | GPS collar vendors |
+| **P2 — Scale** | HATCHERY_BATCH | Medium | Poultry cooperatives |
+| **Total** | **35 entities** (up from 25) | | |
 
 ### 7.2 Pydantic Models (Validation Layer)
 
@@ -970,6 +1205,7 @@ class Species(str, Enum):
     BUFFALO = "buffalo"
     GOAT = "goat"
     SHEEP = "sheep"
+    POULTRY = "poultry"
 
 class AnimalCreate(BaseModel):
     species: Species

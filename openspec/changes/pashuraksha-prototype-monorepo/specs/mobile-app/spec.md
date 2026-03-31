@@ -75,3 +75,58 @@ All interactive elements SHALL have minimum 48dp touch targets. Icons SHALL be 6
 #### Scenario: Touch targets on budget Android
 - **WHEN** the app runs on a 5-inch Android device with 2GB RAM
 - **THEN** all buttons and interactive elements are easily tappable without precision
+
+### Requirement: Multi-language expansion
+The app SHALL support 7 languages via i18next: Kannada (kn), English (en), Hindi (hi), Telugu (te), Tamil (ta), Marathi (mr), and Kannada remains the default. Language selection SHALL persist across app restarts.
+
+#### Scenario: Farmer switches to Hindi
+- **WHEN** the farmer selects Hindi in the language settings
+- **THEN** all UI text switches to Hindi immediately and the preference is persisted
+
+#### Scenario: App remembers language preference
+- **WHEN** the app is reopened after being closed
+- **THEN** the previously selected language is restored without prompting
+
+### Requirement: Home screen weather card
+The home screen SHALL display a weather card showing today's weather for the farmer's district with temperature, humidity, rainfall probability, and a heat stress indicator for livestock.
+
+#### Scenario: Weather card shows current conditions
+- **WHEN** the farmer opens the home screen
+- **THEN** a weather card displays: temperature, humidity, rainfall chance, wind speed, and a livestock heat stress level (Normal / Caution / Danger) based on THI (Temperature-Humidity Index)
+
+#### Scenario: Heat stress danger triggers advisory
+- **WHEN** THI exceeds 78 (danger zone for livestock)
+- **THEN** the weather card shows a red "Heat Stress Danger" badge with advisory text: "Provide shade, extra water, and reduce movement"
+
+### Requirement: Vaccination reminder cards
+The home screen SHALL display upcoming and overdue vaccination cards for all of the farmer's animals.
+
+#### Scenario: Upcoming vaccination shown on home screen
+- **WHEN** an animal has a vaccination due within 7 days
+- **THEN** a yellow reminder card appears on the home screen: "Vaccination due: [vaccine_name] for [animal_name] on [date]"
+
+#### Scenario: Overdue vaccination shown as urgent
+- **WHEN** an animal has a vaccination past its due date
+- **THEN** a red urgent card appears on the home screen: "OVERDUE: [vaccine_name] for [animal_name] — [days] days overdue"
+
+### Requirement: Community alert banner
+The home screen SHALL display a banner for nearby disease alerts based on the farmer's GPS location.
+
+#### Scenario: Active community alert shown
+- **WHEN** a community disease alert exists within 10km of the farmer's location
+- **THEN** a red/orange banner appears at the top of the home screen: "[disease] reported near [village] — tap for details" with distance and precaution advice
+
+#### Scenario: No alerts results in no banner
+- **WHEN** no community alerts exist within 10km
+- **THEN** no alert banner is displayed on the home screen
+
+### Requirement: Smart Farm access
+The home screen header SHALL include an icon linking to the IoT/Smart Farm mockup screen for farmers with connected devices.
+
+#### Scenario: Farmer with IoT devices sees Smart Farm icon
+- **WHEN** the farmer has at least one registered IoT device
+- **THEN** a "Smart Farm" icon appears in the home screen header that navigates to the Smart Farm dashboard showing device status, sensor readings, and automated alerts
+
+#### Scenario: Farmer without IoT devices
+- **WHEN** the farmer has no registered IoT devices
+- **THEN** the Smart Farm icon is hidden or shows a "Coming Soon" state
