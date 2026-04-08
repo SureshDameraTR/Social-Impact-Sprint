@@ -1,0 +1,38 @@
+# PashuRaksha ERP — Development Tasks
+
+default:
+    @just --list
+
+# Start all services (Postgres + API)
+dev:
+    docker compose up -d db
+    cd packages/api && uv run uvicorn app.main:app --reload --port 8000
+
+# Run API tests
+test:
+    cd packages/api && uv run pytest -v
+
+# Seed demo data
+seed:
+    cd packages/api && uv run python -m app.seed.demo_data
+
+# Generate TypeScript API client from OpenAPI
+generate-client:
+    curl -s http://localhost:8000/openapi.json > /tmp/openapi.json
+    cd packages/admin && npx @hey-api/openapi-ts -i /tmp/openapi.json -o src/api-client
+
+# Run linters
+lint:
+    cd packages/api && uv run ruff check . && uv run ruff format --check .
+
+# Run database migrations
+migrate:
+    cd packages/api && uv run alembic upgrade head
+
+# Reset database and re-seed
+reset-db:
+    docker compose down -v
+    docker compose up -d db
+    sleep 3
+    just migrate
+    just seed

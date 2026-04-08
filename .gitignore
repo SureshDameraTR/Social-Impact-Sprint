@@ -4,3 +4,8 @@
 *.db
 .beads-credential-key
 Beadbox-*.exe
+
+# Environment files
+.env
+.env.local
+.env.*.local
