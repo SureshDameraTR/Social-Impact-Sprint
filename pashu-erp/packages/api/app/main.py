@@ -46,9 +46,9 @@ def _validate_settings():
         raise RuntimeError("DATABASE_URL is required")
     if not settings.jwt_secret:
         raise RuntimeError("JWT_SECRET is required")
-    if len(settings.jwt_secret) < 32:
+    if len(settings.jwt_secret) < 64:
         raise RuntimeError(
-            "JWT_SECRET must be at least 32 characters (256 bits). "
+            "JWT_SECRET must be at least 64 hex characters (256 bits). "
             "Generate with: openssl rand -hex 32"
         )
     if settings.environment != "development" and not settings.sarvam_api_key:
