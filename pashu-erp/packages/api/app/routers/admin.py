@@ -3,10 +3,16 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
+from sqlalchemy import func, select, cast, Date
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
+
+# Admin dashboard configuration (previously in constants.py)
+RISK_SCORE_THRESHOLD: float = 0.5
+ALERT_WINDOW_DAYS: int = 7
+ACTIVE_SELLER_WINDOW_DAYS: int = 30
 from app.middleware.auth import require_admin
 from app.models.animal import Animal
 from app.models.health import HealthEvent
@@ -43,14 +49,14 @@ async def dashboard_stats(
     )
     todays_milk = float(milk_result.scalar() or 0)
 
-    # Active health alerts (events in last 7 days with risk > 0.5)
-    week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+    # Active health alerts (events in configured window with risk above threshold)
+    week_ago = datetime.now(timezone.utc) - timedelta(days=ALERT_WINDOW_DAYS)
     alert_result = await db.execute(
         select(func.count())
         .select_from(HealthEvent)
         .where(
             HealthEvent.event_date >= week_ago,
-            HealthEvent.ai_risk_score > 0.5,
+            HealthEvent.ai_risk_score > RISK_SCORE_THRESHOLD,
         )
     )
     active_alerts = alert_result.scalar() or 0
@@ -61,8 +67,8 @@ async def dashboard_stats(
     )
     marketplace_revenue = float(revenue_result.scalar() or 0)
 
-    # Active sellers (users with at least one sell record in last 30 days)
-    month_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    # Active sellers (users with at least one sell record in configured window)
+    month_ago = datetime.now(timezone.utc) - timedelta(days=ACTIVE_SELLER_WINDOW_DAYS)
     sellers_result = await db.execute(
         select(func.count(func.distinct(SellRecord.user_id)))
         .where(SellRecord.sold_at >= month_ago)
@@ -86,21 +92,26 @@ async def milk_chart_data(
 ):
     """30-day milk collection chart data."""
     now = datetime.now(timezone.utc)
-    days = []
+    start_date = (now - timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-    for i in range(30):
-        day = now - timedelta(days=29 - i)
-        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
-        day_end = day_start + timedelta(days=1)
-
-        result = await db.execute(
-            select(func.coalesce(func.sum(YieldLog.quantity_liters), 0.0))
-            .where(YieldLog.recorded_at >= day_start, YieldLog.recorded_at < day_end)
+    # Single GROUP BY query instead of 30 individual queries
+    result = await db.execute(
+        select(
+            cast(YieldLog.recorded_at, Date).label("day"),
+            func.coalesce(func.sum(YieldLog.quantity_liters), 0.0).label("total"),
         )
-        total = float(result.scalar() or 0)
+        .where(YieldLog.recorded_at >= start_date)
+        .group_by(cast(YieldLog.recorded_at, Date))
+    )
+    rows = {row.day: float(row.total) for row in result.all()}
+
+    # Fill missing days in Python
+    days = []
+    for i in range(30):
+        day = (now - timedelta(days=29 - i)).date()
         days.append({
-            "date": day_start.date().isoformat(),
-            "liters": round(total, 2),
+            "date": day.isoformat(),
+            "liters": round(rows.get(day, 0.0), 2),
         })
 
     return {"period": "30_days", "data": days}
@@ -115,13 +126,17 @@ async def gis_alert_markers(
 
     Returns recent high-risk health events with location info for map plotting.
     """
-    week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+    week_ago = datetime.now(timezone.utc) - timedelta(days=ALERT_WINDOW_DAYS)
 
+    # Eager-load Animal (and Animal.owner) in a single query to avoid N+1
     result = await db.execute(
         select(HealthEvent)
         .where(
             HealthEvent.event_date >= week_ago,
-            HealthEvent.ai_risk_score > 0.5,
+            HealthEvent.ai_risk_score > RISK_SCORE_THRESHOLD,
+        )
+        .options(
+            selectinload(HealthEvent.animal).selectinload(Animal.owner),
         )
         .order_by(HealthEvent.ai_risk_score.desc())
         .limit(100)
@@ -130,18 +145,10 @@ async def gis_alert_markers(
 
     markers = []
     for event in events:
-        # Get animal to find owner's location
-        animal_result = await db.execute(
-            select(Animal).where(Animal.id == event.animal_id)
-        )
-        animal = animal_result.scalar_one_or_none()
+        animal = event.animal
         if animal is None:
             continue
-
-        owner_result = await db.execute(
-            select(User).where(User.id == animal.user_id)
-        )
-        owner = owner_result.scalar_one_or_none()
+        owner = animal.owner
 
         markers.append({
             "event_id": str(event.id),

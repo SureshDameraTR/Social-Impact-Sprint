@@ -3,9 +3,9 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -128,63 +128,54 @@ async def get_daily_report(
 @router.get("/{center_id}/farmer-settlements")
 async def get_farmer_settlements(
     center_id: UUID,
-    days: int = 15,
+    days: int = Query(15, ge=1, le=90),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get payment settlement summary per farmer for a billing period."""
     since = datetime.now(timezone.utc) - timedelta(days=days)
 
-    result = await db.execute(
-        select(MilkCollectionRecord)
+    # Aggregate by farmer in SQL via GROUP BY
+    agg_result = await db.execute(
+        select(
+            MilkCollectionRecord.farmer_user_id,
+            func.sum(MilkCollectionRecord.quantity_liters).label("total_liters"),
+            func.coalesce(func.sum(MilkCollectionRecord.total_amount), 0).label("total_amount"),
+            func.count().label("deliveries"),
+            func.avg(MilkCollectionRecord.fat_pct).label("avg_fat"),
+            func.avg(MilkCollectionRecord.snf_pct).label("avg_snf"),
+        )
         .where(
             MilkCollectionRecord.center_id == center_id,
             MilkCollectionRecord.collected_at >= since,
         )
-        .order_by(MilkCollectionRecord.farmer_user_id)
+        .group_by(MilkCollectionRecord.farmer_user_id)
+        .order_by(func.sum(MilkCollectionRecord.total_amount).desc())
+        .offset(skip)
+        .limit(limit)
     )
-    records = result.scalars().all()
-
-    # Aggregate by farmer
-    settlements: dict[str, dict] = {}
-    for r in records:
-        fid = str(r.farmer_user_id)
-        if fid not in settlements:
-            settlements[fid] = {
-                "farmer_user_id": fid,
-                "total_liters": 0,
-                "total_amount": 0,
-                "deliveries": 0,
-                "avg_fat": 0,
-                "avg_snf": 0,
-                "fat_sum": 0,
-                "snf_sum": 0,
-            }
-        s = settlements[fid]
-        s["total_liters"] += r.quantity_liters
-        s["total_amount"] += float(r.total_amount or 0)
-        s["deliveries"] += 1
-        s["fat_sum"] += r.fat_pct or 0
-        s["snf_sum"] += r.snf_pct or 0
+    rows = agg_result.all()
 
     result_list = []
-    for s in settlements.values():
-        count = s["deliveries"]
+    total_payout = 0.0
+    for row in rows:
+        amt = round(float(row.total_amount), 2)
+        total_payout += amt
         result_list.append({
-            "farmer_user_id": s["farmer_user_id"],
-            "total_liters": round(s["total_liters"], 2),
-            "total_amount_inr": round(s["total_amount"], 2),
-            "deliveries": count,
-            "avg_fat_pct": round(s["fat_sum"] / count, 2) if count else 0,
-            "avg_snf_pct": round(s["snf_sum"] / count, 2) if count else 0,
+            "farmer_user_id": str(row.farmer_user_id),
+            "total_liters": round(float(row.total_liters), 2),
+            "total_amount_inr": amt,
+            "deliveries": row.deliveries,
+            "avg_fat_pct": round(float(row.avg_fat or 0), 2),
+            "avg_snf_pct": round(float(row.avg_snf or 0), 2),
         })
-
-    result_list.sort(key=lambda x: x["total_amount_inr"], reverse=True)
 
     return {
         "center_id": str(center_id),
         "period_days": days,
         "settlements": result_list,
         "total_farmers": len(result_list),
-        "total_payout_inr": round(sum(s["total_amount_inr"] for s in result_list), 2),
+        "total_payout_inr": round(total_payout, 2),
     }

@@ -30,7 +30,10 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "thisWeek": "This week",
-    "thisMonth": "This month"
+    "thisMonth": "This month",
+    "listen": "Listen",
+    "english": "English",
+    "kannada": "ಕನ್ನಡ"
   },
   "auth": {
     "enterPhone": "Enter phone number",
@@ -41,6 +44,20 @@
     "phoneLabel": "Mobile number",
     "otpSent": "OTP sent",
     "welcome": "Welcome to PashuRaksha"
+  },
+  "home": {
+    "greeting": "Hello, Lakshamma",
+    "subtitle": "Your farm is doing well today",
+    "quickActions": "Quick Actions",
+    "addMilk": "Add Milk",
+    "healthCheck": "Health Check",
+    "sellProducts": "Sell",
+    "viewIncome": "Income",
+    "vaccination": "Vaccination",
+    "feeding": "Feeding",
+    "weather": "Weather",
+    "insurance": "Insurance",
+    "milkToday": "Today's Milk"
   },
   "animals": {
     "myAnimals": "My Animals",
@@ -112,7 +129,20 @@
     "triageResult": "Triage Result",
     "callVet": "Call Veterinarian",
     "selectAnimal": "Select Animal",
-    "selectSymptoms": "Select Symptoms"
+    "selectSymptoms": "Select Symptoms",
+    "triageFMD": "Possible FMD infection. Immediate vet attention needed.",
+    "triageMastitis": "Signs of mastitis. Consult vet within 24 hours.",
+    "triageBloat": "Possible bloat. Restrict feed and call vet.",
+    "triageBloating": "Bloating detected. Risk of ruminal acidosis. Call vet.",
+    "triageMultipleHigh": "Multiple symptoms detected. Vet visit recommended today.",
+    "triageMultipleMedium": "Monitor closely. If symptoms persist, consult vet.",
+    "triageGeneral": "Monitor symptoms. If no improvement in 24hrs, consult vet.",
+    "triageMinor": "Minor symptom. Keep monitoring for 24 hours.",
+    "emergencyLine": "24/7 Emergency Line",
+    "vaccineFMD": "FMD Vaccination",
+    "vaccineBrucellosis": "Brucellosis Vaccination",
+    "vaccineHSBQ": "HS/BQ Vaccination",
+    "readAloud": "Read Aloud"
   },
   "income": {
     "myIncome": "My Income",
@@ -125,7 +155,11 @@
     "totalEarnings": "Total Earnings",
     "milkIncome": "Milk Income",
     "saleIncome": "Sale Income",
-    "transactions": "Transactions"
+    "transactions": "Transactions",
+    "kisanCreditCardLabel": "Kisan Credit Card — Low interest",
+    "kisanCredit": "Kisan Credit Card - Low interest",
+    "apply": "Apply",
+    "applyNow": "Apply Now"
   },
   "onboarding": {
     "welcomeSubtitle": "Your complete livestock care companion",
@@ -169,7 +203,7 @@
     },
     "fiveDayForecast": "5-Day Forecast",
     "rainfallAlert": "Rain expected this week — keep animals sheltered",
-    "voiceSummary": "Listen to Voice Summary"
+    "voiceSummary": "Voice Summary"
   },
   "advisory": {
     "title": "Advisory & Tips",
@@ -283,6 +317,23 @@
     "serverError": "Server error",
     "unauthorized": "Please login again",
     "voiceFailed": "Voice not recognized — enter manually"
+  },
+  "profile": {
+    "farmDetails": "Farm Details",
+    "farmSize": "Farm Size",
+    "memberSince": "Member Since",
+    "logout": "Logout"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "message": "The app encountered an unexpected error.",
+    "reload": "Reload"
+  },
+  "smartFarm": {
+    "comingSoon": "Phase 2 Feature - IoT integration coming soon",
+    "gpsTracking": "GPS Animal Tracking",
+    "gpsDescription": "Live map will show animal locations from GPS collars",
+    "iotDevices": "IoT Devices"
   },
   "communityAlerts": {
     "title": "Community Disease Alerts",

@@ -1,9 +1,10 @@
 """Animal CRUD endpoints."""
 
+import secrets
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, delete
+from sqlalchemy import func, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -25,8 +26,7 @@ async def create_animal(
     # Auto-generate pashu_aadhaar_id if not provided
     pashu_id = body.pashu_aadhaar_id
     if not pashu_id:
-        import random
-        pashu_id = f"{random.randint(100000000000, 999999999999)}"
+        pashu_id = f"{secrets.randbelow(900000000000) + 100000000000}"
 
     animal = Animal(
         user_id=current_user.id,
@@ -49,19 +49,31 @@ async def create_animal(
     return animal
 
 
-@router.get("", response_model=list[AnimalRead])
+@router.get("")
 async def list_animals(
     species: str | None = Query(None, description="Filter by species (cattle, goat, sheep, poultry)"),
+    limit: int = Query(50, le=200),
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all animals owned by the authenticated user."""
-    stmt = select(Animal).where(Animal.user_id == current_user.id)
+    """List all animals owned by the authenticated user with pagination."""
+    base = select(Animal).where(Animal.user_id == current_user.id)
     if species:
-        stmt = stmt.where(Animal.species == species)
-    stmt = stmt.order_by(Animal.created_at.desc())
+        base = base.where(Animal.species == species)
+
+    # Count
+    count_result = await db.execute(
+        select(func.count()).select_from(base.subquery())
+    )
+    total = count_result.scalar() or 0
+
+    # Data
+    stmt = base.order_by(Animal.created_at.desc()).offset(offset).limit(limit)
     result = await db.execute(stmt)
-    return result.scalars().all()
+    data = result.scalars().all()
+
+    return {"data": data, "total": total, "limit": limit, "offset": offset}
 
 
 @router.get("/{animal_id}", response_model=AnimalRead)

@@ -38,4 +38,4 @@ class CommunityAlert(Base):
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    reporter = relationship("User", foreign_keys=[reported_by])
+    reporter = relationship("User", foreign_keys=[reported_by], lazy="noload")

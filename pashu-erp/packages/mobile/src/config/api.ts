@@ -100,6 +100,20 @@ export class ApiClient {
     });
     if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
   }
+
+  async upload<T>(path: string, formData: FormData): Promise<T> {
+    const token = await SecureStore.getItemAsync('auth_token');
+    const res = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        // Content-Type intentionally omitted — fetch sets multipart boundary automatically
+      },
+    });
+    if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+    return res.json();
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

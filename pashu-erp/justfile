@@ -29,10 +29,15 @@ lint:
 migrate:
     cd packages/api && uv run alembic upgrade head
 
+# Rollback last database migration
+rollback:
+    cd packages/api && uv run alembic downgrade -1
+
 # Reset database and re-seed
 reset-db:
     docker compose down -v
     docker compose up -d db
-    sleep 3
+    @echo "Waiting for Postgres..."
+    until docker compose exec -T db pg_isready -U pashu; do sleep 1; done
     just migrate
     just seed

@@ -18,19 +18,19 @@ export default function WelcomeScreen() {
   return (
     <View style={[styles.container, highContrast && styles.highContrast]}>
       <View style={styles.logoSection}>
-        <View style={styles.logoPlaceholder}>
+        <View style={[styles.logoPlaceholder, highContrast && styles.logoPlaceholderHC]}>
           <Text style={styles.logoEmoji}>🐄</Text>
         </View>
-        <Text variant="headlineLarge" style={styles.title}>
+        <Text variant="headlineLarge" style={[styles.title, highContrast && styles.titleHC]}>
           PashuRaksha
         </Text>
-        <Text variant="bodyLarge" style={styles.subtitle}>
+        <Text variant="bodyLarge" style={[styles.subtitle, highContrast && styles.subtitleHC]}>
           {t('onboarding.welcomeSubtitle')}
         </Text>
       </View>
 
       <View style={styles.languageSection}>
-        <Text variant="titleMedium" style={styles.sectionLabel}>
+        <Text variant="titleMedium" style={[styles.sectionLabel, highContrast && styles.sectionLabelHC]}>
           {t('onboarding.selectLanguage')}
         </Text>
         <View style={styles.languageRow}>
@@ -56,7 +56,7 @@ export default function WelcomeScreen() {
       </View>
 
       <View style={styles.accessibilitySection}>
-        <Text variant="titleMedium" style={styles.sectionLabel}>
+        <Text variant="titleMedium" style={[styles.sectionLabel, highContrast && styles.sectionLabelHC]}>
           {t('onboarding.accessibility')}
         </Text>
         <Button
@@ -162,5 +162,17 @@ const styles = StyleSheet.create({
   continueLabel: {
     fontSize: 20,
     fontWeight: 'bold',
+  },
+  titleHC: {
+    color: '#FFFFFF',
+  },
+  subtitleHC: {
+    color: '#DDDDDD',
+  },
+  sectionLabelHC: {
+    color: '#FFFFFF',
+  },
+  logoPlaceholderHC: {
+    backgroundColor: '#333333',
   },
 });

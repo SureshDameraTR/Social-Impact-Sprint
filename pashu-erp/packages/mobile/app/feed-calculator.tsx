@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Button, Card, Checkbox, Chip, Text, TextInput, ProgressBar, RadioButton } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../src/config/theme';
+import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors, statusColors } from '../src/config/theme';
 
 const LACTATION_STAGES = ['dry', 'early', 'mid', 'late'] as const;
 type LactationStage = (typeof LACTATION_STAGES)[number];
@@ -42,6 +42,8 @@ export default function FeedCalculatorScreen() {
   const [stage, setStage] = useState<LactationStage>('mid');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [result, setResult] = useState<RationResult | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [weightError, setWeightError] = useState<string | null>(null);
 
   const toggleIngredient = (key: string) => {
     setSelected((prev) => {
@@ -52,34 +54,44 @@ export default function FeedCalculatorScreen() {
     });
   };
 
-  const calculate = () => {
-    const w = parseInt(weight) || 300;
-    const stageMultipliers: Record<LactationStage, number> = {
-      dry: 0.6, early: 1.2, mid: 1.0, late: 0.8,
-    };
-    const mult = stageMultipliers[stage];
-    const baseIntake = w * 0.025 * mult;
+  const calculate = async () => {
+    const w = parseInt(weight);
+    if (!weight || isNaN(w) || w <= 0) {
+      setWeightError('Enter a valid weight in kg');
+      return;
+    }
+    setWeightError(null);
+    setIsSubmitting(true);
+    try {
+      const stageMultipliers: Record<LactationStage, number> = {
+        dry: 0.6, early: 1.2, mid: 1.0, late: 0.8,
+      };
+      const mult = stageMultipliers[stage];
+      const baseIntake = w * 0.025 * mult;
 
-    const activeIngredients = INGREDIENTS.filter((ing) => selected.has(ing.key));
-    if (activeIngredients.length === 0) return;
+      const activeIngredients = INGREDIENTS.filter((ing) => selected.has(ing.key));
+      if (activeIngredients.length === 0) return;
 
-    const perIngredient = baseIntake / activeIngredients.length;
-    const items = activeIngredients.map((ing) => ({
-      name: isKn ? ing.nameKn : ing.nameEn,
-      qty: Math.round(perIngredient * 10) / 10,
-      cost: Math.round(perIngredient * ing.costPerKg),
-    }));
+      const perIngredient = baseIntake / activeIngredients.length;
+      const items = activeIngredients.map((ing) => ({
+        name: isKn ? ing.nameKn : ing.nameEn,
+        qty: Math.round(perIngredient * 10) / 10,
+        cost: Math.round(perIngredient * ing.costPerKg),
+      }));
 
-    const totalCost = items.reduce((s, i) => s + i.cost, 0);
-    const totalProtein = activeIngredients.reduce((s, ing) => s + ing.protein, 0) / activeIngredients.length;
-    const totalEnergy = activeIngredients.reduce((s, ing) => s + ing.energy, 0) / activeIngredients.length;
+      const totalCost = items.reduce((s, i) => s + i.cost, 0);
+      const totalProtein = activeIngredients.reduce((s, ing) => s + ing.protein, 0) / activeIngredients.length;
+      const totalEnergy = activeIngredients.reduce((s, ing) => s + ing.energy, 0) / activeIngredients.length;
 
-    setResult({
-      ingredients: items,
-      totalCost,
-      proteinBalance: Math.min(totalProtein / 20, 1),
-      energyBalance: Math.min(totalEnergy / 3, 1),
-    });
+      setResult({
+        ingredients: items,
+        totalCost,
+        proteinBalance: Math.min(totalProtein / 20, 1),
+        energyBalance: Math.min(totalEnergy / 3, 1),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -111,13 +123,22 @@ export default function FeedCalculatorScreen() {
       <TextInput
         label={t('feed.weightKg')}
         value={weight}
-        onChangeText={setWeight}
+        onChangeText={(text) => {
+          setWeight(text);
+          if (weightError) setWeightError(null);
+        }}
         mode="outlined"
         keyboardType="numeric"
         style={styles.input}
         outlineColor="#BDBDBD"
-        activeOutlineColor="#2E7D32"
+        activeOutlineColor={colors.primary}
+        error={!!weightError}
       />
+      {!!weightError && (
+        <Text variant="bodySmall" style={{ color: colors.error, marginTop: 4 }}>
+          {weightError}
+        </Text>
+      )}
 
       <Text variant="titleSmall" style={styles.label}>
         {t('feed.lactationStage')}
@@ -145,7 +166,7 @@ export default function FeedCalculatorScreen() {
           label={`${isKn ? ing.nameKn : ing.nameEn} (₹${ing.costPerKg}/kg)`}
           status={selected.has(ing.key) ? 'checked' : 'unchecked'}
           onPress={() => toggleIngredient(ing.key)}
-          color="#2E7D32"
+          color={colors.primary}
           style={styles.checkItem}
         />
       ))}
@@ -156,7 +177,8 @@ export default function FeedCalculatorScreen() {
         style={styles.calcButton}
         contentStyle={styles.calcContent}
         labelStyle={styles.calcLabel}
-        disabled={selected.size === 0 || !weight}
+        disabled={isSubmitting || selected.size === 0 || !weight}
+        loading={isSubmitting}
         icon="calculator"
       >
         {t('feed.calculateRation')}
@@ -222,7 +244,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   heading: {
-    color: '#2E7D32',
+    color: colors.primary,
     fontWeight: 'bold',
     marginBottom: SPACING.md,
   },
@@ -261,7 +283,7 @@ const styles = StyleSheet.create({
     minHeight: TOUCH_TARGET_MIN,
   },
   calcButton: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: colors.primary,
     borderRadius: CARD_BORDER_RADIUS,
     marginTop: SPACING.lg,
   },
@@ -276,7 +298,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.lg,
   },
   resultTitle: {
-    color: '#2E7D32',
+    color: colors.primary,
     fontWeight: 'bold',
     marginBottom: SPACING.sm,
   },
@@ -289,7 +311,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   resultQty: {
-    color: '#2E7D32',
+    color: statusColors.healthy,
     fontWeight: 'bold',
     marginRight: SPACING.md,
   },
@@ -306,7 +328,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   totalAmount: {
-    color: '#2E7D32',
+    color: statusColors.healthy,
     fontWeight: 'bold',
   },
   balanceRow: {

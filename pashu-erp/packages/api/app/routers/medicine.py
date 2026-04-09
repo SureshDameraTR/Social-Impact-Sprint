@@ -3,9 +3,10 @@
 from datetime import date, datetime, timedelta, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
@@ -18,10 +19,14 @@ router = APIRouter(prefix="/v1/medicines", tags=["Medicines"])
 
 
 @router.get("", response_model=list[MedicineRead])
-async def list_medicines(db: AsyncSession = Depends(get_db)):
+async def list_medicines(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+):
     """List all medicines with withdrawal period information."""
     result = await db.execute(
-        select(Medicine).order_by(Medicine.name_en)
+        select(Medicine).order_by(Medicine.name_en).offset(skip).limit(limit)
     )
     return result.scalars().all()
 
@@ -92,6 +97,7 @@ async def get_withdrawal_status(
     result = await db.execute(
         select(MedicineAdministration)
         .where(MedicineAdministration.animal_id == animal_id)
+        .options(selectinload(MedicineAdministration.medicine))
         .order_by(MedicineAdministration.administered_at.desc())
     )
     administrations = result.scalars().all()
@@ -105,11 +111,7 @@ async def get_withdrawal_status(
         meat_active = admin.withdrawal_meat_until and admin.withdrawal_meat_until > today
 
         if milk_active or meat_active:
-            # Get medicine name
-            med_result = await db.execute(
-                select(Medicine).where(Medicine.id == admin.medicine_id)
-            )
-            med = med_result.scalar_one_or_none()
+            med = admin.medicine
             active_withdrawals.append({
                 "medicine": med.name_en if med else "Unknown",
                 "administered_at": admin.administered_at.isoformat(),

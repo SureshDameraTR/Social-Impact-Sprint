@@ -5,6 +5,7 @@ import { PaperProvider } from 'react-native-paper';
 import * as SecureStore from 'expo-secure-store';
 import { useTranslation } from 'react-i18next';
 import { theme, colors } from '../src/config/theme';
+import { SnackbarProvider } from '../src/hooks/useSnackbar';
 import '../src/i18n';
 
 // Inner component to use hooks inside the error boundary
@@ -110,30 +111,32 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <PaperProvider theme={theme}>
-        <Stack screenOptions={{ headerShown: false }} initialRouteName={authState === 'authenticated' ? '(tabs)' : '(auth)'}>
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="animal/[id]"
-            options={{ headerShown: true, title: '' }}
-          />
-          <Stack.Screen
-            name="animal/add"
-            options={{ headerShown: true, title: '' }}
-          />
-          <Stack.Screen
-            name="milk/history"
-            options={{ headerShown: true, title: '' }}
-          />
-          <Stack.Screen
-            name="smart-farm"
-            options={{ headerShown: true, title: '' }}
-          />
-          <Stack.Screen
-            name="profile"
-            options={{ headerShown: true, title: '' }}
-          />
-        </Stack>
+        <SnackbarProvider>
+          <Stack screenOptions={{ headerShown: false }} initialRouteName={authState === 'authenticated' ? '(tabs)' : '(auth)'}>
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen
+              name="animal/[id]"
+              options={{ headerShown: true, title: '' }}
+            />
+            <Stack.Screen
+              name="animal/add"
+              options={{ headerShown: true, title: '' }}
+            />
+            <Stack.Screen
+              name="milk/history"
+              options={{ headerShown: true, title: '' }}
+            />
+            <Stack.Screen
+              name="smart-farm"
+              options={{ headerShown: true, title: '' }}
+            />
+            <Stack.Screen
+              name="profile"
+              options={{ headerShown: true, title: '' }}
+            />
+          </Stack>
+        </SnackbarProvider>
       </PaperProvider>
     </ErrorBoundary>
   );

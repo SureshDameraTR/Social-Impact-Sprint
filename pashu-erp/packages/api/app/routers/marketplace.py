@@ -4,59 +4,49 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
-from app.models.marketplace import SellRecord
+from app.models.marketplace import ProductType, SellRecord
 from app.models.user import User
-from app.services.market_rates import KARNATAKA_RATES
+from app.services.market_rates import get_all_market_rates
+from app.schemas.marketplace import SellRecordCreate, SellRecordRead
 
 router = APIRouter(prefix="/v1/marketplace", tags=["Marketplace"])
-
-
-# ---------------------------------------------------------------------------
-# Schemas
-# ---------------------------------------------------------------------------
-
-class SellCreate(BaseModel):
-    product_type: str = Field(..., description="milk, eggs, goat_products, etc.")
-    quantity: float = Field(..., gt=0)
-    unit: str = Field(..., max_length=20)
-    price_per_unit: float = Field(..., gt=0)
-    buyer_name: str | None = Field(None, max_length=200)
-    buyer_phone: str | None = Field(None, max_length=15)
-    sold_at: datetime
-    notes: str | None = Field(None, max_length=500)
-
-
-class SellRead(BaseModel):
-    id: UUID
-    user_id: UUID
-    product_type: str
-    quantity: float
-    unit: str
-    price_per_unit: float
-    total_amount: float
-    buyer_name: str | None = None
-    buyer_phone: str | None = None
-    sold_at: datetime
-    notes: str | None = None
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 
-@router.post("/sell", response_model=SellRead, status_code=status.HTTP_201_CREATED)
+@router.get("")
+async def list_sell_records(
+    limit: int = Query(100, le=500),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List sell records (admin: all, farmer: own only)."""
+    base = select(SellRecord)
+    if current_user.role != "admin":
+        base = base.where(SellRecord.user_id == current_user.id)
+
+    count_result = await db.execute(select(func.count()).select_from(base.subquery()))
+    total = count_result.scalar() or 0
+
+    result = await db.execute(
+        base.order_by(SellRecord.sold_at.desc()).offset(offset).limit(limit)
+    )
+    data = result.scalars().all()
+    return {"data": data, "total": total, "limit": limit, "offset": offset}
+
+
+@router.post("/sell", response_model=SellRecordRead, status_code=status.HTTP_201_CREATED)
 async def record_sale(
-    body: SellCreate,
+    body: SellRecordCreate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -65,14 +55,14 @@ async def record_sale(
 
     record = SellRecord(
         user_id=current_user.id,
-        product_type=body.product_type,
+        product_type=body.product_type.value,
         quantity=body.quantity,
         unit=body.unit,
         price_per_unit=Decimal(str(body.price_per_unit)),
         total_amount=Decimal(str(total_amount)),
         buyer_name=body.buyer_name,
         buyer_phone=body.buyer_phone,
-        sold_at=body.sold_at,
+        sold_at=datetime.now(timezone.utc),
         notes=body.notes,
     )
     db.add(record)
@@ -81,33 +71,46 @@ async def record_sale(
     return record
 
 
-@router.get("/history/{user_id}", response_model=list[SellRead])
+@router.get("/history/{user_id}")
 async def get_sell_history(
     user_id: UUID,
+    limit: int = Query(50, le=200),
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get sell history for a user."""
+    """Get sell history for a user with pagination."""
     if str(current_user.id) != str(user_id) and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    result = await db.execute(
-        select(SellRecord)
-        .where(SellRecord.user_id == user_id)
-        .order_by(SellRecord.sold_at.desc())
+    base = select(SellRecord).where(SellRecord.user_id == user_id)
+
+    # Count
+    count_result = await db.execute(
+        select(func.count()).select_from(base.subquery())
     )
-    return result.scalars().all()
+    total = count_result.scalar() or 0
+
+    # Data
+    result = await db.execute(
+        base.order_by(SellRecord.sold_at.desc()).offset(offset).limit(limit)
+    )
+    data = result.scalars().all()
+
+    return {"data": data, "total": total, "limit": limit, "offset": offset}
 
 
 @router.get("/rates")
 async def get_market_rates(
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Get current Karnataka APMC market rates."""
+    """Get current Karnataka APMC market rates from database."""
+    rates = await get_all_market_rates(db)
     return {
-        "source": "Karnataka APMC (Hardcoded Reference Rates)",
+        "source": "Karnataka APMC",
         "updated_at": datetime.now(timezone.utc).date().isoformat(),
-        "rates": KARNATAKA_RATES,
+        "rates": rates,
     }
 
 
@@ -121,28 +124,39 @@ async def get_marketplace_summary(
     if str(current_user.id) != str(user_id) and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    result = await db.execute(
-        select(SellRecord).where(SellRecord.user_id == user_id)
+    # Aggregate totals in SQL
+    totals_result = await db.execute(
+        select(
+            func.coalesce(func.sum(SellRecord.total_amount), 0).label("total_revenue"),
+            func.coalesce(func.sum(SellRecord.quantity), 0).label("total_quantity"),
+            func.count().label("total_sales"),
+        ).where(SellRecord.user_id == user_id)
     )
-    records = result.scalars().all()
+    totals = totals_result.one()
 
-    total_revenue = sum(float(r.total_amount) for r in records)
-    total_quantity = sum(r.quantity for r in records)
-
-    # Breakdown by product type
+    # Breakdown by product type via GROUP BY
+    breakdown_result = await db.execute(
+        select(
+            SellRecord.product_type,
+            func.sum(SellRecord.quantity).label("quantity"),
+            func.sum(SellRecord.total_amount).label("revenue"),
+            func.count().label("count"),
+        )
+        .where(SellRecord.user_id == user_id)
+        .group_by(SellRecord.product_type)
+    )
     by_product: dict[str, dict] = {}
-    for r in records:
-        key = r.product_type
-        if key not in by_product:
-            by_product[key] = {"quantity": 0.0, "revenue": 0.0, "count": 0}
-        by_product[key]["quantity"] += r.quantity
-        by_product[key]["revenue"] += float(r.total_amount)
-        by_product[key]["count"] += 1
+    for row in breakdown_result.all():
+        by_product[row.product_type] = {
+            "quantity": round(float(row.quantity), 2),
+            "revenue": round(float(row.revenue), 2),
+            "count": row.count,
+        }
 
     return {
         "user_id": str(user_id),
-        "total_revenue": round(total_revenue, 2),
-        "total_quantity": round(total_quantity, 2),
-        "total_sales": len(records),
+        "total_revenue": round(float(totals.total_revenue), 2),
+        "total_quantity": round(float(totals.total_quantity), 2),
+        "total_sales": totals.total_sales,
         "by_product": by_product,
     }

@@ -1,22 +1,29 @@
-"""Health events and vaccination endpoints."""
+"""Health events endpoints.
 
-from datetime import date, datetime, timezone
+Note: Vaccination CRUD routes live in routers/vaccination.py to avoid
+duplication.  This module only handles health-event logging and history.
+"""
+
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
+
+# Admin dashboard configuration (previously in constants.py)
+RISK_SCORE_THRESHOLD: float = 0.5
+ALERT_WINDOW_DAYS: int = 7
 from app.middleware.auth import get_current_user
 from app.models.animal import Animal
-from app.models.health import HealthEvent, Vaccination
+from app.models.health import HealthEvent
 from app.models.user import User
 from app.schemas.health import (
     HealthEventCreate,
     HealthEventRead,
-    VaccinationCreate,
-    VaccinationRead,
 )
 from app.services.disease_rules import evaluate_symptoms
 
@@ -62,13 +69,15 @@ async def log_health_event(
     return event
 
 
-@router.get("/health/history/{animal_id}", response_model=list[HealthEventRead])
+@router.get("/health/history/{animal_id}")
 async def get_health_history(
     animal_id: UUID,
+    limit: int = Query(50, le=200),
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get health event history for an animal."""
+    """Get health event history for an animal with pagination."""
     # Verify ownership
     animal_result = await db.execute(select(Animal).where(Animal.id == animal_id))
     animal = animal_result.scalar_one_or_none()
@@ -77,92 +86,85 @@ async def get_health_history(
     if str(animal.user_id) != str(current_user.id):
         raise HTTPException(status_code=403, detail="Not your animal")
 
+    # Count
+    count_result = await db.execute(
+        select(func.count()).select_from(HealthEvent).where(HealthEvent.animal_id == animal_id)
+    )
+    total = count_result.scalar() or 0
+
     result = await db.execute(
         select(HealthEvent)
         .where(HealthEvent.animal_id == animal_id)
         .order_by(HealthEvent.event_date.desc())
+        .offset(offset)
+        .limit(limit)
     )
-    return result.scalars().all()
+    data = result.scalars().all()
+
+    return {"data": data, "total": total, "limit": limit, "offset": offset}
 
 
-# ---------------------------------------------------------------------------
-# Vaccinations
-# ---------------------------------------------------------------------------
-
-@router.post("/vaccinations", response_model=VaccinationRead, status_code=status.HTTP_201_CREATED)
-async def record_vaccination(
-    body: VaccinationCreate,
+@router.get("/health")
+async def list_health_events(
+    limit: int = Query(100, le=500),
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Record a vaccination for an animal."""
-    # Verify animal exists and belongs to user
-    result = await db.execute(select(Animal).where(Animal.id == body.animal_id))
-    animal = result.scalar_one_or_none()
-    if animal is None:
-        raise HTTPException(status_code=404, detail="Animal not found")
-    if str(animal.user_id) != str(current_user.id):
-        raise HTTPException(status_code=403, detail="Not your animal")
+    """List recent health events (admin: all, farmer: own animals only)."""
+    week_ago = datetime.now(timezone.utc) - timedelta(days=ALERT_WINDOW_DAYS)
+    base = select(HealthEvent).where(HealthEvent.event_date >= week_ago)
+    if current_user.role != "admin":
+        animal_ids_q = select(Animal.id).where(Animal.user_id == current_user.id)
+        base = base.where(HealthEvent.animal_id.in_(animal_ids_q))
 
-    vaccination = Vaccination(
-        animal_id=str(body.animal_id),
-        vaccine_name=body.vaccine_name,
-        administered_on=body.administered_on,
-        next_due=body.next_due,
-        batch_number=body.batch_number,
-        recorded_by=str(current_user.id),
-    )
-    db.add(vaccination)
-    await db.commit()
-    await db.refresh(vaccination)
-    return vaccination
-
-
-@router.get("/vaccinations/{animal_id}", response_model=list[VaccinationRead])
-async def get_vaccinations(
-    animal_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Get vaccination records for an animal."""
-    animal_result = await db.execute(select(Animal).where(Animal.id == animal_id))
-    animal = animal_result.scalar_one_or_none()
-    if animal is None:
-        raise HTTPException(status_code=404, detail="Animal not found")
-    if str(animal.user_id) != str(current_user.id):
-        raise HTTPException(status_code=403, detail="Not your animal")
+    count_result = await db.execute(select(func.count()).select_from(base.subquery()))
+    total = count_result.scalar() or 0
 
     result = await db.execute(
-        select(Vaccination)
-        .where(Vaccination.animal_id == animal_id)
-        .order_by(Vaccination.administered_on.desc())
+        base.order_by(HealthEvent.event_date.desc()).offset(offset).limit(limit)
     )
-    return result.scalars().all()
+    data = result.scalars().all()
+    return {"data": data, "total": total, "limit": limit, "offset": offset}
 
 
-@router.get("/vaccinations/due", response_model=list[VaccinationRead])
-async def get_due_vaccinations(
+@router.get("/health/alerts/map")
+async def get_health_alerts_map(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get upcoming vaccinations for all of the current user's animals."""
-    today = date.today()
-    # Get all animal IDs for the current user
-    animal_result = await db.execute(
-        select(Animal.id).where(Animal.user_id == current_user.id)
-    )
-    animal_ids = [row[0] for row in animal_result.all()]
-
-    if not animal_ids:
-        return []
+    """Health events with coordinates for GIS map display."""
+    week_ago = datetime.now(timezone.utc) - timedelta(days=ALERT_WINDOW_DAYS)
 
     result = await db.execute(
-        select(Vaccination)
+        select(HealthEvent)
         .where(
-            Vaccination.animal_id.in_(animal_ids),
-            Vaccination.next_due != None,  # noqa: E711
-            Vaccination.next_due >= today,
+            HealthEvent.event_date >= week_ago,
+            HealthEvent.ai_risk_score > RISK_SCORE_THRESHOLD,
         )
-        .order_by(Vaccination.next_due.asc())
+        .options(
+            selectinload(HealthEvent.animal).selectinload(Animal.owner),
+        )
+        .order_by(HealthEvent.ai_risk_score.desc())
+        .limit(200)
     )
-    return result.scalars().all()
+    events = result.scalars().all()
+
+    markers = []
+    for event in events:
+        animal = event.animal
+        if animal is None:
+            continue
+        owner = animal.owner
+        markers.append({
+            "event_id": str(event.id),
+            "animal_id": str(event.animal_id),
+            "species": animal.species if animal else None,
+            "risk_score": event.ai_risk_score,
+            "probable_diseases": event.probable_diseases,
+            "district": owner.location_district if owner else None,
+            "village_code": owner.village_code if owner else None,
+            "event_date": event.event_date.isoformat(),
+        })
+
+    return {"alert_count": len(markers), "markers": markers}

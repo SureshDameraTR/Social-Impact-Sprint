@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useList } from "@refinedev/core";
 import {
   Box,
@@ -16,103 +16,144 @@ import {
   TextField,
   Stack,
   Chip,
+  TableSortLabel,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
+import dynamic from "next/dynamic";
+import { colors, sxCodeCell, sxNameCell, tooltipStyle, axisTickStyle, gridStroke } from "@/theme/theme";
+import { fmtDate } from "@/utils/format";
+import EmptyState from "@/components/EmptyState";
 
 interface MilkRecord {
   id: string;
-  date: string;
-  farmer: string;
-  animal: string;
-  quantity: number;
-  session: "Morning" | "Evening";
-  center: string;
+  recorded_at: string;
+  user_id: string;
+  animal_id: string;
+  quantity_liters: number;
+  session: "morning" | "evening";
+  notes: string | null;
 }
 
-const mockMilk: MilkRecord[] = [
-  { id: "M001", date: "2026-04-08", farmer: "Ramesh Gowda", animal: "Lakshmi", quantity: 8.5, session: "Morning", center: "Hullahalli MC" },
-  { id: "M002", date: "2026-04-08", farmer: "Ramesh Gowda", animal: "Nandi", quantity: 6.2, session: "Morning", center: "Hullahalli MC" },
-  { id: "M003", date: "2026-04-08", farmer: "Lakshmi Devi", animal: "Gauri", quantity: 12.0, session: "Morning", center: "T. Narasipura MC" },
-  { id: "M004", date: "2026-04-08", farmer: "Suresh Babu", animal: "Sundari", quantity: 9.8, session: "Morning", center: "Virajpet MC" },
-  { id: "M005", date: "2026-04-07", farmer: "Ramesh Gowda", animal: "Lakshmi", quantity: 7.2, session: "Evening", center: "Hullahalli MC" },
-  { id: "M006", date: "2026-04-07", farmer: "Krishna Murthy", animal: "Raja", quantity: 5.5, session: "Evening", center: "Pandavapura MC" },
-  { id: "M007", date: "2026-04-07", farmer: "Lakshmi Devi", animal: "Gauri", quantity: 11.0, session: "Morning", center: "T. Narasipura MC" },
-  { id: "M008", date: "2026-04-07", farmer: "Nagaraj P", animal: "Bhadra", quantity: 7.8, session: "Morning", center: "Hunsur MC" },
-  { id: "M009", date: "2026-04-06", farmer: "Suresh Babu", animal: "Sundari", quantity: 10.2, session: "Morning", center: "Virajpet MC" },
-  { id: "M010", date: "2026-04-06", farmer: "Meenakshi H", animal: "Chinna", quantity: 3.5, session: "Evening", center: "Nanjangud MC" },
-  { id: "M011", date: "2026-04-06", farmer: "Ramesh Gowda", animal: "Nandi", quantity: 6.8, session: "Morning", center: "Hullahalli MC" },
-  { id: "M012", date: "2026-04-05", farmer: "Shivamma R", animal: "Kamala", quantity: 9.0, session: "Morning", center: "Kollegal MC" },
-];
+interface DailySummary {
+  date: string;
+  total: number;
+}
 
-// Daily summary for chart
-const dailySummary = [
-  { date: "Apr 3", morning: 920, evening: 680 },
-  { date: "Apr 4", morning: 1050, evening: 740 },
-  { date: "Apr 5", morning: 980, evening: 710 },
-  { date: "Apr 6", morning: 1120, evening: 790 },
-  { date: "Apr 7", morning: 1080, evening: 750 },
-  { date: "Apr 8", morning: 1200, evening: 0 },
-];
+function MilkChart({ data }: { data: DailySummary[] }) {
+  const {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+    ResponsiveContainer, Legend,
+  } = require("recharts");
+
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <BarChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+        <XAxis dataKey="date" tick={axisTickStyle} tickLine={false} />
+        <YAxis tick={axisTickStyle} tickLine={false} />
+        <Tooltip contentStyle={tooltipStyle} />
+        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Bar dataKey="total" fill={colors.primary} name="Total (L)" radius={[4, 4, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+const MilkChartLazy = dynamic(() => Promise.resolve(MilkChart), {
+  ssr: false,
+  loading: () => (
+    <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5', borderRadius: 1 }}>
+      Loading chart...
+    </Box>
+  ),
+});
+
+type SortKey = "recorded_at" | "quantity_liters" | "session";
 
 export default function MilkPage() {
+  useEffect(() => {
+    document.title = 'Milk Collection — PashuRaksha ERP';
+  }, []);
+
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [sortBy, setSortBy] = useState<SortKey | "">("");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  const { data } = useList<MilkRecord>({ resource: "milk" });
-  const records = data?.data ?? mockMilk;
+  const { data, isLoading, isError } = useList<MilkRecord>({ resource: "milk" });
+
+  const records = data?.data ?? [];
+
+  const handleSort = (key: SortKey) => {
+    if (sortBy === key) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(key);
+      setSortDir("asc");
+    }
+  };
 
   const filtered = useMemo(() => {
     return records.filter((r) => {
-      if (dateFrom && r.date < dateFrom) return false;
-      if (dateTo && r.date > dateTo) return false;
+      const d = r.recorded_at?.split("T")[0] ?? "";
+      if (dateFrom && d < dateFrom) return false;
+      if (dateTo && d > dateTo) return false;
       return true;
     });
   }, [records, dateFrom, dateTo]);
 
-  const totalToday = mockMilk
-    .filter((r) => r.date === "2026-04-08")
-    .reduce((sum, r) => sum + r.quantity, 0);
+  const sortedRows = useMemo(() => {
+    if (!sortBy) return filtered;
+    const sorted = [...filtered];
+    sorted.sort((a, b) => {
+      const aVal = a[sortBy];
+      const bVal = b[sortBy];
+      const cmp = typeof aVal === "string" ? aVal.localeCompare(bVal as string) : (aVal as number) - (bVal as number);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [filtered, sortBy, sortDir]);
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayRecords = records.filter((r) => (r.recorded_at?.split("T")[0] ?? "") === todayStr);
+  const totalToday = todayRecords.reduce((sum, r) => sum + r.quantity_liters, 0);
+
+  const dailySummary: DailySummary[] = useMemo(() => {
+    const map: Record<string, number> = {};
+    records.forEach((r) => {
+      const d = r.recorded_at?.split("T")[0] ?? "";
+      map[d] = (map[d] || 0) + r.quantity_liters;
+    });
+    return Object.entries(map)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, total]) => ({ date, total: Math.round(total * 10) / 10 }));
+  }, [records]);
+
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress /></Box>;
+  if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
 
   return (
     <Box p={3}>
-      <Typography variant="h4" fontWeight={700} gutterBottom>
+      <Typography variant="h4" gutterBottom sx={{ color: colors.text }}>
         Milk Collection
       </Typography>
       <Typography variant="body1" color="text.secondary" mb={3}>
         Today&apos;s total: {totalToday.toFixed(1)} L from{" "}
-        {mockMilk.filter((r) => r.date === "2026-04-08").length} entries
+        {todayRecords.length} entries
       </Typography>
 
       {/* Daily Summary Chart */}
-      <Paper sx={{ p: 3, borderRadius: 2, mb: 3 }}>
-        <Typography variant="h6" fontWeight={600} gutterBottom>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" gutterBottom>
           Daily Collection Summary
         </Typography>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={dailySummary}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="morning" fill="#00695c" name="Morning (L)" />
-            <Bar dataKey="evening" fill="#0288d1" name="Evening (L)" />
-          </BarChart>
-        </ResponsiveContainer>
+        <MilkChartLazy data={dailySummary} />
       </Paper>
 
-      <Paper sx={{ borderRadius: 2 }}>
+      <Paper>
         <Box p={2}>
           <Stack direction="row" spacing={2} alignItems="center">
             <TextField
@@ -137,42 +178,75 @@ export default function MilkPage() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Farmer</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Animal</TableCell>
-                <TableCell sx={{ fontWeight: 700 }} align="right">Quantity (L)</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Session</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Center</TableCell>
+                <TableCell>
+                  <TableSortLabel active={sortBy === "recorded_at"} direction={sortBy === "recorded_at" ? sortDir : "asc"} onClick={() => handleSort("recorded_at")}>
+                    Date
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>Animal ID</TableCell>
+                <TableCell align="right">
+                  <TableSortLabel active={sortBy === "quantity_liters"} direction={sortBy === "quantity_liters" ? sortDir : "asc"} onClick={() => handleSort("quantity_liters")}>
+                    Quantity (L)
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel active={sortBy === "session"} direction={sortBy === "session" ? sortDir : "asc"} onClick={() => handleSort("session")}>
+                    Session
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>Notes</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filtered
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((rec) => (
-                  <TableRow key={rec.id} hover>
-                    <TableCell>{new Date(rec.date).toLocaleDateString("en-IN")}</TableCell>
-                    <TableCell>{rec.farmer}</TableCell>
-                    <TableCell>{rec.animal}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>
-                      {rec.quantity.toFixed(1)}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={rec.session}
-                        size="small"
-                        color={rec.session === "Morning" ? "warning" : "info"}
-                        variant="outlined"
-                      />
-                    </TableCell>
-                    <TableCell>{rec.center}</TableCell>
-                  </TableRow>
-                ))}
+              {sortedRows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} sx={{ border: 0 }}>
+                    <EmptyState />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sortedRows
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((rec) => (
+                    <TableRow key={rec.id}>
+                      <TableCell
+                        sx={sxCodeCell}
+                      >
+                        {fmtDate(rec.recorded_at)}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '11px', color: colors.textDim }}>{rec.animal_id?.slice(0, 8)}</TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{ ...sxCodeCell, fontWeight: 600, color: colors.text }}
+                      >
+                        {rec.quantity_liters.toFixed(1)}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={rec.session}
+                          size="small"
+                          sx={{
+                            bgcolor: rec.session === "morning" ? colors.warningLight : colors.infoLight,
+                            color: rec.session === "morning" ? colors.accentAmber : colors.accentBlue,
+                            border: 'none',
+                            fontWeight: 500,
+                            fontSize: '11.5px',
+                            textTransform: 'capitalize',
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '12.5px', color: colors.textDim }}>
+                        {rec.notes || '\u2014'}
+                      </TableCell>
+                    </TableRow>
+                  ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
         <TablePagination
           component="div"
-          count={filtered.length}
+          count={sortedRows.length}
           page={page}
           onPageChange={(_, p) => setPage(p)}
           rowsPerPage={rowsPerPage}

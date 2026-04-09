@@ -4,7 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -96,6 +96,8 @@ async def create_shg(
 
 @router.get("", response_model=list[SHGRead])
 async def list_shg(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -104,6 +106,8 @@ async def list_shg(
         select(SHGGroup)
         .where(SHGGroup.admin_user_id == current_user.id)
         .order_by(SHGGroup.created_at.desc())
+        .offset(skip)
+        .limit(limit)
     )
     return result.scalars().all()
 

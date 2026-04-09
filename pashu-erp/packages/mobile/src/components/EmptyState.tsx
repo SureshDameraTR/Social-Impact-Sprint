@@ -11,7 +11,7 @@ interface EmptyStateProps {
   onAction?: () => void;
 }
 
-export function EmptyState({ icon, title, subtitle, actionLabel, onAction }: EmptyStateProps) {
+function EmptyStateInner({ icon, title, subtitle, actionLabel, onAction }: EmptyStateProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.icon}>{icon}</Text>
@@ -68,3 +68,5 @@ const styles = StyleSheet.create({
     height: 48,
   },
 });
+
+export const EmptyState = React.memo(EmptyStateInner);

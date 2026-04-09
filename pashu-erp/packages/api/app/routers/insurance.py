@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +10,7 @@ from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.animal import Animal
 from app.models.insurance import InsuranceClaim, InsurancePolicy
+from app.models.reference import InsurancePremium
 from app.models.user import User
 from app.schemas.insurance import (
     InsuranceClaimCreate,
@@ -20,26 +21,12 @@ from app.schemas.insurance import (
 
 router = APIRouter(prefix="/v1/insurance", tags=["Insurance"])
 
-# Premium estimation rates (% of animal value)
-PREMIUM_RATES = {
-    "cattle": {"indigenous": 3.0, "crossbreed": 3.5, "exotic": 4.0},
-    "goat": {"indigenous": 3.5, "crossbreed": 4.0, "exotic": 4.5},
-    "sheep": {"indigenous": 3.0, "crossbreed": 3.5, "exotic": 4.0},
-    "poultry": {"indigenous": 5.0, "crossbreed": 5.0, "exotic": 5.0},
-}
-
-# Approximate animal values for premium estimation
-ANIMAL_VALUES = {
-    "cattle": {"indigenous": 40000, "crossbreed": 60000, "exotic": 80000},
-    "goat": {"indigenous": 8000, "crossbreed": 12000, "exotic": 15000},
-    "sheep": {"indigenous": 7000, "crossbreed": 10000, "exotic": 12000},
-    "poultry": {"indigenous": 300, "crossbreed": 500, "exotic": 800},
-}
-
 
 @router.get("/policies/{user_id}", response_model=list[InsurancePolicyRead])
 async def get_user_policies(
     user_id: UUID,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -60,6 +47,8 @@ async def get_user_policies(
         select(InsurancePolicy)
         .where(InsurancePolicy.animal_id.in_(animal_ids))
         .order_by(InsurancePolicy.valid_to.desc())
+        .offset(skip)
+        .limit(limit)
     )
     return result.scalars().all()
 
@@ -114,8 +103,27 @@ async def estimate_premium(
     species = animal.species.lower() if animal.species else "cattle"
     breed_type = animal.breed_type.lower() if animal.breed_type else "indigenous"
 
-    animal_value = ANIMAL_VALUES.get(species, ANIMAL_VALUES["cattle"]).get(breed_type, 40000)
-    premium_pct = PREMIUM_RATES.get(species, PREMIUM_RATES["cattle"]).get(breed_type, 3.5)
+    # Look up insurance premium data from reference table
+    premium_result = await db.execute(
+        select(InsurancePremium).where(
+            InsurancePremium.species == species,
+            InsurancePremium.breed_type == breed_type,
+        )
+    )
+    premium_row = premium_result.scalar_one_or_none()
+
+    if premium_row is None:
+        # Fallback: try species with cattle defaults
+        fallback_result = await db.execute(
+            select(InsurancePremium).where(
+                InsurancePremium.species == "cattle",
+                InsurancePremium.breed_type == "indigenous",
+            )
+        )
+        premium_row = fallback_result.scalar_one_or_none()
+
+    animal_value = int(premium_row.animal_value_inr) if premium_row else 40000
+    premium_pct = float(premium_row.premium_pct) if premium_row else 3.5
 
     premium = animal_value * premium_pct / 100
     # Government subsidizes 50% of premium for BPL farmers

@@ -17,6 +17,8 @@ router = APIRouter(prefix="/v1/advisory", tags=["Advisory"])
 async def list_tips(
     species: str | None = Query(None, description="Filter by species"),
     category: str | None = Query(None, description="Filter by category"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
     """List advisory tips with optional species and category filters."""
@@ -32,7 +34,7 @@ async def list_tips(
     if category:
         query = query.where(AdvisoryTip.category == category.lower())
 
-    result = await db.execute(query)
+    result = await db.execute(query.offset(skip).limit(limit))
     return result.scalars().all()
 
 

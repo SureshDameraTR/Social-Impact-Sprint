@@ -17,6 +17,8 @@ router = APIRouter(prefix="/v1/ethno-vet", tags=["Ethno-Veterinary"])
 async def list_remedies(
     species: str | None = Query(None, description="Filter by species"),
     condition: str | None = Query(None, description="Filter by condition treated"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
     """List traditional remedies with optional filters."""
@@ -34,7 +36,7 @@ async def list_remedies(
             TraditionalRemedy.conditions_treated.contains([condition.lower()])
         )
 
-    result = await db.execute(query)
+    result = await db.execute(query.offset(skip).limit(limit))
     return result.scalars().all()
 
 
@@ -53,6 +55,8 @@ async def get_remedy(remedy_id: UUID, db: AsyncSession = Depends(get_db)):
 @router.get("/search", response_model=list[TraditionalRemedyRead])
 async def search_remedies(
     q: str = Query(..., min_length=2, description="Search keyword"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
     """Search remedies by keyword across name, ingredient, and conditions."""
@@ -65,6 +69,6 @@ async def search_remedies(
                 TraditionalRemedy.plant_ingredient.ilike(pattern),
                 TraditionalRemedy.preparation_method.ilike(pattern),
             )
-        )
+        ).offset(skip).limit(limit)
     )
     return result.scalars().all()

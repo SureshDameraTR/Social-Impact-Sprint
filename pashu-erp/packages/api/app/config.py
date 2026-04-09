@@ -1,15 +1,25 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql+asyncpg://pashu:pashu_dev_2026@localhost:5432/pashuraksha"
-    jwt_secret: str = "dev-secret-change-in-production"
+    database_url: str
+    jwt_secret: str
     jwt_algorithm: str = "HS256"
-    jwt_expire_minutes: int = 1440  # 24 hours
+    jwt_expire_minutes: int = 1440
     environment: str = "development"
     sarvam_api_key: str = ""
+    weather_api_url: str = ""
+    bharat_pashudhan_api_url: str = ""
+    iot_gateway_url: str = ""
+    storage_api_url: str = ""
+    cors_origins: str = "http://localhost:3000,http://localhost:8081"
+    pool_size: int = 10
+    max_overflow: int = 20
+    pool_recycle: int = 3600
+    rate_limit_per_minute: int = 10
+    sql_echo: bool = False
 
-    model_config = {"env_file": ".env", "extra": "ignore"}
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()

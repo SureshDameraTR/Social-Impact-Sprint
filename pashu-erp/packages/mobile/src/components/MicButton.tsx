@@ -28,13 +28,13 @@ export function MicButton({ onResult, context = 'generic', onTranscript }: MicBu
       Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
-            toValue: 1.3,
-            duration: 600,
+            toValue: 1.2,
+            duration: 500,
             useNativeDriver: true,
           }),
           Animated.timing(pulseAnim, {
             toValue: 1,
-            duration: 600,
+            duration: 500,
             useNativeDriver: true,
           }),
         ])
@@ -74,26 +74,26 @@ export function MicButton({ onResult, context = 'generic', onTranscript }: MicBu
         onResult(result.parsedNumber);
       } else {
         setState('error');
-        setStatusText('\u0CA6\u0CAF\u0CB5\u0CBF\u0C9F\u0CCD\u0C9F\u0CC1 \u0CAE\u0CA4\u0CCD\u0CA4\u0CC6 \u0CAA\u0CCD\u0CB0\u0CAF\u0CA4\u0CCD\u0CA8\u0CBF\u0CB8\u0CBF'); // "Please try again" in Kannada
-        setTimeout(() => setState('idle'), 2000);
+        setStatusText('\u0CAE\u0CA4\u0CCD\u0CA4\u0CC6 \u0CAE\u0CBE\u0CA4\u0CA8\u0CBE\u0CA1\u0CBF'); // "Speak again" in Kannada
+        setTimeout(() => setState('idle'), 3000); // give more time (3s was 2s)
       }
     } catch {
       setState('error');
-      setStatusText('\u0CA6\u0CCB\u0CB7\u0CB5\u0CBE\u0CAF\u0CBF\u0CA4\u0CC1'); // "Error occurred" in Kannada
-      setTimeout(() => setState('idle'), 2000);
+      setStatusText('\u0CAE\u0CA4\u0CCD\u0CA4\u0CC6 \u0CAE\u0CBE\u0CA4\u0CA8\u0CBE\u0CA1\u0CBF'); // "Speak again" in Kannada
+      setTimeout(() => setState('idle'), 3000);
     }
   }, [state, context, onResult, onTranscript]);
 
   const containerColor =
     state === 'error' ? '#FF9800' :
-    state === 'recording' ? '#F44336' :
-    state === 'processing' ? '#1565C0' :
-    '#2E7D32';
+    state === 'recording' ? '#C62828' :
+    state === 'processing' ? '#3B6470' :
+    '#E65100';
 
   const icon =
     state === 'recording' ? 'microphone' :
     state === 'processing' ? 'loading' :
-    state === 'error' ? 'microphone-off' :
+    state === 'error' ? 'microphone' :   // was 'microphone-off' — keep enabled appearance
     'microphone';
 
   return (
@@ -102,12 +102,13 @@ export function MicButton({ onResult, context = 'generic', onTranscript }: MicBu
         onPress={handlePress}
         accessibilityLabel={t('milk.voiceInput')}
         accessibilityRole="button"
+        accessibilityHint="Double tap to record voice input"
         disabled={state === 'recording' || state === 'processing'}
       >
         <IconButton
           icon={icon}
           mode="contained"
-          size={32}
+          size={36}
           iconColor="#FFFFFF"
           containerColor={containerColor}
           style={styles.button}
@@ -128,15 +129,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   button: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     minHeight: TOUCH_TARGET_MIN,
     minWidth: TOUCH_TARGET_MIN,
+    shadowColor: '#E65100',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   statusText: {
-    marginTop: 4,
-    color: '#616161',
+    marginTop: 6,
+    color: '#414941',
     textAlign: 'center',
     maxWidth: 120,
   },

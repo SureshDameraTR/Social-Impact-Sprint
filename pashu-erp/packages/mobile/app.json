@@ -8,15 +8,28 @@
     "scheme": "pashuraksha",
     "userInterfaceStyle": "light",
     "splash": {
-      "backgroundColor": "#2E7D32"
+      "backgroundColor": "#1B6B4A"
+    },
+    "ios": {
+      "bundleIdentifier": "org.rdo.pashuraksha",
+      "supportsTablet": true
     },
     "android": {
       "package": "org.rdo.pashuraksha",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2E7D32"
+        "backgroundColor": "#1B6B4A"
       }
     },
-    "plugins": ["expo-router", "expo-secure-store"]
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-asset",
+      "expo-font"
+    ]
   }
 }

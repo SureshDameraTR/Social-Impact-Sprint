@@ -1,31 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Button, Card, Text, Menu } from 'react-native-paper';
+import { Button, Card, Text, Menu, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../src/config/theme';
+import { useSnackbar } from '../src/hooks/useSnackbar';
+import { EmptyState } from '../src/components/EmptyState';
+import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors, statusColors } from '../src/config/theme';
+import { api } from '../src/config/api';
+import { MEDICINES, type Medicine } from '../src/config/medicines';
 
-interface Medicine {
-  key: string;
+interface AnimalOption {
+  id: string;
   name: string;
-  withdrawalDays: { milk: number; meat: number };
+  species: string;
 }
 
-const MEDICINES: Medicine[] = [
-  { key: 'oxytetracycline', name: 'Oxytetracycline', withdrawalDays: { milk: 7, meat: 28 } },
-  { key: 'ivermectin', name: 'Ivermectin', withdrawalDays: { milk: 5, meat: 35 } },
-  { key: 'penicillin', name: 'Penicillin', withdrawalDays: { milk: 4, meat: 14 } },
-  { key: 'enrofloxacin', name: 'Enrofloxacin', withdrawalDays: { milk: 7, meat: 14 } },
-  { key: 'albendazole', name: 'Albendazole', withdrawalDays: { milk: 5, meat: 14 } },
-  { key: 'meloxicam', name: 'Meloxicam', withdrawalDays: { milk: 5, meat: 15 } },
-  { key: 'amoxicillin', name: 'Amoxicillin', withdrawalDays: { milk: 3, meat: 21 } },
-];
-
-const ANIMALS = [
-  { key: '1', name: 'Lakshmi', emoji: '🐄' },
-  { key: '2', name: 'Gowri', emoji: '🐄' },
-  { key: '3', name: 'Nandi', emoji: '🐄' },
-  { key: '4', name: 'Malli', emoji: '🐐' },
-];
+const SPECIES_EMOJI: Record<string, string> = {
+  cattle: '\uD83D\uDC04',
+  goat: '\uD83D\uDC10',
+  sheep: '\uD83D\uDC11',
+  poultry: '\uD83D\uDC14',
+};
 
 interface WithdrawalEntry {
   id: string;
@@ -39,58 +33,78 @@ interface WithdrawalEntry {
   meatDaysLeft: number;
 }
 
-const TODAY = '2026-04-08';
-
-const MOCK_WITHDRAWALS: WithdrawalEntry[] = [
-  {
-    id: '1',
-    animalName: 'Lakshmi',
-    animalEmoji: '🐄',
-    medicineName: 'Oxytetracycline',
-    adminDate: '2026-04-05',
-    milkSafeDate: '2026-04-12',
-    meatSafeDate: '2026-05-03',
-    milkDaysLeft: 4,
-    meatDaysLeft: 25,
-  },
-  {
-    id: '2',
-    animalName: 'Gowri',
-    animalEmoji: '🐄',
-    medicineName: 'Penicillin',
-    adminDate: '2026-04-02',
-    milkSafeDate: '2026-04-06',
-    meatSafeDate: '2026-04-16',
-    milkDaysLeft: -2,
-    meatDaysLeft: 8,
-  },
-];
-
 export default function MedicineLogScreen() {
   const { t } = useTranslation();
+  const { showError } = useSnackbar();
+  const [animals, setAnimals] = useState<AnimalOption[]>([]);
+  const [withdrawals, setWithdrawals] = useState<WithdrawalEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
-  const [selectedAnimal, setSelectedAnimal] = useState<typeof ANIMALS[0] | null>(null);
+  const [selectedAnimal, setSelectedAnimal] = useState<AnimalOption | null>(null);
   const [medMenuVisible, setMedMenuVisible] = useState(false);
   const [animalMenuVisible, setAnimalMenuVisible] = useState(false);
-  const [withdrawals, setWithdrawals] = useState(MOCK_WITHDRAWALS);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const administer = () => {
+  const fetchData = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    Promise.all([
+      api.get<AnimalOption[]>('/animals'),
+      api.get<WithdrawalEntry[]>('/medicine-log/withdrawals'),
+    ])
+      .then(([animalsData, withdrawalsData]) => {
+        setAnimals(animalsData);
+        setWithdrawals(withdrawalsData);
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const administer = async () => {
     if (!selectedMedicine || !selectedAnimal) return;
-    const newEntry: WithdrawalEntry = {
-      id: String(Date.now()),
-      animalName: selectedAnimal.name,
-      animalEmoji: selectedAnimal.emoji,
-      medicineName: selectedMedicine.name,
-      adminDate: TODAY,
-      milkSafeDate: `+${selectedMedicine.withdrawalDays.milk} days`,
-      meatSafeDate: `+${selectedMedicine.withdrawalDays.meat} days`,
-      milkDaysLeft: selectedMedicine.withdrawalDays.milk,
-      meatDaysLeft: selectedMedicine.withdrawalDays.meat,
-    };
-    setWithdrawals((prev) => [newEntry, ...prev]);
-    setSelectedMedicine(null);
-    setSelectedAnimal(null);
+    setIsSubmitting(true);
+    try {
+      const result = await api.post<WithdrawalEntry>('/medicine-log/administer', {
+        animalId: selectedAnimal.id,
+        medicineKey: selectedMedicine.key,
+      });
+      setWithdrawals((prev) => [result, ...prev]);
+      setSelectedMedicine(null);
+      setSelectedAnimal(null);
+    } catch (e) {
+      console.error('Medicine log save failed:', e);
+      showError('Failed to save medicine log. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          icon={'\u26A0\uFE0F'}
+          title={t('common.error')}
+          subtitle={error}
+          actionLabel={t('common.retry')}
+          onAction={fetchData}
+        />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -144,19 +158,19 @@ export default function MedicineLogScreen() {
                 contentStyle={styles.dropdownContent}
                 icon="cow"
               >
-                {selectedAnimal ? `${selectedAnimal.emoji} ${selectedAnimal.name}` : t('medicineLog.selectAnimal')}
+                {selectedAnimal ? `${SPECIES_EMOJI[selectedAnimal.species] || '\uD83D\uDC3E'} ${selectedAnimal.name}` : t('medicineLog.selectAnimal')}
               </Button>
             }
             contentStyle={styles.menuContent}
           >
-            {ANIMALS.map((animal) => (
+            {animals.map((animal) => (
               <Menu.Item
-                key={animal.key}
+                key={animal.id}
                 onPress={() => {
                   setSelectedAnimal(animal);
                   setAnimalMenuVisible(false);
                 }}
-                title={`${animal.emoji} ${animal.name}`}
+                title={`${SPECIES_EMOJI[animal.species] || '\uD83D\uDC3E'} ${animal.name}`}
                 style={{ minHeight: TOUCH_TARGET_MIN }}
               />
             ))}
@@ -167,7 +181,8 @@ export default function MedicineLogScreen() {
             onPress={administer}
             style={styles.adminButton}
             contentStyle={styles.adminContent}
-            disabled={!selectedMedicine || !selectedAnimal}
+            disabled={isSubmitting || !selectedMedicine || !selectedAnimal}
+            loading={isSubmitting}
             icon="needle"
           >
             {t('medicineLog.administer')}
@@ -178,6 +193,14 @@ export default function MedicineLogScreen() {
       <Text variant="titleMedium" style={styles.sectionTitle}>
         {t('medicineLog.activeWithdrawals')}
       </Text>
+
+      {withdrawals.length === 0 && (
+        <EmptyState
+          icon={'\uD83D\uDC8A'}
+          title={t('common.noData')}
+          subtitle={t('medicineLog.activeWithdrawals')}
+        />
+      )}
 
       {withdrawals.map((entry) => {
         const milkSafe = entry.milkDaysLeft <= 0;
@@ -199,16 +222,16 @@ export default function MedicineLogScreen() {
 
               <View style={styles.statusRow}>
                 <View style={[styles.statusCard, { backgroundColor: milkSafe ? '#E8F5E9' : '#FFEBEE' }]}>
-                  <Text style={{ fontSize: 20 }}>🥛</Text>
-                  <Text variant="bodySmall" style={{ color: milkSafe ? '#2E7D32' : '#D32F2F', fontWeight: 'bold' }}>
+                  <Text style={{ fontSize: 20 }}>{'\uD83E\uDD5B'}</Text>
+                  <Text variant="bodySmall" style={{ color: milkSafe ? statusColors.healthy : statusColors.urgent, fontWeight: 'bold' }}>
                     {milkSafe
                       ? t('medicineLog.milkSafe')
                       : `${t('medicineLog.milkUnsafe')} ${entry.milkSafeDate}`}
                   </Text>
                 </View>
                 <View style={[styles.statusCard, { backgroundColor: meatSafe ? '#E8F5E9' : '#FFEBEE' }]}>
-                  <Text style={{ fontSize: 20 }}>🥩</Text>
-                  <Text variant="bodySmall" style={{ color: meatSafe ? '#2E7D32' : '#D32F2F', fontWeight: 'bold' }}>
+                  <Text style={{ fontSize: 20 }}>{'\uD83E\uDD69'}</Text>
+                  <Text variant="bodySmall" style={{ color: meatSafe ? statusColors.healthy : statusColors.urgent, fontWeight: 'bold' }}>
                     {meatSafe
                       ? t('medicineLog.meatSafe')
                       : `${t('medicineLog.meatUnsafe')} ${entry.meatSafeDate}`}
@@ -233,7 +256,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   heading: {
-    color: '#2E7D32',
+    color: colors.primary,
     fontWeight: 'bold',
     marginBottom: SPACING.md,
   },
@@ -242,7 +265,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   formTitle: {
-    color: '#2E7D32',
+    color: colors.primary,
     fontWeight: 'bold',
     marginBottom: SPACING.md,
   },
@@ -260,7 +283,7 @@ const styles = StyleSheet.create({
     maxHeight: 300,
   },
   adminButton: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: colors.primary,
     borderRadius: CARD_BORDER_RADIUS,
   },
   adminContent: {

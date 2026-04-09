@@ -3,6 +3,7 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { Button, Text, TextInput, Menu } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../../src/config/theme';
 
 const KARNATAKA_DISTRICTS = [
@@ -18,8 +19,13 @@ export default function ProfileScreen() {
   const [district, setDistrict] = useState('');
   const [village, setVillage] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
+  const [phone, setPhone] = useState('');
 
-  const mockPhone = '+91 98765 43210';
+  React.useEffect(() => {
+    SecureStore.getItemAsync('user_phone').then((val) => {
+      if (val) setPhone(val);
+    });
+  }, []);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -43,7 +49,7 @@ export default function ProfileScreen() {
 
       <TextInput
         label={t('onboarding.phoneLabel')}
-        value={mockPhone}
+        value={phone}
         mode="outlined"
         style={styles.input}
         disabled

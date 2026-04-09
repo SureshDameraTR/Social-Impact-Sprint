@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { Card, Chip, Text, Button, Badge } from 'react-native-paper';
+import { Card, Chip, Text, Button, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../src/config/theme';
+import { EmptyState } from '../src/components/EmptyState';
+import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors } from '../src/config/theme';
+import { api } from '../src/config/api';
 
 type Category = 'all' | 'health' | 'feeding' | 'breeding' | 'government';
 type Source = 'ICAR' | 'KMF' | 'NABARD' | 'Community';
@@ -25,96 +27,6 @@ interface Advisory {
   isScheme: boolean;
 }
 
-const MOCK_ADVISORIES: Advisory[] = [
-  {
-    id: '1',
-    titleKn: 'ಬೇಸಿಗೆಯಲ್ಲಿ ಹಸುಗಳ ಆರೈಕೆ',
-    titleEn: 'Summer care for cattle',
-    bodyKn: 'ಬೇಸಿಗೆಯಲ್ಲಿ ಹಸುಗಳಿಗೆ ದಿನಕ್ಕೆ 60-80 ಲೀಟರ್ ನೀರು ಬೇಕು. ನೆರಳಿನ ಏರ್ಪಾಡು ಮಾಡಿ.',
-    bodyEn: 'Cattle need 60-80 liters of water per day in summer. Ensure shade availability.',
-    category: 'health',
-    source: 'ICAR',
-    isScheme: false,
-  },
-  {
-    id: '2',
-    titleKn: 'ಅಜೋಲಾ ಬೆಳೆಸುವ ವಿಧಾನ',
-    titleEn: 'How to grow Azolla',
-    bodyKn: 'ಅಜೋಲಾ ಪ್ರೋಟೀನ್ ಸಮೃದ್ಧ ಮೇವು. 2x2 ಮೀಟರ್ ತೊಟ್ಟಿಯಲ್ಲಿ 1 ಕೆಜಿ ಅಜೋಲಾ ಬೆಳೆಸಬಹುದು.',
-    titleEn: 'How to grow Azolla',
-    bodyEn: 'Azolla is a protein-rich feed supplement. Grow 1kg in a 2x2m pit easily.',
-    category: 'feeding',
-    source: 'KMF',
-    isScheme: false,
-  },
-  {
-    id: '3',
-    titleKn: 'ಕೃತಕ ಗರ್ಭಧಾರಣೆ ಸಮಯ',
-    titleEn: 'AI timing for best results',
-    bodyKn: 'ಬೆದೆ ಕಂಡ 12-18 ಗಂಟೆಯೊಳಗೆ ಕೃತಕ ಗರ್ಭಧಾರಣೆ ಮಾಡಿ.',
-    titleEn: 'AI timing for best results',
-    bodyEn: 'Perform artificial insemination within 12-18 hours of heat detection.',
-    category: 'breeding',
-    source: 'ICAR',
-    isScheme: false,
-  },
-  {
-    id: '4',
-    titleKn: 'ರಾಷ್ಟ್ರೀಯ ಗೋಕುಲ ಮಿಷನ್ - ₹5 ಲಕ್ಷ ಸಹಾಯಧನ',
-    titleEn: 'Rashtriya Gokul Mission - ₹5L subsidy',
-    bodyKn: 'ದೇಶಿ ತಳಿ ಸಾಕಾಣಿಕೆಗೆ ₹5 ಲಕ್ಷದವರೆಗೆ ಸಹಾಯಧನ. ಅರ್ಜಿ ಸಲ್ಲಿಸಿ.',
-    titleEn: 'Rashtriya Gokul Mission - ₹5L subsidy',
-    bodyEn: 'Up to ₹5 lakh subsidy for indigenous breed rearing. Apply now.',
-    category: 'government',
-    source: 'NABARD',
-    isScheme: true,
-  },
-  {
-    id: '5',
-    titleKn: 'ಕಾಲುಬಾಯಿ ರೋಗ ತಡೆಗಟ್ಟುವಿಕೆ',
-    titleEn: 'FMD prevention tips',
-    bodyKn: 'ವರ್ಷಕ್ಕೆ 2 ಬಾರಿ ಲಸಿಕೆ ಹಾಕಿಸಿ. ಹೊಸ ಪ್ರಾಣಿಗಳನ್ನು 2 ವಾರ ಪ್ರತ್ಯೇಕಿಸಿ.',
-    titleEn: 'FMD prevention tips',
-    bodyEn: 'Vaccinate twice a year. Isolate new animals for 2 weeks.',
-    category: 'health',
-    source: 'ICAR',
-    isScheme: false,
-  },
-  {
-    id: '6',
-    titleKn: 'ರಾಗಿ ಹುಲ್ಲು ಸಂಸ್ಕರಣೆ',
-    titleEn: 'Ragi straw treatment with urea',
-    bodyKn: '100 ಕೆಜಿ ರಾಗಿ ಹುಲ್ಲಿಗೆ 4 ಕೆಜಿ ಯೂರಿಯಾ + 40 ಲೀ ನೀರು. 21 ದಿನ ಮುಚ್ಚಿಡಿ.',
-    titleEn: 'Ragi straw treatment with urea',
-    bodyEn: 'Mix 4kg urea + 40L water per 100kg ragi straw. Seal for 21 days.',
-    category: 'feeding',
-    source: 'Community',
-    isScheme: false,
-  },
-  {
-    id: '7',
-    titleKn: 'ಕಿಸಾನ್ ಕ್ರೆಡಿಟ್ ಕಾರ್ಡ್ - ₹3 ಲಕ್ಷ ಸಾಲ',
-    titleEn: 'Kisan Credit Card - ₹3L loan for livestock',
-    bodyKn: 'ಪಶುಪಾಲನೆಗೆ KCC ಮೂಲಕ 4% ಬಡ್ಡಿಯಲ್ಲಿ ₹3 ಲಕ್ಷ ಸಾಲ ಸಿಗುತ್ತದೆ.',
-    titleEn: 'Kisan Credit Card - ₹3L loan for livestock',
-    bodyEn: 'Get ₹3L loan at 4% interest via KCC for animal husbandry.',
-    category: 'government',
-    source: 'NABARD',
-    isScheme: true,
-  },
-  {
-    id: '8',
-    titleKn: 'ಆಡುಗಳಲ್ಲಿ ಹುಳ ನಿವಾರಣೆ',
-    titleEn: 'Deworming schedule for goats',
-    bodyKn: 'ಪ್ರತಿ 3 ತಿಂಗಳಿಗೊಮ್ಮೆ ಹುಳ ಮಾತ್ರೆ ಕೊಡಿ. ಮಳೆಗಾಲದ ಮೊದಲು ಕಡ್ಡಾಯ.',
-    titleEn: 'Deworming schedule for goats',
-    bodyEn: 'Deworm every 3 months. Mandatory before monsoon season.',
-    category: 'health',
-    source: 'Community',
-    isScheme: false,
-  },
-];
-
 const CATEGORIES: { key: Category; labelKey: string }[] = [
   { key: 'all', labelKey: 'animals.all' },
   { key: 'health', labelKey: 'common.health' },
@@ -125,13 +37,29 @@ const CATEGORIES: { key: Category; labelKey: string }[] = [
 
 export default function AdvisoryScreen() {
   const { t, i18n } = useTranslation();
+  const [advisories, setAdvisories] = useState<Advisory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<Category>('all');
   const [expandedLang, setExpandedLang] = useState<Record<string, 'kn' | 'en'>>({});
 
+  const fetchAdvisories = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    api.get<Advisory[]>('/advisory')
+      .then(res => setAdvisories(res))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchAdvisories();
+  }, [fetchAdvisories]);
+
   const isKannada = i18n.language === 'kn';
   const filtered = category === 'all'
-    ? MOCK_ADVISORIES
-    : MOCK_ADVISORIES.filter((a) => a.category === category);
+    ? advisories
+    : advisories.filter((a) => a.category === category);
 
   const getCardLang = (id: string): 'kn' | 'en' => {
     return expandedLang[id] || (isKannada ? 'kn' : 'en');
@@ -141,6 +69,28 @@ export default function AdvisoryScreen() {
     const current = getCardLang(id);
     setExpandedLang((prev) => ({ ...prev, [id]: current === 'kn' ? 'en' : 'kn' }));
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          icon={'\u26A0\uFE0F'}
+          title={t('common.error')}
+          subtitle={error}
+          actionLabel={t('common.retry')}
+          onAction={fetchAdvisories}
+        />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -164,6 +114,14 @@ export default function AdvisoryScreen() {
         </View>
       </ScrollView>
 
+      {filtered.length === 0 && (
+        <EmptyState
+          icon={'\uD83D\uDCCB'}
+          title={t('common.noData')}
+          subtitle={t('advisory.title')}
+        />
+      )}
+
       {filtered.map((advisory) => {
         const lang = getCardLang(advisory.id);
         return (
@@ -183,8 +141,8 @@ export default function AdvisoryScreen() {
                 <Text variant="titleMedium" style={styles.cardTitle}>
                   {lang === 'kn' ? advisory.titleKn : advisory.titleEn}
                 </Text>
-                <View style={[styles.sourceBadge, { backgroundColor: SOURCE_COLORS[advisory.source] + '20' }]}>
-                  <Text style={[styles.sourceText, { color: SOURCE_COLORS[advisory.source] }]}>
+                <View style={[styles.sourceBadge, { backgroundColor: (SOURCE_COLORS[advisory.source] || '#616161') + '20' }]}>
+                  <Text style={[styles.sourceText, { color: SOURCE_COLORS[advisory.source] || '#616161' }]}>
                     {advisory.source}
                   </Text>
                 </View>
@@ -198,7 +156,7 @@ export default function AdvisoryScreen() {
                   style={styles.langToggle}
                 >
                   <Text style={styles.langToggleText}>
-                    {lang === 'kn' ? 'English' : 'ಕನ್ನಡ'} ↔
+                    {lang === 'kn' ? 'English' : '\u0C95\u0CA8\u0CCD\u0CA8\u0CA1'} \u21C6
                   </Text>
                 </TouchableOpacity>
                 {advisory.isScheme && (
@@ -225,7 +183,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   heading: {
-    color: '#2E7D32',
+    color: colors.primary,
     fontWeight: 'bold',
     marginBottom: SPACING.sm,
   },

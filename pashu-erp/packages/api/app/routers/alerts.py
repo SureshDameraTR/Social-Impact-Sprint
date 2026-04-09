@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -59,16 +59,20 @@ async def get_nearby_alerts(
     """Get disease alerts near a location."""
     now = datetime.now(timezone.utc)
 
-    # Fetch all non-expired alerts, then filter by distance
+    # Bounding-box pre-filter in SQL (1 degree ~ 111 km) to avoid full table scan
+    delta = radius / 111.0
     result = await db.execute(
         select(CommunityAlert).where(
-            CommunityAlert.expires_at > now,
+            CommunityAlert.expires_at > func.now(),
+            CommunityAlert.lat.between(lat - delta, lat + delta),
+            CommunityAlert.lon.between(lon - delta, lon + delta),
         )
     )
-    all_alerts = result.scalars().all()
+    candidates = result.scalars().all()
 
+    # Precise Haversine filter on the reduced candidate set
     nearby = []
-    for alert in all_alerts:
+    for alert in candidates:
         distance = _haversine_km(lat, lon, alert.lat, alert.lon)
         if distance <= radius:
             nearby.append(alert)

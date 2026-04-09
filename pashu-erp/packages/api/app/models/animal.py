@@ -35,7 +35,7 @@ class Animal(Base):
         server_default=text("gen_random_uuid()"),
     )
     user_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
     pashu_aadhaar_id: Mapped[str] = mapped_column(String(12), unique=True, nullable=False)
     species: Mapped[str] = mapped_column(Enum(Species, name="species"), nullable=False)
@@ -52,7 +52,7 @@ class Animal(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    owner = relationship("User", back_populates="animals", foreign_keys=[user_id])
-    health_events = relationship("HealthEvent", back_populates="animal", foreign_keys="HealthEvent.animal_id")
-    vaccinations = relationship("Vaccination", back_populates="animal", foreign_keys="Vaccination.animal_id")
-    yield_logs = relationship("YieldLog", back_populates="animal", foreign_keys="YieldLog.animal_id")
+    owner = relationship("User", back_populates="animals", foreign_keys=[user_id], lazy="selectin")
+    health_events = relationship("HealthEvent", back_populates="animal", foreign_keys="HealthEvent.animal_id", lazy="selectin")
+    vaccinations = relationship("Vaccination", back_populates="animal", foreign_keys="Vaccination.animal_id", lazy="selectin")
+    yield_logs = relationship("YieldLog", back_populates="animal", foreign_keys="YieldLog.animal_id", lazy="selectin")

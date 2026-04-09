@@ -16,7 +16,7 @@ interface SpeciesIconProps {
   size?: number;
 }
 
-export function SpeciesIcon({ species, size = ICON_SIZE_LARGE }: SpeciesIconProps) {
+function SpeciesIconInner({ species, size = ICON_SIZE_LARGE }: SpeciesIconProps) {
   return (
     <Text style={[styles.icon, { fontSize: size }]}>
       {SPECIES_EMOJIS[species] || '\uD83D\uDC3E'}
@@ -30,4 +30,5 @@ const styles = StyleSheet.create({
   },
 });
 
+export const SpeciesIcon = React.memo(SpeciesIconInner);
 export type { Species };

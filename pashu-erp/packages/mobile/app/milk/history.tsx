@@ -1,36 +1,75 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Text, Card, DataTable } from 'react-native-paper';
+import { Text, Card, DataTable, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { SPACING, CARD_BORDER_RADIUS } from '../../src/config/theme';
+import { EmptyState } from '../../src/components/EmptyState';
+import { SPACING, CARD_BORDER_RADIUS, colors } from '../../src/config/theme';
+import { api } from '../../src/config/api';
 
-// Mock weekly data for bar chart representation
-const WEEKLY_DATA = [
-  { day: 'Mon', liters: 10.5 },
-  { day: 'Tue', liters: 11.2 },
-  { day: 'Wed', liters: 9.8 },
-  { day: 'Thu', liters: 12.5 },
-  { day: 'Fri', liters: 11.0 },
-  { day: 'Sat', liters: 10.3 },
-  { day: 'Sun', liters: 12.0 },
-];
+interface WeeklyDataPoint {
+  day: string;
+  liters: number;
+}
 
-const MOCK_HISTORY = [
-  { date: '2026-04-07', animal: 'Lakshmi', session: 'morning', liters: 5.2 },
-  { date: '2026-04-07', animal: 'Gowri', session: 'morning', liters: 4.8 },
-  { date: '2026-04-07', animal: 'Lakshmi', session: 'evening', liters: 4.5 },
-  { date: '2026-04-07', animal: 'Gowri', session: 'evening', liters: 4.0 },
-  { date: '2026-04-06', animal: 'Lakshmi', session: 'morning', liters: 5.0 },
-  { date: '2026-04-06', animal: 'Gowri', session: 'morning', liters: 4.5 },
-  { date: '2026-04-06', animal: 'Lakshmi', session: 'evening', liters: 4.2 },
-  { date: '2026-04-06', animal: 'Gowri', session: 'evening', liters: 3.8 },
-];
+interface HistoryEntry {
+  date: string;
+  animal: string;
+  session: string;
+  liters: number;
+}
 
-const MAX_LITERS = Math.max(...WEEKLY_DATA.map((d) => d.liters));
+interface MilkHistoryResponse {
+  weekly: WeeklyDataPoint[];
+  records: HistoryEntry[];
+}
 
 export default function MilkHistoryScreen() {
   const { t } = useTranslation();
-  const weeklyTotal = WEEKLY_DATA.reduce((sum, d) => sum + d.liters, 0);
+  const [weeklyData, setWeeklyData] = useState<WeeklyDataPoint[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchHistory = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    api.get<MilkHistoryResponse>('/milk/history')
+      .then(res => {
+        setWeeklyData(res.weekly || []);
+        setHistory(res.records || []);
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#2E7D32" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          icon={'\u26A0\uFE0F'}
+          title={t('common.error')}
+          subtitle={error}
+          actionLabel={t('common.retry')}
+          onAction={fetchHistory}
+        />
+      </View>
+    );
+  }
+
+  const maxLiters = weeklyData.length > 0 ? Math.max(...weeklyData.map((d) => d.liters)) : 1;
+  const weeklyTotal = weeklyData.reduce((sum, d) => sum + d.liters, 0);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
@@ -51,56 +90,67 @@ export default function MilkHistoryScreen() {
       </Card>
 
       {/* Simple bar chart using View heights */}
-      <Card style={styles.chartCard}>
-        <Card.Content>
-          <Text variant="titleMedium" style={styles.chartTitle}>
-            {t('income.weekly')} {t('milk.history')}
-          </Text>
-          <View style={styles.barChart}>
-            {WEEKLY_DATA.map((d) => (
-              <View key={d.day} style={styles.barColumn}>
-                <Text variant="labelSmall" style={styles.barValue}>
-                  {d.liters}
-                </Text>
-                <View
-                  style={[
-                    styles.bar,
-                    { height: (d.liters / MAX_LITERS) * 120 },
-                  ]}
-                />
-                <Text variant="labelSmall" style={styles.barLabel}>
-                  {d.day}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </Card.Content>
-      </Card>
+      {weeklyData.length > 0 && (
+        <Card style={styles.chartCard}>
+          <Card.Content>
+            <Text variant="titleMedium" style={styles.chartTitle}>
+              {t('income.weekly')} {t('milk.history')}
+            </Text>
+            <View style={styles.barChart}>
+              {weeklyData.map((d) => (
+                <View key={d.day} style={styles.barColumn}>
+                  <Text variant="labelSmall" style={styles.barValue}>
+                    {d.liters}
+                  </Text>
+                  <View
+                    style={[
+                      styles.bar,
+                      { height: (d.liters / maxLiters) * 120 },
+                    ]}
+                  />
+                  <Text variant="labelSmall" style={styles.barLabel}>
+                    {d.day}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </Card.Content>
+        </Card>
+      )}
 
       {/* History table */}
       <Text variant="titleMedium" style={styles.sectionTitle}>
         {t('milk.history')}
       </Text>
-      <Card style={styles.tableCard}>
-        <DataTable>
-          <DataTable.Header>
-            <DataTable.Title>{'\uD83D\uDCC5'}</DataTable.Title>
-            <DataTable.Title>{'\uD83D\uDC04'}</DataTable.Title>
-            <DataTable.Title>{t('milk.session')}</DataTable.Title>
-            <DataTable.Title numeric>{t('milk.liters')}</DataTable.Title>
-          </DataTable.Header>
-          {MOCK_HISTORY.map((entry, idx) => (
-            <DataTable.Row key={idx}>
-              <DataTable.Cell>{entry.date.slice(5)}</DataTable.Cell>
-              <DataTable.Cell>{entry.animal}</DataTable.Cell>
-              <DataTable.Cell>
-                {entry.session === 'morning' ? `\u2600\uFE0F ${t('milk.morning')}` : `\uD83C\uDF19 ${t('milk.evening')}`}
-              </DataTable.Cell>
-              <DataTable.Cell numeric>{entry.liters}</DataTable.Cell>
-            </DataTable.Row>
-          ))}
-        </DataTable>
-      </Card>
+
+      {history.length === 0 ? (
+        <EmptyState
+          icon={'\uD83E\uDD5B'}
+          title={t('empty.noMilkRecords')}
+          subtitle={t('milk.recordMilk')}
+        />
+      ) : (
+        <Card style={styles.tableCard}>
+          <DataTable>
+            <DataTable.Header>
+              <DataTable.Title>{'\uD83D\uDCC5'}</DataTable.Title>
+              <DataTable.Title>{'\uD83D\uDC04'}</DataTable.Title>
+              <DataTable.Title>{t('milk.session')}</DataTable.Title>
+              <DataTable.Title numeric>{t('milk.liters')}</DataTable.Title>
+            </DataTable.Header>
+            {history.map((entry, idx) => (
+              <DataTable.Row key={idx}>
+                <DataTable.Cell>{entry.date.slice(5)}</DataTable.Cell>
+                <DataTable.Cell>{entry.animal}</DataTable.Cell>
+                <DataTable.Cell>
+                  {entry.session === 'morning' ? `\u2600\uFE0F ${t('milk.morning')}` : `\uD83C\uDF19 ${t('milk.evening')}`}
+                </DataTable.Cell>
+                <DataTable.Cell numeric>{entry.liters}</DataTable.Cell>
+              </DataTable.Row>
+            ))}
+          </DataTable>
+        </Card>
+      )}
     </ScrollView>
   );
 }

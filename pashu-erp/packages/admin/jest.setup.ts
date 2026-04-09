@@ -1,0 +1,16 @@
+import '@testing-library/jest-dom';
+
+// Suppress console.error for known MUI/Next.js warnings in tests
+const originalError = console.error;
+beforeAll(() => {
+  console.error = (...args: unknown[]) => {
+    if (
+      typeof args[0] === 'string' &&
+      (args[0].includes('Warning: ReactDOM.render') ||
+        args[0].includes('Warning: An update to') ||
+        args[0].includes('leaflet'))
+    ) return;
+    originalError(...args);
+  };
+});
+afterAll(() => { console.error = originalError; });

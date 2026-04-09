@@ -64,7 +64,7 @@ def calculate_ration(
     concentrate_dm = total_dm_kg * 0.35
     mineral_dm = total_dm_kg * 0.05
 
-    # Use default ingredients for mock calculation
+    # Calculate ration using reference ingredients
     ingredients = []
     total_cost = 0.0
 

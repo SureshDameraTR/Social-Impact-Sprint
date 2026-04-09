@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Text, Card, Button, Divider } from 'react-native-paper';
-import { useLocalSearchParams } from 'expo-router';
+import { Text, Card, Button, Divider, ActivityIndicator } from 'react-native-paper';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SpeciesIcon } from '../../src/components/SpeciesIcon';
-import { SPACING, CARD_BORDER_RADIUS } from '../../src/config/theme';
+import { EmptyState } from '../../src/components/EmptyState';
+import { SPACING, CARD_BORDER_RADIUS, statusColors, colors } from '../../src/config/theme';
+import { api } from '../../src/config/api';
 import type { Species } from '../../src/components/SpeciesIcon';
 
-// Mock data - keyed by ID
-const MOCK_DETAILS: Record<string, {
+interface AnimalDetail {
   name: string;
   species: Species;
   breed: string;
@@ -20,47 +21,7 @@ const MOCK_DETAILS: Record<string, {
   healthStatus: string;
   lastMilk: string;
   lastVaccination: string;
-}> = {
-  '1': {
-    name: 'Lakshmi',
-    species: 'cattle',
-    breed: 'Hallikar',
-    tagNumber: 'KA-001',
-    pashuAadhaar: 'PA-2026-0001',
-    age: '4 years',
-    weight: '350 kg',
-    gender: 'female',
-    healthStatus: 'healthy',
-    lastMilk: '5.2L (today morning)',
-    lastVaccination: 'FMD - 2026-01-15',
-  },
-  '2': {
-    name: 'Gowri',
-    species: 'cattle',
-    breed: 'Amrit Mahal',
-    tagNumber: 'KA-002',
-    pashuAadhaar: 'PA-2026-0002',
-    age: '3 years',
-    weight: '320 kg',
-    gender: 'female',
-    healthStatus: 'healthy',
-    lastMilk: '4.8L (today morning)',
-    lastVaccination: 'FMD - 2026-01-15',
-  },
-  '3': {
-    name: 'Malli',
-    species: 'goat',
-    breed: 'Osmanabadi',
-    tagNumber: 'KA-003',
-    pashuAadhaar: 'PA-2026-0003',
-    age: '2 years',
-    weight: '35 kg',
-    gender: 'female',
-    healthStatus: 'sick',
-    lastMilk: 'N/A',
-    lastVaccination: 'PPR - 2025-12-01',
-  },
-};
+}
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -74,8 +35,56 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 export default function AnimalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
+  const [animal, setAnimal] = useState<AnimalDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const animal = MOCK_DETAILS[id || '1'] || MOCK_DETAILS['1'];
+  const fetchAnimal = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    api.get<AnimalDetail>(`/animals/${id}`)
+      .then(res => setAnimal(res))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  useEffect(() => {
+    fetchAnimal();
+  }, [fetchAnimal]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          icon={'\u26A0\uFE0F'}
+          title={t('common.error')}
+          subtitle={error}
+          actionLabel={t('common.retry')}
+          onAction={fetchAnimal}
+        />
+      </View>
+    );
+  }
+
+  if (!animal) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          icon={'\uD83D\uDC04'}
+          title={t('common.noData')}
+          subtitle={t('animals.myAnimals')}
+        />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
@@ -89,7 +98,7 @@ export default function AnimalDetailScreen() {
         ]}>
           <Text style={[
             styles.healthText,
-            { color: animal.healthStatus === 'healthy' ? '#2E7D32' : '#D32F2F' },
+            { color: animal.healthStatus === 'healthy' ? statusColors.healthy : statusColors.urgent },
           ]}>
             {t(`animals.${animal.healthStatus}`)}
           </Text>
@@ -121,24 +130,36 @@ export default function AnimalDetailScreen() {
           <Card.Content style={styles.quickContent}>
             <Text style={styles.quickIcon}>{'\uD83E\uDD5B'}</Text>
             <Text variant="bodySmall">{t('milk.todayTotal')}</Text>
-            <Text variant="titleSmall" style={styles.quickValue}>{animal.lastMilk}</Text>
+            <Text variant="titleSmall" style={styles.quickValue}>{animal.lastMilk || '\u2014'}</Text>
           </Card.Content>
         </Card>
         <Card style={styles.quickCard}>
           <Card.Content style={styles.quickContent}>
             <Text style={styles.quickIcon}>{'\uD83D\uDC89'}</Text>
             <Text variant="bodySmall">{t('health.vaccinations')}</Text>
-            <Text variant="titleSmall" style={styles.quickValue}>{animal.lastVaccination}</Text>
+            <Text variant="titleSmall" style={styles.quickValue}>{animal.lastVaccination || '\u2014'}</Text>
           </Card.Content>
         </Card>
       </View>
 
       {/* Actions */}
       <View style={styles.actions}>
-        <Button mode="outlined" icon="pencil" onPress={() => {}} style={styles.actionButton}>
+        <Button mode="outlined" icon="pencil" onPress={() => router.push(`/animal/add?edit=${id}`)} style={styles.actionButton}>
           {t('common.edit')}
         </Button>
-        <Button mode="outlined" icon="delete" onPress={() => {}} style={styles.actionButton} textColor="#D32F2F">
+        <Button
+          mode="outlined"
+          icon="delete"
+          onPress={async () => {
+            try {
+              await api.delete(`/animals/${id}`);
+            } catch (e) {
+              setError(e instanceof Error ? e.message : 'An error occurred');
+            }
+          }}
+          style={styles.actionButton}
+          textColor={statusColors.urgent}
+        >
           {t('common.delete')}
         </Button>
       </View>

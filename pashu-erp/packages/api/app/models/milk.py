@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import String, Float, Boolean, DateTime, Enum, ForeignKey, text, func
+from sqlalchemy import String, Float, Boolean, DateTime, Enum, ForeignKey, Numeric, text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -22,10 +22,10 @@ class YieldLog(Base):
         server_default=text("gen_random_uuid()"),
     )
     animal_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("animals.id"), nullable=False
+        UUID(as_uuid=True), ForeignKey("animals.id"), nullable=False, index=True
     )
     user_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
     quantity_liters: Mapped[float] = mapped_column(Float, nullable=False)
     session: Mapped[str] = mapped_column(Enum(MilkSession, name="milk_session"), nullable=False)
@@ -33,8 +33,8 @@ class YieldLog(Base):
     notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Relationships
-    animal = relationship("Animal", back_populates="yield_logs", foreign_keys=[animal_id])
-    user = relationship("User", back_populates="yield_logs", foreign_keys=[user_id])
+    animal = relationship("Animal", back_populates="yield_logs", foreign_keys=[animal_id], lazy="selectin")
+    user = relationship("User", back_populates="yield_logs", foreign_keys=[user_id], lazy="selectin")
 
 
 class MilkCollectionCenter(Base):
@@ -56,9 +56,9 @@ class MilkCollectionCenter(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    manager = relationship("User", foreign_keys=[manager_user_id])
+    manager = relationship("User", foreign_keys=[manager_user_id], lazy="noload")
     collection_records = relationship(
-        "MilkCollectionRecord", back_populates="center", foreign_keys="MilkCollectionRecord.center_id"
+        "MilkCollectionRecord", back_populates="center", foreign_keys="MilkCollectionRecord.center_id", lazy="noload"
     )
 
 
@@ -79,11 +79,11 @@ class MilkCollectionRecord(Base):
     quantity_liters: Mapped[float] = mapped_column(Float, nullable=False)
     fat_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
     snf_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
-    rate_per_liter: Mapped[float | None] = mapped_column(Float, nullable=True)
-    total_amount: Mapped[float | None] = mapped_column(Float, nullable=True)
+    rate_per_liter: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    total_amount: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     shift: Mapped[str] = mapped_column(Enum(MilkSession, name="milk_session", create_type=False), nullable=False)
     collected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    center = relationship("MilkCollectionCenter", back_populates="collection_records", foreign_keys=[center_id])
-    farmer = relationship("User", foreign_keys=[farmer_user_id])
+    center = relationship("MilkCollectionCenter", back_populates="collection_records", foreign_keys=[center_id], lazy="selectin")
+    farmer = relationship("User", foreign_keys=[farmer_user_id], lazy="selectin")

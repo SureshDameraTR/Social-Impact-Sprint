@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
-import { Button, Card, Text, TextInput, Modal, Portal, RadioButton } from 'react-native-paper';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
+import { Button, Card, Text, TextInput, Modal, Portal, RadioButton, IconButton, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../src/config/theme';
+import * as ImagePicker from 'expo-image-picker';
+import { EmptyState } from '../src/components/EmptyState';
+import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors, statusColors } from '../src/config/theme';
+import { api } from '../src/config/api';
+import { useSnackbar } from '../src/hooks/useSnackbar';
 
 interface Policy {
   id: string;
@@ -16,46 +20,132 @@ interface Policy {
   sumInsured: number;
 }
 
-const MOCK_POLICIES: Policy[] = [
-  {
-    id: '1',
-    animalName: 'Lakshmi',
-    species: '🐄',
-    policyNumber: 'LIC-KA-2026-4521',
-    provider: 'LIC',
-    status: 'active',
-    premiumDue: '2026-05-01',
-    daysUntilDue: 23,
-    sumInsured: 80000,
-  },
-  {
-    id: '2',
-    animalName: 'Gowri',
-    species: '🐄',
-    policyNumber: 'NAIS-KA-2025-8932',
-    provider: 'NAIS',
-    status: 'expired',
-    premiumDue: '2026-03-15',
-    daysUntilDue: -24,
-    sumInsured: 60000,
-  },
-];
+// TODO: Fetch premium rates from API /insurance/rates in future
+const BASE_PREMIUMS: Record<string, number> = { cattle: 1200, goat: 400, sheep: 350, poultry: 50 };
 
 export default function InsuranceScreen() {
   const { t } = useTranslation();
+  const { showError, showSuccess } = useSnackbar();
+  const [policies, setPolicies] = useState<Policy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [claimVisible, setClaimVisible] = useState(false);
   const [claimDesc, setClaimDesc] = useState('');
+  const [claimAnimalId, setClaimAnimalId] = useState<string | null>(null);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [calcSpecies, setCalcSpecies] = useState('cattle');
   const [calcAge, setCalcAge] = useState('');
   const [calcResult, setCalcResult] = useState<number | null>(null);
 
+  const uploadPhoto = async (uri: string, animalId: string) => {
+    const formData = new FormData();
+    formData.append('file', {
+      uri,
+      type: 'image/jpeg',
+      name: 'insurance_photo.jpg',
+    } as any);
+    formData.append('category', 'insurance_photo');
+    formData.append('entity_type', 'animal');
+    formData.append('entity_id', animalId);
+    await api.upload('/files', formData);
+  };
+
+  const takePhoto = async () => {
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        showError(t('insurance.cameraPermissionRequired'));
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+      });
+      if (result.canceled) return;
+      setPhotoUri(result.assets[0].uri);
+      showSuccess(t('insurance.photoAttached'));
+    } catch {
+      showError(t('insurance.photoFailed'));
+    }
+  };
+
+  const pickFromGallery = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        showError(t('insurance.galleryPermissionRequired'));
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+      });
+      if (result.canceled) return;
+      setPhotoUri(result.assets[0].uri);
+      showSuccess(t('insurance.photoAttached'));
+    } catch {
+      showError(t('insurance.photoFailed'));
+    }
+  };
+
+  const showPhotoOptions = () => {
+    if (Platform.OS === 'web') {
+      pickFromGallery();
+      return;
+    }
+    Alert.alert(
+      t('insurance.addPhoto'),
+      t('insurance.photoSourcePrompt'),
+      [
+        { text: t('insurance.takePhoto'), onPress: takePhoto },
+        { text: t('insurance.chooseFromGallery'), onPress: pickFromGallery },
+        { text: t('common.cancel'), style: 'cancel' },
+      ]
+    );
+  };
+
+  const fetchPolicies = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    api.get<Policy[]>('/insurance/policies')
+      .then(res => setPolicies(res))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchPolicies();
+  }, [fetchPolicies]);
+
   const calculatePremium = () => {
-    const baseRates: Record<string, number> = { cattle: 1200, goat: 400, sheep: 350, poultry: 50 };
-    const base = baseRates[calcSpecies] || 500;
+    const base = BASE_PREMIUMS[calcSpecies] || 500;
     const age = parseInt(calcAge) || 3;
     const multiplier = age > 5 ? 1.5 : age > 3 ? 1.2 : 1.0;
     setCalcResult(Math.round(base * multiplier));
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          icon={'\u26A0\uFE0F'}
+          title={t('common.error')}
+          subtitle={error}
+          actionLabel={t('common.retry')}
+          onAction={fetchPolicies}
+        />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -67,7 +157,15 @@ export default function InsuranceScreen() {
         {t('insurance.activePolicies')}
       </Text>
 
-      {MOCK_POLICIES.map((policy) => (
+      {policies.length === 0 && (
+        <EmptyState
+          icon={'\uD83D\uDEE1\uFE0F'}
+          title={t('common.noData')}
+          subtitle={t('insurance.activePolicies')}
+        />
+      )}
+
+      {policies.map((policy) => (
         <Card
           key={policy.id}
           style={[
@@ -91,7 +189,7 @@ export default function InsuranceScreen() {
                 { backgroundColor: policy.status === 'active' ? '#E8F5E9' : '#FFEBEE' },
               ]}>
                 <Text style={{
-                  color: policy.status === 'active' ? '#2E7D32' : '#D32F2F',
+                  color: policy.status === 'active' ? statusColors.healthy : statusColors.urgent,
                   fontWeight: 'bold',
                   fontSize: 12,
                 }}>
@@ -102,7 +200,7 @@ export default function InsuranceScreen() {
 
             <View style={styles.policyDetails}>
               <Text variant="bodyMedium">
-                {t('insurance.sumInsured')}: ₹{policy.sumInsured.toLocaleString()}
+                {t('insurance.sumInsured')}: \u20B9{policy.sumInsured.toLocaleString()}
               </Text>
               <Text variant="bodyMedium">
                 {t('insurance.provider')}: {policy.provider}
@@ -120,7 +218,11 @@ export default function InsuranceScreen() {
       <Button
         mode="contained"
         icon="file-document-edit"
-        onPress={() => setClaimVisible(true)}
+        onPress={() => {
+          const activePolicy = policies.find(p => p.status === 'active');
+          if (activePolicy) setClaimAnimalId(activePolicy.id);
+          setClaimVisible(true);
+        }}
         style={styles.claimButton}
         contentStyle={styles.claimContent}
       >
@@ -139,7 +241,7 @@ export default function InsuranceScreen() {
             <View style={styles.radioRow}>
               {['cattle', 'goat', 'sheep', 'poultry'].map((sp) => (
                 <View key={sp} style={styles.radioItem}>
-                  <RadioButton value={sp} color="#2E7D32" />
+                  <RadioButton value={sp} color={colors.primary} />
                   <Text>{t(`animals.${sp}`)}</Text>
                 </View>
               ))}
@@ -154,7 +256,7 @@ export default function InsuranceScreen() {
             keyboardType="numeric"
             style={styles.calcInput}
             outlineColor="#BDBDBD"
-            activeOutlineColor="#2E7D32"
+            activeOutlineColor={colors.primary}
           />
 
           <Button
@@ -170,7 +272,7 @@ export default function InsuranceScreen() {
             <View style={styles.resultBox}>
               <Text variant="bodyLarge">{t('insurance.estimatedPremium')}</Text>
               <Text variant="headlineMedium" style={styles.resultAmount}>
-                ₹{calcResult}/year
+                \u20B9{calcResult}/year
               </Text>
             </View>
           )}
@@ -180,12 +282,20 @@ export default function InsuranceScreen() {
       <Portal>
         <Modal
           visible={claimVisible}
-          onDismiss={() => setClaimVisible(false)}
+          onDismiss={() => { setClaimVisible(false); setPhotoUri(null); }}
           contentContainerStyle={styles.modal}
         >
-          <Text variant="titleLarge" style={styles.modalTitle}>
-            {t('insurance.fileClaim')}
-          </Text>
+          <View style={styles.modalHeader}>
+            <Text variant="titleLarge" style={styles.modalTitle}>
+              {t('insurance.fileClaim')}
+            </Text>
+            <IconButton
+              icon="close"
+              size={24}
+              onPress={() => setClaimVisible(false)}
+              accessibilityLabel="Close claim form"
+            />
+          </View>
           <TextInput
             label={t('insurance.claimDescription')}
             value={claimDesc}
@@ -195,20 +305,44 @@ export default function InsuranceScreen() {
             numberOfLines={4}
             style={styles.calcInput}
             outlineColor="#BDBDBD"
-            activeOutlineColor="#2E7D32"
+            activeOutlineColor={colors.primary}
           />
           <Button
             mode="outlined"
             icon="camera"
-            onPress={() => {}}
-            style={{ marginBottom: SPACING.md, borderColor: '#2E7D32' }}
+            onPress={showPhotoOptions}
+            style={{ marginBottom: SPACING.md, borderColor: colors.primary }}
             contentStyle={{ minHeight: TOUCH_TARGET_MIN }}
           >
-            {t('insurance.addPhoto')}
+            {photoUri ? t('insurance.changePhoto') : t('insurance.addPhoto')}
           </Button>
+          {photoUri && (
+            <Text variant="bodySmall" style={{ marginBottom: SPACING.md, color: statusColors.healthy }}>
+              {t('insurance.photoAttached')}
+            </Text>
+          )}
           <Button
             mode="contained"
-            onPress={() => setClaimVisible(false)}
+            loading={uploading}
+            disabled={uploading}
+            onPress={async () => {
+              setUploading(true);
+              try {
+                const claimRes = await api.post<{ id: string }>('/insurance/claims', { description: claimDesc });
+                if (photoUri && claimAnimalId) {
+                  await uploadPhoto(photoUri, claimAnimalId);
+                }
+                showSuccess(t('insurance.claimSubmitted'));
+              } catch (e) {
+                showError(e instanceof Error ? e.message : t('insurance.claimFailed'));
+              } finally {
+                setUploading(false);
+              }
+              setClaimVisible(false);
+              setClaimDesc('');
+              setPhotoUri(null);
+              setClaimAnimalId(null);
+            }}
             style={styles.calcButton}
             contentStyle={{ minHeight: TOUCH_TARGET_MIN }}
           >
@@ -230,7 +364,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   heading: {
-    color: '#2E7D32',
+    color: colors.primary,
     fontWeight: 'bold',
     marginBottom: SPACING.md,
   },
@@ -246,10 +380,10 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
   },
   activeCard: {
-    borderLeftColor: '#2E7D32',
+    borderLeftColor: statusColors.healthy,
   },
   expiredCard: {
-    borderLeftColor: '#D32F2F',
+    borderLeftColor: statusColors.urgent,
   },
   policyHeader: {
     flexDirection: 'row',
@@ -283,7 +417,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   claimButton: {
-    backgroundColor: '#D32F2F',
+    backgroundColor: statusColors.urgent,
     borderRadius: CARD_BORDER_RADIUS,
     marginTop: SPACING.md,
   },
@@ -309,7 +443,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   calcButton: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: colors.primary,
     borderRadius: CARD_BORDER_RADIUS,
   },
   resultBox: {
@@ -320,7 +454,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   resultAmount: {
-    color: '#2E7D32',
+    color: statusColors.healthy,
     fontWeight: 'bold',
   },
   modal: {
@@ -329,9 +463,15 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     borderRadius: CARD_BORDER_RADIUS,
   },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
   modalTitle: {
-    color: '#2E7D32',
+    color: colors.primary,
     fontWeight: 'bold',
-    marginBottom: SPACING.md,
+    flex: 1,
   },
 });

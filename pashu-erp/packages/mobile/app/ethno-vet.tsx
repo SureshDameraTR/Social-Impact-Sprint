@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { Card, Chip, Searchbar, Text } from 'react-native-paper';
+import { Card, Chip, Searchbar, Text, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
+import { EmptyState } from '../src/components/EmptyState';
 import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../src/config/theme';
+import { api } from '../src/config/api';
 
 type Evidence = 'validated' | 'studied' | 'traditional';
 type SpeciesFilter = 'all' | 'cattle' | 'goat' | 'sheep' | 'poultry';
 
 const EVIDENCE_CONFIG: Record<Evidence, { emoji: string; labelKey: string; color: string }> = {
-  validated: { emoji: '🟢', labelKey: 'ethnoVet.validated', color: '#2E7D32' },
-  studied: { emoji: '🟡', labelKey: 'ethnoVet.studied', color: '#FF8F00' },
-  traditional: { emoji: '⚪', labelKey: 'ethnoVet.traditional', color: '#616161' },
+  validated: { emoji: '\uD83D\uDFE2', labelKey: 'ethnoVet.validated', color: '#2E7D32' },
+  studied: { emoji: '\uD83D\uDFE1', labelKey: 'ethnoVet.studied', color: '#FF8F00' },
+  traditional: { emoji: '\u26AA', labelKey: 'ethnoVet.traditional', color: '#616161' },
 };
 
 interface Remedy {
@@ -30,170 +32,31 @@ interface Remedy {
   source: string;
 }
 
-const MOCK_REMEDIES: Remedy[] = [
-  {
-    id: '1',
-    nameKn: 'ಅರಿಶಿನ-ಬೆಲ್ಲ ಮಿಶ್ರಣ',
-    nameEn: 'Turmeric-Jaggery Mix',
-    ingredientsKn: 'ಅರಿಶಿನ, ಬೆಲ್ಲ, ತುಪ್ಪ',
-    ingredientsEn: 'Turmeric, Jaggery, Ghee',
-    conditionsKn: 'ಗಾಯ ಗುಣಪಡಿಸುವಿಕೆ, ಉರಿಯೂತ',
-    conditionsEn: 'Wound healing, Inflammation',
-    evidence: 'validated',
-    species: ['cattle', 'goat'],
-    preparationKn: '50ಗ್ರಾ ಅರಿಶಿನ + 100ಗ್ರಾ ಬೆಲ್ಲ + 2 ಚಮಚ ತುಪ್ಪ ಮಿಶ್ರ ಮಾಡಿ ಗಾಯಕ್ಕೆ ಹಚ್ಚಿ',
-    preparationEn: 'Mix 50g turmeric + 100g jaggery + 2 spoons ghee. Apply to wound.',
-    dosage: '2x daily for 5 days',
-    source: 'ICAR-NBAGR Study 2019',
-  },
-  {
-    id: '2',
-    nameKn: 'ಬೇವಿನ ಎಲೆ ಕಷಾಯ',
-    nameEn: 'Neem Leaf Decoction',
-    ingredientsKn: 'ಬೇವಿನ ಎಲೆ, ನೀರು',
-    ingredientsEn: 'Neem leaves, Water',
-    conditionsKn: 'ಚರ್ಮ ರೋಗ, ಉಣ್ಣೆ ನಿವಾರಣೆ',
-    conditionsEn: 'Skin diseases, Tick control',
-    evidence: 'validated',
-    species: ['cattle', 'goat', 'sheep'],
-    preparationKn: '500ಗ್ರಾ ಬೇವಿನ ಎಲೆಯನ್ನು 5ಲೀ ನೀರಿನಲ್ಲಿ ಕುದಿಸಿ, ತಣ್ಣಗಾದ ಮೇಲೆ ಮೈಗೆ ಹಚ್ಚಿ',
-    preparationEn: 'Boil 500g neem leaves in 5L water. Cool and apply to body.',
-    dosage: 'External application, 1x daily for 7 days',
-    source: 'ICAR-IVRI Bareilly',
-  },
-  {
-    id: '3',
-    nameKn: 'ಶುಂಠಿ-ಬೆಳ್ಳುಳ್ಳಿ ಕಷಾಯ',
-    nameEn: 'Ginger-Garlic Decoction',
-    ingredientsKn: 'ಶುಂಠಿ, ಬೆಳ್ಳುಳ್ಳಿ, ಕಾಳುಮೆಣಸು',
-    ingredientsEn: 'Ginger, Garlic, Black pepper',
-    conditionsKn: 'ಕೆಮ್ಮು, ಶೀತ, ಜ್ವರ',
-    conditionsEn: 'Cough, Cold, Fever',
-    evidence: 'studied',
-    species: ['cattle', 'goat', 'sheep'],
-    preparationKn: '100ಗ್ರಾ ಶುಂಠಿ + 50ಗ್ರಾ ಬೆಳ್ಳುಳ್ಳಿ ಜಜ್ಜಿ, ಬಿಸಿ ನೀರಿನಲ್ಲಿ ಕುಡಿಸಿ',
-    preparationEn: 'Crush 100g ginger + 50g garlic. Mix with warm water and drench.',
-    dosage: '2x daily for 3 days',
-    source: 'Univ. of Agricultural Sciences, Bangalore',
-  },
-  {
-    id: '4',
-    nameKn: 'ಎಣ್ಣೆ ಕುಡಿಸುವಿಕೆ (ಉಬ್ಬರಕ್ಕೆ)',
-    nameEn: 'Oil Drench for Bloat',
-    ingredientsKn: 'ಶೇಂಗಾ ಎಣ್ಣೆ, ಅಡಿಗೆ ಸೋಡಾ',
-    ingredientsEn: 'Groundnut oil, Baking soda',
-    conditionsKn: 'ಉಬ್ಬರ, ಅಜೀರ್ಣ',
-    conditionsEn: 'Bloat, Indigestion',
-    evidence: 'validated',
-    species: ['cattle'],
-    safetyWarning: 'Do not use if animal is unconscious. Consult vet if no improvement in 2 hours.',
-    preparationKn: '200ಮಿಲಿ ಶೇಂಗಾ ಎಣ್ಣೆ + 1 ಚಮಚ ಸೋಡಾ ಮಿಶ್ರ ಮಾಡಿ ನಿಧಾನವಾಗಿ ಕುಡಿಸಿ',
-    preparationEn: 'Mix 200ml groundnut oil + 1 spoon baking soda. Drench slowly.',
-    dosage: 'Single dose. Repeat after 2 hours if needed.',
-    source: 'ICAR-NBAGR',
-  },
-  {
-    id: '5',
-    nameKn: 'ಅಲೋವೆರಾ ಲೇಪ',
-    nameEn: 'Aloe Vera Paste',
-    ingredientsKn: 'ಅಲೋವೆರಾ ತಿರುಳು',
-    ingredientsEn: 'Aloe vera pulp',
-    conditionsKn: 'ಸುಟ್ಟ ಗಾಯ, ಚರ್ಮ ಉರಿಯೂತ',
-    conditionsEn: 'Burns, Skin inflammation',
-    evidence: 'studied',
-    species: ['cattle', 'goat', 'sheep', 'poultry'],
-    preparationKn: 'ಅಲೋವೆರಾ ಎಲೆ ಸೀಳಿ ತಿರುಳನ್ನು ನೇರವಾಗಿ ಗಾಯಕ್ಕೆ ಹಚ್ಚಿ',
-    preparationEn: 'Split aloe leaf and apply pulp directly to affected area.',
-    dosage: '2-3x daily until healed',
-    source: 'KVAFSU Bidar Study',
-  },
-  {
-    id: '6',
-    nameKn: 'ಮಜ್ಜಿಗೆ ಚಿಕಿತ್ಸೆ',
-    nameEn: 'Buttermilk Therapy',
-    ingredientsKn: 'ಮಜ್ಜಿಗೆ, ಉಪ್ಪು, ಜೀರಿಗೆ',
-    ingredientsEn: 'Buttermilk, Salt, Cumin',
-    conditionsKn: 'ಭೇದಿ, ನಿರ್ಜಲೀಕರಣ',
-    conditionsEn: 'Diarrhea, Dehydration',
-    evidence: 'traditional',
-    species: ['cattle', 'goat'],
-    preparationKn: '2ಲೀ ಮಜ್ಜಿಗೆ + ಒಂದು ಹಿಡಿ ಉಪ್ಪು + ಜೀರಿಗೆ ಮಿಶ್ರ ಮಾಡಿ ಕುಡಿಸಿ',
-    preparationEn: 'Mix 2L buttermilk + pinch of salt + cumin. Drench orally.',
-    dosage: '3x daily for 2-3 days',
-    source: 'Karnataka folk tradition',
-  },
-  {
-    id: '7',
-    nameKn: 'ಬಾಳೆಹಣ್ಣು ಆಹಾರ',
-    nameEn: 'Banana Feeding for Weakness',
-    ingredientsKn: 'ಮಾಗಿದ ಬಾಳೆಹಣ್ಣು, ಬೆಲ್ಲ',
-    ingredientsEn: 'Ripe bananas, Jaggery',
-    conditionsKn: 'ದೌರ್ಬಲ್ಯ, ಹೆರಿಗೆ ನಂತರ',
-    conditionsEn: 'Weakness, Post-partum recovery',
-    evidence: 'traditional',
-    species: ['cattle'],
-    preparationKn: '5-6 ಬಾಳೆಹಣ್ಣು + 200ಗ್ರಾ ಬೆಲ್ಲ ಮಿಶ್ರ ಮಾಡಿ ತಿನ್ನಿಸಿ',
-    preparationEn: 'Mix 5-6 ripe bananas + 200g jaggery. Feed orally.',
-    dosage: '1x daily for 7 days post-calving',
-    source: 'Mandya farmer practice',
-  },
-  {
-    id: '8',
-    nameKn: 'ತೊಗರಿ ಎಲೆ ಸಾರು',
-    nameEn: 'Pigeon Pea Leaf Extract',
-    ingredientsKn: 'ತೊಗರಿ ಎಲೆ, ನೀರು',
-    ingredientsEn: 'Pigeon pea leaves, Water',
-    conditionsKn: 'ಹುಳ ನಿವಾರಣೆ',
-    conditionsEn: 'Deworming',
-    evidence: 'studied',
-    species: ['goat', 'sheep'],
-    preparationKn: '250ಗ್ರಾ ಎಲೆಯನ್ನು 2ಲೀ ನೀರಿನಲ್ಲಿ ಕುದಿಸಿ, ತಣ್ಣಗಾಗಿಸಿ ಕುಡಿಸಿ',
-    preparationEn: 'Boil 250g leaves in 2L water. Cool and drench.',
-    dosage: 'Once weekly for 3 weeks',
-    source: 'UAS Dharwad Study 2020',
-  },
-  {
-    id: '9',
-    nameKn: 'ಅಜ್ವಾನ್ ನೀರು',
-    nameEn: 'Ajwain Water',
-    ingredientsKn: 'ಅಜ್ವಾನ್, ಬಿಸಿ ನೀರು',
-    ingredientsEn: 'Carom seeds, Warm water',
-    conditionsKn: 'ಹೊಟ್ಟೆ ನೋವು, ಗ್ಯಾಸ್',
-    conditionsEn: 'Stomach ache, Gas',
-    evidence: 'traditional',
-    species: ['cattle', 'goat', 'sheep'],
-    preparationKn: '50ಗ್ರಾ ಅಜ್ವಾನ್ ಬಿಸಿ ನೀರಿನಲ್ಲಿ ನೆನೆಸಿ ಕುಡಿಸಿ',
-    preparationEn: 'Soak 50g carom seeds in warm water. Drench.',
-    dosage: '2x daily for 2 days',
-    source: 'Hassan district practice',
-  },
-  {
-    id: '10',
-    nameKn: 'ಕಹಿಬೇವಿನ ಹೊಗೆ',
-    nameEn: 'Neem Smoke Fumigation',
-    ingredientsKn: 'ಒಣ ಬೇವಿನ ಎಲೆ',
-    ingredientsEn: 'Dried neem leaves',
-    conditionsKn: 'ಕೋಳಿ ಮನೆ ಸೋಂಕು ನಿವಾರಣೆ',
-    conditionsEn: 'Poultry house disinfection',
-    evidence: 'studied',
-    species: ['poultry'],
-    safetyWarning: 'Ensure adequate ventilation. Remove birds during fumigation.',
-    preparationKn: 'ಒಣ ಬೇವಿನ ಎಲೆಯನ್ನು ಹೊಗೆ ಹಾಕಿ ಕೋಳಿ ಮನೆ ಶುದ್ಧೀಕರಿಸಿ',
-    preparationEn: 'Burn dried neem leaves to fumigate poultry house.',
-    dosage: 'Weekly, 15 min per session',
-    source: 'KVAFSU Extension Bulletin',
-  },
-];
-
 export default function EthnoVetScreen() {
   const { t, i18n } = useTranslation();
   const isKn = i18n.language === 'kn';
+  const [remedies, setRemedies] = useState<Remedy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [speciesFilter, setSpeciesFilter] = useState<SpeciesFilter>('all');
   const [evidenceFilter, setEvidenceFilter] = useState<Evidence | 'all'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const filtered = MOCK_REMEDIES.filter((r) => {
+  const fetchRemedies = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    api.get<Remedy[]>('/ethno-vet/remedies')
+      .then(res => setRemedies(res))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchRemedies();
+  }, [fetchRemedies]);
+
+  const filtered = remedies.filter((r) => {
     if (speciesFilter !== 'all' && !r.species.includes(speciesFilter)) return false;
     if (evidenceFilter !== 'all' && r.evidence !== evidenceFilter) return false;
     if (search) {
@@ -207,6 +70,28 @@ export default function EthnoVetScreen() {
     }
     return true;
   });
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#2E7D32" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          icon={'\u26A0\uFE0F'}
+          title={t('common.error')}
+          subtitle={error}
+          actionLabel={t('common.retry')}
+          onAction={fetchRemedies}
+        />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -290,7 +175,7 @@ export default function EthnoVetScreen() {
                 {remedy.safetyWarning && (
                   <View style={styles.warningBox}>
                     <Text style={styles.warningText}>
-                      ⚠️ {remedy.safetyWarning}
+                      {'\u26A0\uFE0F'} {remedy.safetyWarning}
                     </Text>
                   </View>
                 )}
@@ -321,7 +206,7 @@ export default function EthnoVetScreen() {
                 )}
 
                 <Text variant="bodySmall" style={styles.tapHint}>
-                  {isExpanded ? '▲ ' + t('ethnoVet.tapToCollapse') : '▼ ' + t('ethnoVet.tapToExpand')}
+                  {isExpanded ? '\u25B2 ' + t('ethnoVet.tapToCollapse') : '\u25BC ' + t('ethnoVet.tapToExpand')}
                 </Text>
               </Card.Content>
             </Card>
@@ -330,9 +215,11 @@ export default function EthnoVetScreen() {
       })}
 
       {filtered.length === 0 && (
-        <Text variant="bodyLarge" style={styles.empty}>
-          {t('common.noData')}
-        </Text>
+        <EmptyState
+          icon={'\uD83C\uDF3F'}
+          title={t('common.noData')}
+          subtitle={t('ethnoVet.title')}
+        />
       )}
     </ScrollView>
   );
@@ -435,10 +322,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: SPACING.sm,
     fontSize: 12,
-  },
-  empty: {
-    textAlign: 'center',
-    marginTop: SPACING.xl,
-    color: '#9E9E9E',
   },
 });

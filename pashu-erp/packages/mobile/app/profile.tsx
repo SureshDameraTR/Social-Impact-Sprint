@@ -1,14 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Text, Card, Button, Switch, Divider, List } from 'react-native-paper';
+import { Text, Card, Button, Switch, Divider, List, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { SPACING, CARD_BORDER_RADIUS } from '../src/config/theme';
+import { EmptyState } from '../src/components/EmptyState';
+import { SPACING, CARD_BORDER_RADIUS, colors, statusColors } from '../src/config/theme';
+import { api } from '../src/config/api';
+
+interface UserProfile {
+  name: string;
+  phone: string;
+  village: string;
+  totalAnimals: number;
+  farmSize: string;
+  memberSince: string;
+  todayMilk: number;
+  monthlyIncome: number;
+}
 
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const [isKannada, setIsKannada] = useState(i18n.language === 'kn');
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProfile = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    api.get<UserProfile>('/users/profile')
+      .then(res => setProfile(res))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const toggleLanguage = () => {
     const newLang = isKannada ? 'en' : 'kn';
@@ -21,6 +50,28 @@ export default function ProfileScreen() {
     router.replace('/(auth)/login');
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          icon={'\u26A0\uFE0F'}
+          title={t('common.error')}
+          subtitle={error}
+          actionLabel={t('common.retry')}
+          onAction={fetchProfile}
+        />
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
       {/* User info */}
@@ -29,13 +80,13 @@ export default function ProfileScreen() {
           <Text style={styles.avatarText}>{'\uD83D\uDC68\u200D\uD83C\uDF3E'}</Text>
         </View>
         <Text variant="headlineMedium" style={styles.name}>
-          Ramesh Kumar
+          {profile?.name || '\u2014'}
         </Text>
         <Text variant="bodyLarge" style={styles.phone}>
-          +91 98765 43210
+          {profile?.phone || '\u2014'}
         </Text>
         <Text variant="bodyMedium" style={styles.village}>
-          Hoskote, Karnataka
+          {profile?.village || '\u2014'}
         </Text>
       </View>
 
@@ -45,16 +96,16 @@ export default function ProfileScreen() {
           <View style={styles.settingRow}>
             <View>
               <Text variant="titleMedium">
-                {isKannada ? 'ಕನ್ನಡ' : 'English'}
+                {isKannada ? t('common.kannada') : t('common.english')}
               </Text>
               <Text variant="bodySmall" style={styles.settingHint}>
-                {isKannada ? 'Switch to English' : 'ಕನ್ನಡಕ್ಕೆ ಬದಲಿಸಿ'}
+                {isKannada ? 'Switch to English' : '\u0C95\u0CA8\u0CCD\u0CA8\u0CA1\u0C95\u0CCD\u0C95\u0CC6 \u0CAC\u0CA6\u0CB2\u0CBF\u0CB8\u0CBF'}
               </Text>
             </View>
             <Switch
               value={isKannada}
               onValueChange={toggleLanguage}
-              color="#2E7D32"
+              color={colors.primary}
             />
           </View>
         </Card.Content>
@@ -64,22 +115,22 @@ export default function ProfileScreen() {
       <Card style={styles.card}>
         <Card.Content>
           <Text variant="titleMedium" style={styles.cardTitle}>
-            {'\uD83C\uDFE1'} Farm Details
+            {'\uD83C\uDFE1'} {t('profile.farmDetails')}
           </Text>
           <Divider style={styles.cardDivider} />
           <List.Item
             title={t('animals.totalAnimals')}
-            description="7"
+            description={profile ? String(profile.totalAnimals) : '\u2014'}
             left={(props) => <List.Icon {...props} icon="paw" />}
           />
           <List.Item
-            title="Farm Size"
-            description="5 acres"
+            title={t('profile.farmSize')}
+            description={profile?.farmSize || '\u2014'}
             left={(props) => <List.Icon {...props} icon="terrain" />}
           />
           <List.Item
-            title="Member Since"
-            description="January 2026"
+            title={t('profile.memberSince')}
+            description={profile?.memberSince || '\u2014'}
             left={(props) => <List.Icon {...props} icon="calendar" />}
           />
         </Card.Content>
@@ -90,14 +141,18 @@ export default function ProfileScreen() {
         <Card style={styles.statCard}>
           <Card.Content style={styles.statContent}>
             <Text style={styles.statIcon}>{'\uD83E\uDD5B'}</Text>
-            <Text variant="headlineSmall" style={styles.statValue}>12.5L</Text>
+            <Text variant="headlineSmall" style={styles.statValue}>
+              {profile ? `${profile.todayMilk}L` : '\u2014'}
+            </Text>
             <Text variant="bodySmall">{t('milk.todayTotal')}</Text>
           </Card.Content>
         </Card>
         <Card style={styles.statCard}>
           <Card.Content style={styles.statContent}>
             <Text style={styles.statIcon}>{'\uD83D\uDCB0'}</Text>
-            <Text variant="headlineSmall" style={styles.statValue}>{'\u20B9'}14.5K</Text>
+            <Text variant="headlineSmall" style={styles.statValue}>
+              {profile ? `\u20B9${(profile.monthlyIncome / 1000).toFixed(1)}K` : '\u2014'}
+            </Text>
             <Text variant="bodySmall">{t('income.monthly')}</Text>
           </Card.Content>
         </Card>
@@ -109,10 +164,10 @@ export default function ProfileScreen() {
         onPress={handleLogout}
         style={styles.logoutButton}
         contentStyle={styles.logoutContent}
-        textColor="#D32F2F"
+        textColor={statusColors.urgent}
         icon="logout"
       >
-        Logout
+        {t('profile.logout')}
       </Button>
     </ScrollView>
   );
@@ -195,11 +250,11 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontWeight: 'bold',
-    color: '#2E7D32',
+    color: statusColors.healthy,
   },
   logoutButton: {
     borderRadius: 12,
-    borderColor: '#D32F2F',
+    borderColor: statusColors.urgent,
     marginTop: SPACING.md,
   },
   logoutContent: {

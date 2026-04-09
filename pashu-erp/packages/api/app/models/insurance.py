@@ -44,8 +44,8 @@ class InsurancePolicy(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    animal = relationship("Animal", foreign_keys=[animal_id])
-    claims = relationship("InsuranceClaim", back_populates="policy", foreign_keys="InsuranceClaim.policy_id")
+    animal = relationship("Animal", foreign_keys=[animal_id], lazy="selectin")
+    claims = relationship("InsuranceClaim", back_populates="policy", foreign_keys="InsuranceClaim.policy_id", lazy="selectin")
 
 
 class InsuranceClaim(Base):
@@ -68,4 +68,4 @@ class InsuranceClaim(Base):
     filed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    policy = relationship("InsurancePolicy", back_populates="claims", foreign_keys=[policy_id])
+    policy = relationship("InsurancePolicy", back_populates="claims", foreign_keys=[policy_id], lazy="selectin")

@@ -1,18 +1,62 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Text, Card, Banner, Chip } from 'react-native-paper';
+import { Text, Card, Banner, Chip, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { SPACING, CARD_BORDER_RADIUS } from '../src/config/theme';
+import { EmptyState } from '../src/components/EmptyState';
+import { SPACING, CARD_BORDER_RADIUS, colors } from '../src/config/theme';
+import { api } from '../src/config/api';
 
-const MOCK_DEVICES = [
-  { id: '1', name: 'GPS Tracker #1', status: 'online', animal: 'Lakshmi', battery: '85%' },
-  { id: '2', name: 'GPS Tracker #2', status: 'online', animal: 'Gowri', battery: '72%' },
-  { id: '3', name: 'Temperature Sensor', status: 'offline', animal: 'Shed A', battery: '12%' },
-  { id: '4', name: 'Water Level Monitor', status: 'online', animal: 'Trough #1', battery: '95%' },
-];
+interface IoTDevice {
+  id: string;
+  name: string;
+  status: string;
+  animal: string;
+  battery: string;
+}
 
 export default function SmartFarmScreen() {
   const { t } = useTranslation();
+  const [devices, setDevices] = useState<IoTDevice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDevices = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    api.get<IoTDevice[]>('/iot/devices')
+      .then(res => setDevices(res))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchDevices();
+  }, [fetchDevices]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#2E7D32" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          icon={'\u26A0\uFE0F'}
+          title={t('common.error')}
+          subtitle={error}
+          actionLabel={t('common.retry')}
+          onAction={fetchDevices}
+        />
+      </View>
+    );
+  }
+
+  const offlineDevices = devices.filter(d => d.status === 'offline');
+  const onlineDevices = devices.filter(d => d.status === 'online');
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
@@ -24,7 +68,7 @@ export default function SmartFarmScreen() {
         actions={[]}
       >
         <Text variant="bodyLarge" style={styles.bannerText}>
-          {'\uD83D\uDEA7'} Phase 2 Feature - IoT integration coming soon
+          {'\uD83D\uDEA7'} {t('smartFarm.comingSoon')}
         </Text>
       </Banner>
 
@@ -37,26 +81,28 @@ export default function SmartFarmScreen() {
         <Card.Content style={styles.mapContent}>
           <Text style={styles.mapIcon}>{'\uD83D\uDDFA\uFE0F'}</Text>
           <Text variant="titleMedium" style={styles.mapTitle}>
-            GPS Animal Tracking
+            {t('smartFarm.gpsTracking')}
           </Text>
           <Text variant="bodyMedium" style={styles.mapSubtitle}>
-            Live map will show animal locations from GPS collars
+            {t('smartFarm.gpsDescription')}
           </Text>
-          <View style={styles.mapPlaceholder}>
-            <Text style={styles.mapPlaceholderText}>
-              {'\uD83D\uDCCD'} Lakshmi - Grazing Field A{'\n'}
-              {'\uD83D\uDCCD'} Gowri - Near Water Tank{'\n'}
-              {'\uD83D\uDCCD'} Nandi - Shed B
-            </Text>
-          </View>
         </Card.Content>
       </Card>
 
       {/* Device cards */}
       <Text variant="titleMedium" style={styles.sectionTitle}>
-        IoT Devices
+        {t('smartFarm.iotDevices')}
       </Text>
-      {MOCK_DEVICES.map((device) => (
+
+      {devices.length === 0 && (
+        <EmptyState
+          icon={'\uD83D\uDCE1'}
+          title={t('common.noData')}
+          subtitle={t('common.smartFarm')}
+        />
+      )}
+
+      {devices.map((device) => (
         <Card key={device.id} style={styles.deviceCard}>
           <Card.Content style={styles.deviceContent}>
             <View style={styles.deviceInfo}>
@@ -88,23 +134,31 @@ export default function SmartFarmScreen() {
       ))}
 
       {/* Alerts section */}
-      <Text variant="titleMedium" style={styles.sectionTitle}>
-        Smart Alerts
-      </Text>
-      <Card style={styles.alertCard}>
-        <Card.Content>
-          <Text variant="bodyLarge">
-            {'\u26A0\uFE0F'} Temperature Sensor in Shed A is offline - low battery
+      {(offlineDevices.length > 0 || onlineDevices.length > 0) && (
+        <>
+          <Text variant="titleMedium" style={styles.sectionTitle}>
+            Smart Alerts
           </Text>
-        </Card.Content>
-      </Card>
-      <Card style={styles.alertCardGreen}>
-        <Card.Content>
-          <Text variant="bodyLarge">
-            {'\u2705'} All GPS trackers reporting normally
-          </Text>
-        </Card.Content>
-      </Card>
+          {offlineDevices.map((device) => (
+            <Card key={`alert-${device.id}`} style={styles.alertCard}>
+              <Card.Content>
+                <Text variant="bodyLarge">
+                  {'\u26A0\uFE0F'} {device.name} is offline - {device.battery} battery
+                </Text>
+              </Card.Content>
+            </Card>
+          ))}
+          {offlineDevices.length === 0 && (
+            <Card style={styles.alertCardGreen}>
+              <Card.Content>
+                <Text variant="bodyLarge">
+                  {'\u2705'} All devices reporting normally
+                </Text>
+              </Card.Content>
+            </Card>
+          )}
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -151,20 +205,6 @@ const styles = StyleSheet.create({
     color: '#616161',
     textAlign: 'center',
     marginBottom: SPACING.md,
-  },
-  mapPlaceholder: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: SPACING.md,
-    width: '100%',
-    borderWidth: 2,
-    borderColor: '#C8E6C9',
-    borderStyle: 'dashed',
-  },
-  mapPlaceholderText: {
-    fontSize: 16,
-    lineHeight: 28,
-    textAlign: 'center',
   },
   sectionTitle: {
     fontWeight: 'bold',

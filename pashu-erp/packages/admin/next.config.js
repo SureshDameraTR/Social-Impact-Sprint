@@ -1,8 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["react-leaflet", "@react-leaflet/core", "leaflet"],
-  experimental: {
-    // Enable server actions if needed
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+        ],
+      },
+    ];
   },
 };
 

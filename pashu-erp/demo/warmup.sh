@@ -4,6 +4,8 @@ set -euo pipefail
 
 echo "=== PashuRaksha Demo Warm-Up ==="
 echo ""
+echo "WARNING: Using mock OTP (123456) - development mode only"
+echo ""
 
 echo "1. Checking Docker..."
 docker compose ps

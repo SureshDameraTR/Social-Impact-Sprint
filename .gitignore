@@ -9,3 +9,34 @@ Beadbox-*.exe
 .env
 .env.local
 .env.*.local
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Node.js
+node_modules/
+.next/
+dist/
+build/
+.expo/
+web-build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Packages
+*.tgz

@@ -4,6 +4,7 @@ import { Text, TextInput, Button, SegmentedButtons, Snackbar } from 'react-nativ
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { SPACING, TOUCH_TARGET_MIN } from '../../src/config/theme';
+import { api } from '../../src/config/api';
 
 type Species = 'cattle' | 'goat' | 'sheep' | 'poultry';
 
@@ -24,11 +25,31 @@ export default function AddAnimalScreen() {
   const [weight, setWeight] = useState('');
   const [gender, setGender] = useState('female');
   const [snackVisible, setSnackVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSave = () => {
-    // Mock save - in production, POST to API
-    setSnackVisible(true);
-    setTimeout(() => router.back(), 1500);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    setIsSubmitting(true);
+    setSaveError(null);
+    try {
+      const dob = age ? new Date(Date.now() - parseInt(age) * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined;
+      await api.post('/animals', {
+        species,
+        breed: breed || 'Unknown',
+        breed_type: 'indigenous',
+        sex: gender,
+        name: name || undefined,
+        tag_id: tagNumber || undefined,
+        date_of_birth: dob,
+      });
+      setSnackVisible(true);
+      setTimeout(() => router.back(), 1500);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Failed to save');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -114,6 +135,11 @@ export default function AddAnimalScreen() {
           style={styles.genderButtons}
         />
 
+        {/* Error message */}
+        {saveError && (
+          <Text style={{ color: '#D32F2F', marginTop: SPACING.sm, textAlign: 'center' }}>{saveError}</Text>
+        )}
+
         {/* Save / Cancel */}
         <View style={styles.actions}>
           <Button
@@ -127,7 +153,8 @@ export default function AddAnimalScreen() {
           <Button
             mode="contained"
             onPress={handleSave}
-            disabled={!name || !breed}
+            disabled={isSubmitting || !name || !breed}
+            loading={isSubmitting}
             style={styles.actionButton}
             contentStyle={styles.actionButtonContent}
             labelStyle={styles.saveLabel}

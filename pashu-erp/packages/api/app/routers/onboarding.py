@@ -28,8 +28,6 @@ async def complete_onboarding(
     db: AsyncSession = Depends(get_db),
 ):
     """Mark onboarding as complete and save user preferences."""
-    # Update user metadata with onboarding preferences
-    # In a real implementation, these would be dedicated columns or a preferences table
     preferences = {
         "preferred_language": body.preferred_language,
         "district": body.district,
@@ -41,8 +39,16 @@ async def complete_onboarding(
         "onboarding_complete": True,
     }
 
-    # Store in user metadata (JSONB field if available)
-    # For prototype, we return the preferences as confirmation
+    # Persist preferences on the user record
+    current_user.preferences = preferences
+    current_user.location_district = body.district
+    current_user.lang_pref = body.preferred_language
+    if body.village_code is not None:
+        current_user.village_code = body.village_code
+
+    await db.commit()
+    await db.refresh(current_user)
+
     return {
         "user_id": str(current_user.id),
         "onboarding_complete": True,

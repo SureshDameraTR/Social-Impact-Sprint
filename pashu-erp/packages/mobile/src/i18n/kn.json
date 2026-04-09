@@ -30,7 +30,10 @@
     "today": "ಇಂದು",
     "yesterday": "ನಿನ್ನೆ",
     "thisWeek": "ಈ ವಾರ",
-    "thisMonth": "ಈ ತಿಂಗಳು"
+    "thisMonth": "ಈ ತಿಂಗಳು",
+    "listen": "ಕೇಳಿ",
+    "english": "English",
+    "kannada": "ಕನ್ನಡ"
   },
   "auth": {
     "enterPhone": "ಫೋನ್ ನಂಬರ್ ನಮೂದಿಸಿ",
@@ -41,6 +44,20 @@
     "phoneLabel": "ಮೊಬೈಲ್ ನಂಬರ್",
     "otpSent": "OTP ಕಳುಹಿಸಲಾಗಿದೆ",
     "welcome": "ಪಶುರಕ್ಷಾಗೆ ಸ್ವಾಗತ"
+  },
+  "home": {
+    "greeting": "ನಮಸ್ಕಾರ, ಲಕ್ಷ್ಮಮ್ಮ",
+    "subtitle": "ನಿಮ್ಮ ಫಾರ್ಮ್ ಇಂದು ಚೆನ್ನಾಗಿದೆ",
+    "quickActions": "ತ್ವರಿತ ಕ್ರಿಯೆಗಳು",
+    "addMilk": "ಹಾಲು ಸೇರಿಸಿ",
+    "healthCheck": "ಆರೋಗ್ಯ ತಪಾಸಣೆ",
+    "sellProducts": "ಮಾರಾಟ",
+    "viewIncome": "ಆದಾಯ",
+    "vaccination": "ಲಸಿಕೆ",
+    "feeding": "ಆಹಾರ",
+    "weather": "ಹವಾಮಾನ",
+    "insurance": "ವಿಮೆ",
+    "milkToday": "ಇಂದಿನ ಹಾಲು"
   },
   "animals": {
     "myAnimals": "ನನ್ನ ಪ್ರಾಣಿಗಳು",
@@ -112,7 +129,20 @@
     "triageResult": "ಪರೀಕ್ಷಾ ಫಲಿತಾಂಶ",
     "callVet": "ಪಶುವೈದ್ಯರಿಗೆ ಕರೆ ಮಾಡಿ",
     "selectAnimal": "ಪ್ರಾಣಿ ಆಯ್ಕೆಮಾಡಿ",
-    "selectSymptoms": "ರೋಗಲಕ್ಷಣಗಳನ್ನು ಆಯ್ಕೆಮಾಡಿ"
+    "selectSymptoms": "ರೋಗಲಕ್ಷಣಗಳನ್ನು ಆಯ್ಕೆಮಾಡಿ",
+    "triageFMD": "ಎಫ್ಎಂಡಿ ಸೋಂಕಿನ ಸಾಧ್ಯತೆ. ತಕ್ಷಣ ಪಶುವೈದ್ಯರ ಗಮನ ಅಗತ್ಯ.",
+    "triageMastitis": "ಕೆಚ್ಚಲು ಉರಿಯೂತದ ಲಕ್ಷಣಗಳು. 24 ಗಂಟೆಯೊಳಗೆ ಪಶುವೈದ್ಯರನ್ನು ಸಂಪರ್ಕಿಸಿ.",
+    "triageBloat": "ಹೊಟ್ಟೆ ಉಬ್ಬರದ ಸಾಧ್ಯತೆ. ಮೇವು ನಿಲ್ಲಿಸಿ ಪಶುವೈದ್ಯರಿಗೆ ಕರೆ ಮಾಡಿ.",
+    "triageBloating": "ಉಬ್ಬರ ಪತ್ತೆಯಾಗಿದೆ. ಹೊಟ್ಟೆ ಆಮ್ಲೀಯತೆ ಅಪಾಯ. ಪಶುವೈದ್ಯರಿಗೆ ಕರೆ ಮಾಡಿ.",
+    "triageMultipleHigh": "ಅನೇಕ ರೋಗಲಕ್ಷಣಗಳು ಕಂಡುಬಂದಿವೆ. ಇಂದೇ ಪಶುವೈದ್ಯರನ್ನು ಭೇಟಿ ಮಾಡಿ.",
+    "triageMultipleMedium": "ನಿಕಟವಾಗಿ ಗಮನಿಸಿ. ರೋಗಲಕ್ಷಣಗಳು ಮುಂದುವರಿದರೆ ಪಶುವೈದ್ಯರನ್ನು ಕೇಳಿ.",
+    "triageGeneral": "ರೋಗಲಕ್ಷಣಗಳನ್ನು ಗಮನಿಸಿ. 24 ಗಂಟೆಯಲ್ಲಿ ಸುಧಾರಣೆ ಇಲ್ಲದಿದ್ದರೆ, ಪಶುವೈದ್ಯರನ್ನು ಸಂಪರ್ಕಿಸಿ.",
+    "triageMinor": "ಸಣ್ಣ ರೋಗಲಕ್ಷಣ. 24 ಗಂಟೆ ಗಮನಿಸುತ್ತಿರಿ.",
+    "emergencyLine": "24/7 ತುರ್ತು ಸಹಾಯವಾಣಿ",
+    "vaccineFMD": "FMD ಲಸಿಕೆ",
+    "vaccineBrucellosis": "ಬ್ರೂಸೆಲ್ಲೋಸಿಸ್ ಲಸಿಕೆ",
+    "vaccineHSBQ": "HS/BQ ಲಸಿಕೆ",
+    "readAloud": "ಜೋರಾಗಿ ಓದಿ"
   },
   "income": {
     "myIncome": "ನನ್ನ ಆದಾಯ",
@@ -125,7 +155,11 @@
     "totalEarnings": "ಒಟ್ಟು ಗಳಿಕೆ",
     "milkIncome": "ಹಾಲಿನ ಆದಾಯ",
     "saleIncome": "ಮಾರಾಟ ಆದಾಯ",
-    "transactions": "ವಹಿವಾಟುಗಳು"
+    "transactions": "ವಹಿವಾಟುಗಳು",
+    "kisanCreditCardLabel": "ಕಿಸಾನ್ ಕ್ರೆಡಿಟ್ ಕಾರ್ಡ್ — ಕಡಿಮೆ ಬಡ್ಡಿ",
+    "kisanCredit": "ಕಿಸಾನ್ ಕ್ರೆಡಿಟ್ ಕಾರ್ಡ್ - ಕಡಿಮೆ ಬಡ್ಡಿ",
+    "apply": "ಅರ್ಜಿ ಸಲ್ಲಿಸಿ",
+    "applyNow": "ಈಗ ಅರ್ಜಿ ಸಲ್ಲಿಸಿ"
   },
   "onboarding": {
     "welcomeSubtitle": "ನಿಮ್ಮ ಪಶುಗಳ ಆರೈಕೆಗೆ ಸಂಪೂರ್ಣ ಸಹಾಯಕ",
@@ -169,7 +203,7 @@
     },
     "fiveDayForecast": "5 ದಿನಗಳ ಮುನ್ಸೂಚನೆ",
     "rainfallAlert": "ಈ ವಾರ ಮಳೆ ನಿರೀಕ್ಷಿತ — ಪ್ರಾಣಿಗಳನ್ನು ನೆರಳಿನಲ್ಲಿಡಿ",
-    "voiceSummary": "ಧ್ವನಿ ಸಾರಾಂಶ ಕೇಳಿ"
+    "voiceSummary": "ಧ್ವನಿ ಸಾರಾಂಶ"
   },
   "advisory": {
     "title": "ಸಲಹೆ ಮತ್ತು ಮಾರ್ಗದರ್ಶನ",
@@ -283,6 +317,23 @@
     "serverError": "ಸರ್ವರ್ ದೋಷ",
     "unauthorized": "ದಯವಿಟ್ಟು ಮತ್ತೆ ಲಾಗಿನ್ ಮಾಡಿ",
     "voiceFailed": "ಧ್ವನಿ ಗುರುತಿಸಲಾಗಲಿಲ್ಲ — ಕೈಯಿಂದ ನಮೂದಿಸಿ"
+  },
+  "profile": {
+    "farmDetails": "ಕೃಷಿ ವಿವರಗಳು",
+    "farmSize": "ಜಮೀನಿನ ಗಾತ್ರ",
+    "memberSince": "ಸದಸ್ಯತ್ವ ಆರಂಭ",
+    "logout": "ಲಾಗ್ ಔಟ್"
+  },
+  "error": {
+    "title": "ಏನೋ ತಪ್ಪಾಗಿದೆ",
+    "message": "ಅನಿರೀಕ್ಷಿತ ದೋಷ ಸಂಭವಿಸಿದೆ",
+    "reload": "ಮರುಲೋಡ್"
+  },
+  "smartFarm": {
+    "comingSoon": "ಹಂತ 2 - IoT ಏಕೀಕರಣ ಶೀಘ್ರದಲ್ಲೇ",
+    "gpsTracking": "GPS ಪ್ರಾಣಿ ಟ್ರ್ಯಾಕಿಂಗ್",
+    "gpsDescription": "GPS ಕಾಲರ್\u200Cಗಳಿಂದ ಪ್ರಾಣಿ ಸ್ಥಳಗಳನ್ನು ನೇರ ನಕ್ಷೆ ತೋರಿಸುತ್ತದೆ",
+    "iotDevices": "IoT ಸಾಧನಗಳು"
   },
   "communityAlerts": {
     "title": "ಸಮುದಾಯ ರೋಗ ಎಚ್ಚರಿಕೆ",

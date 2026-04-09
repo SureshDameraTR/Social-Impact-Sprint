@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
-import { Button, Card, FAB, Modal, Portal, Text, TextInput, Menu } from 'react-native-paper';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, FlatList, StyleSheet } from 'react-native';
+import { Button, Card, FAB, Modal, Portal, Text, TextInput, Menu, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../src/config/theme';
+import { EmptyState } from '../src/components/EmptyState';
+import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors } from '../src/config/theme';
+import { api } from '../src/config/api';
 
 type Severity = 'critical' | 'high' | 'medium' | 'low';
 
 const SEVERITY_CONFIG: Record<Severity, { color: string; bgColor: string; emoji: string }> = {
-  critical: { color: '#D32F2F', bgColor: '#FFEBEE', emoji: '🔴' },
-  high: { color: '#E65100', bgColor: '#FFF3E0', emoji: '🟠' },
-  medium: { color: '#FF8F00', bgColor: '#FFF8E1', emoji: '🟡' },
-  low: { color: '#2E7D32', bgColor: '#E8F5E9', emoji: '🟢' },
+  critical: { color: '#D32F2F', bgColor: '#FFEBEE', emoji: '\uD83D\uDD34' },
+  high: { color: '#E65100', bgColor: '#FFF3E0', emoji: '\uD83D\uDFE0' },
+  medium: { color: '#FF8F00', bgColor: '#FFF8E1', emoji: '\uD83D\uDFE1' },
+  low: { color: '#2E7D32', bgColor: '#E8F5E9', emoji: '\uD83D\uDFE2' },
 };
 
 interface DiseaseAlert {
@@ -25,6 +27,7 @@ interface DiseaseAlert {
   notes: string;
 }
 
+// UI options for disease reporting (reference list)
 const DISEASES = [
   'Foot & Mouth Disease (FMD)',
   'Hemorrhagic Septicemia (HS)',
@@ -36,143 +39,151 @@ const DISEASES = [
   'Mastitis',
 ];
 
-const MOCK_ALERTS: DiseaseAlert[] = [
-  {
-    id: '1',
-    disease: 'Foot & Mouth Disease (FMD)',
-    location: 'Bannur, Mysore',
-    distanceKm: 3,
-    daysAgo: 2,
-    severity: 'critical',
-    affectedCount: 12,
-    species: '🐄 Cattle',
-    notes: '12 cattle affected in 3 farms. Vaccination drive scheduled.',
-  },
-  {
-    id: '2',
-    disease: 'PPR (Goats)',
-    location: 'K.R. Pet, Mandya',
-    distanceKm: 15,
-    daysAgo: 5,
-    severity: 'high',
-    affectedCount: 8,
-    species: '🐐 Goats',
-    notes: '8 goats showing symptoms. Quarantine in place.',
-  },
-  {
-    id: '3',
-    disease: 'Lumpy Skin Disease',
-    location: 'Nagamangala, Mandya',
-    distanceKm: 25,
-    daysAgo: 10,
-    severity: 'medium',
-    affectedCount: 5,
-    species: '🐄 Cattle',
-    notes: 'Contained. Vaccination ongoing in surrounding villages.',
-  },
-  {
-    id: '4',
-    disease: 'Mastitis',
-    location: 'Hullahalli, Mysore',
-    distanceKm: 1,
-    daysAgo: 1,
-    severity: 'low',
-    affectedCount: 2,
-    species: '🐄 Cattle',
-    notes: 'Non-contagious. Treatment ongoing.',
-  },
-];
-
 export default function CommunityAlertsScreen() {
   const { t } = useTranslation();
+  const [alerts, setAlerts] = useState<DiseaseAlert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [reportVisible, setReportVisible] = useState(false);
   const [reportDisease, setReportDisease] = useState('');
   const [reportNotes, setReportNotes] = useState('');
   const [diseaseMenuVisible, setDiseaseMenuVisible] = useState(false);
 
-  const nearbyAlert = MOCK_ALERTS.find((a) => a.distanceKm <= 5 && a.severity === 'critical');
+  const fetchAlerts = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    api.get<DiseaseAlert[]>('/alerts/nearby')
+      .then(res => setAlerts(res))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          icon={'\u26A0\uFE0F'}
+          title={t('common.error')}
+          subtitle={error}
+          actionLabel={t('common.retry')}
+          onAction={fetchAlerts}
+        />
+      </View>
+    );
+  }
+
+  const nearbyAlert = alerts.find((a) => a.distanceKm <= 5 && a.severity === 'critical');
+
+  const renderAlert = ({ item: alert }: { item: DiseaseAlert }) => {
+    const sev = SEVERITY_CONFIG[alert.severity];
+    return (
+      <Card
+        style={[styles.alertCard, { borderLeftColor: sev.color, backgroundColor: sev.bgColor }]}
+      >
+        <Card.Content>
+          <View style={styles.alertHeader}>
+            <Text style={{ fontSize: 24 }}>{sev.emoji}</Text>
+            <View style={{ flex: 1, marginLeft: SPACING.sm }}>
+              <Text variant="titleSmall" style={[styles.alertDisease, { color: sev.color }]}>
+                {alert.disease}
+              </Text>
+              <Text variant="bodySmall" style={styles.alertLocation}>
+                {'\uD83D\uDCCD'} {alert.location} — {alert.distanceKm}km {t('communityAlerts.away')}
+              </Text>
+            </View>
+            <View style={[styles.severityBadge, { backgroundColor: sev.color }]}>
+              <Text style={styles.severityText}>
+                {t(`health.${alert.severity}`)}
+              </Text>
+            </View>
+          </View>
+
+          <Text variant="bodyMedium" style={styles.alertMeta}>
+            {alert.species} | {alert.affectedCount} {t('communityAlerts.affected')} | {alert.daysAgo} {t('communityAlerts.daysAgo')}
+          </Text>
+          <Text variant="bodySmall" style={styles.alertNotes}>
+            {alert.notes}
+          </Text>
+        </Card.Content>
+      </Card>
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text variant="headlineMedium" style={styles.heading}>
-          {t('communityAlerts.title')}
-        </Text>
+      <FlatList
+        data={alerts}
+        keyExtractor={(item) => item.id}
+        renderItem={renderAlert}
+        contentContainerStyle={styles.content}
+        ListHeaderComponent={
+          <>
+            <Text variant="headlineMedium" style={styles.heading}>
+              {t('communityAlerts.title')}
+            </Text>
 
-        {nearbyAlert && (
-          <Card style={styles.urgentBanner}>
-            <Card.Content style={styles.urgentContent}>
-              <Text style={styles.urgentEmoji}>⚠️</Text>
-              <View style={{ flex: 1 }}>
-                <Text variant="titleMedium" style={styles.urgentTitle}>
-                  {nearbyAlert.disease}
-                </Text>
-                <Text variant="bodyMedium" style={styles.urgentBody}>
-                  {t('communityAlerts.reportedNearby', {
-                    distance: nearbyAlert.distanceKm,
-                    days: nearbyAlert.daysAgo,
-                  })}
-                </Text>
-              </View>
-            </Card.Content>
-          </Card>
-        )}
-
-        <View style={styles.mapPlaceholder}>
-          <Text style={styles.mapEmoji}>🗺️</Text>
-          <Text variant="bodyMedium" style={styles.mapText}>
-            {t('communityAlerts.mapPlaceholder')}
-          </Text>
-          {MOCK_ALERTS.map((alert) => {
-            const sev = SEVERITY_CONFIG[alert.severity];
-            return (
-              <View key={alert.id} style={styles.mapPin}>
-                <Text>{sev.emoji} {alert.location} ({alert.distanceKm}km)</Text>
-              </View>
-            );
-          })}
-        </View>
-
-        <Text variant="titleMedium" style={styles.sectionTitle}>
-          {t('communityAlerts.recentAlerts')}
-        </Text>
-
-        {MOCK_ALERTS.map((alert) => {
-          const sev = SEVERITY_CONFIG[alert.severity];
-          return (
-            <Card
-              key={alert.id}
-              style={[styles.alertCard, { borderLeftColor: sev.color, backgroundColor: sev.bgColor }]}
-            >
-              <Card.Content>
-                <View style={styles.alertHeader}>
-                  <Text style={{ fontSize: 24 }}>{sev.emoji}</Text>
-                  <View style={{ flex: 1, marginLeft: SPACING.sm }}>
-                    <Text variant="titleSmall" style={[styles.alertDisease, { color: sev.color }]}>
-                      {alert.disease}
+            {nearbyAlert && (
+              <Card style={styles.urgentBanner}>
+                <Card.Content style={styles.urgentContent}>
+                  <Text style={styles.urgentEmoji}>{'\u26A0\uFE0F'}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text variant="titleMedium" style={styles.urgentTitle}>
+                      {nearbyAlert.disease}
                     </Text>
-                    <Text variant="bodySmall" style={styles.alertLocation}>
-                      📍 {alert.location} — {alert.distanceKm}km {t('communityAlerts.away')}
+                    <Text variant="bodyMedium" style={styles.urgentBody}>
+                      {t('communityAlerts.reportedNearby', {
+                        distance: nearbyAlert.distanceKm,
+                        days: nearbyAlert.daysAgo,
+                      })}
                     </Text>
                   </View>
-                  <View style={[styles.severityBadge, { backgroundColor: sev.color }]}>
-                    <Text style={styles.severityText}>
-                      {t(`health.${alert.severity}`)}
-                    </Text>
-                  </View>
-                </View>
+                </Card.Content>
+              </Card>
+            )}
 
-                <Text variant="bodyMedium" style={styles.alertMeta}>
-                  {alert.species} | {alert.affectedCount} {t('communityAlerts.affected')} | {alert.daysAgo} {t('communityAlerts.daysAgo')}
+            {alerts.length > 0 && (
+              <View style={styles.mapPlaceholder}>
+                <Text style={styles.mapEmoji}>{'\uD83D\uDDFA\uFE0F'}</Text>
+                <Text variant="bodyMedium" style={styles.mapText}>
+                  {t('communityAlerts.mapPlaceholder')}
                 </Text>
-                <Text variant="bodySmall" style={styles.alertNotes}>
-                  {alert.notes}
-                </Text>
-              </Card.Content>
-            </Card>
-          );
-        })}
-      </ScrollView>
+                {alerts.map((alert) => {
+                  const sev = SEVERITY_CONFIG[alert.severity];
+                  return (
+                    <View key={alert.id} style={styles.mapPin}>
+                      <Text>{sev.emoji} {alert.location} ({alert.distanceKm}km)</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              {t('communityAlerts.recentAlerts')}
+            </Text>
+
+            {alerts.length === 0 && (
+              <EmptyState
+                icon={'\uD83D\uDEE1\uFE0F'}
+                title={t('empty.noAlerts')}
+                subtitle={t('communityAlerts.title')}
+              />
+            )}
+          </>
+        }
+      />
 
       <FAB
         icon="alert-plus"
@@ -221,8 +232,7 @@ export default function CommunityAlertsScreen() {
           </Menu>
 
           <View style={styles.gpsRow}>
-            <Text variant="bodyMedium">📍 GPS: 12.3156° N, 76.6553° E</Text>
-            <Text variant="bodySmall" style={styles.gpsAuto}>({t('communityAlerts.autoDetected')})</Text>
+            <Text variant="bodyMedium">{'\uD83D\uDCCD'} GPS: {t('communityAlerts.autoDetected')}</Text>
           </View>
 
           <TextInput
@@ -234,12 +244,22 @@ export default function CommunityAlertsScreen() {
             numberOfLines={3}
             style={styles.notesInput}
             outlineColor="#BDBDBD"
-            activeOutlineColor="#2E7D32"
+            activeOutlineColor={colors.primary}
           />
 
           <Button
             mode="contained"
-            onPress={() => setReportVisible(false)}
+            onPress={async () => {
+              try {
+                await api.post('/alerts/report', { disease: reportDisease, notes: reportNotes });
+              } catch (e) {
+                setError(e instanceof Error ? e.message : 'An error occurred');
+              }
+              setReportVisible(false);
+              setReportDisease('');
+              setReportNotes('');
+              fetchAlerts();
+            }}
             style={styles.submitButton}
             contentStyle={{ minHeight: TOUCH_TARGET_MIN }}
           >
@@ -261,7 +281,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   heading: {
-    color: '#2E7D32',
+    color: colors.primary,
     fontWeight: 'bold',
     marginBottom: SPACING.md,
   },
@@ -369,9 +389,6 @@ const styles = StyleSheet.create({
   },
   gpsRow: {
     marginBottom: SPACING.md,
-  },
-  gpsAuto: {
-    color: '#9E9E9E',
   },
   notesInput: {
     marginBottom: SPACING.md,

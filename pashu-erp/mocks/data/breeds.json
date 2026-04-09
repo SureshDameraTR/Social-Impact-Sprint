@@ -1,0 +1,27 @@
+{
+  "cattle": [
+    {"code": "GIR001", "name": "Gir", "origin": "Gujarat"},
+    {"code": "SAH001", "name": "Sahiwal", "origin": "Punjab"},
+    {"code": "RED001", "name": "Red Sindhi", "origin": "Sindh"},
+    {"code": "THR001", "name": "Tharparkar", "origin": "Rajasthan"},
+    {"code": "KAN001", "name": "Kangayam", "origin": "Tamil Nadu"},
+    {"code": "HF001", "name": "Holstein Friesian", "origin": "Imported"},
+    {"code": "JER001", "name": "Jersey", "origin": "Imported"}
+  ],
+  "buffalo": [
+    {"code": "MUR001", "name": "Murrah", "origin": "Haryana"},
+    {"code": "JAF001", "name": "Jaffarabadi", "origin": "Gujarat"},
+    {"code": "SUR001", "name": "Surti", "origin": "Gujarat"}
+  ],
+  "goat": [
+    {"code": "JAM001", "name": "Jamunapari", "origin": "UP"},
+    {"code": "BEE001", "name": "Beetal", "origin": "Punjab"},
+    {"code": "OSM001", "name": "Osmanabadi", "origin": "Maharashtra"},
+    {"code": "BLK001", "name": "Black Bengal", "origin": "West Bengal"}
+  ],
+  "sheep": [
+    {"code": "BAN001", "name": "Bannur", "origin": "Karnataka"},
+    {"code": "DEC001", "name": "Deccani", "origin": "Maharashtra"},
+    {"code": "NEL001", "name": "Nellore", "origin": "Andhra Pradesh"}
+  ]
+}

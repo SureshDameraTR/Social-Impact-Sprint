@@ -1,0 +1,56 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  api-lint-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pashu-erp/packages/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv pip install --system -e ".[dev]"
+      - name: Lint
+        run: ruff check app/
+      - name: Type check
+        run: ruff check --select=E,W,F app/
+      - name: Test
+        run: pytest tests/ -v --tb=short
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///test.db
+          JWT_SECRET: test-secret-ci-only
+          ENVIRONMENT: test
+
+  admin-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pashu-erp/packages/admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm next build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -t pashuraksha-api:ci pashu-erp/packages/api/

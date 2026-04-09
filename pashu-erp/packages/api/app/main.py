@@ -3,11 +3,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from app.config import settings
 from app.database import engine, get_db
 from app.middleware.csrf import CSRFMiddleware
+from app.services.errors import ServiceNotConfiguredError, ServiceUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,8 @@ from app.routers import (
     iot,
     map_points,
     users,
+    reference,
+    files,
 )
 
 
@@ -55,6 +59,21 @@ def _validate_settings():
         raise RuntimeError("SARVAM_API_KEY is required in non-development environments")
     if settings.environment != "development" and not settings.cors_origins:
         raise RuntimeError("CORS_ORIGINS is required in non-development environments")
+
+    service_urls = [
+        ("WEATHER_API_URL", settings.weather_api_url),
+        ("BHARAT_PASHUDHAN_API_URL", settings.bharat_pashudhan_api_url),
+        ("IOT_GATEWAY_URL", settings.iot_gateway_url),
+        ("STORAGE_API_URL", settings.storage_api_url),
+    ]
+    if settings.environment == "development":
+        for name, val in service_urls:
+            if not val:
+                logger.warning("%s not set — related endpoints will return 503", name)
+    else:
+        for name, val in service_urls:
+            if not val:
+                raise RuntimeError(f"{name} is required in non-development environments")
 
 
 @asynccontextmanager
@@ -108,6 +127,22 @@ def create_app() -> FastAPI:
     app.include_router(iot.router)
     app.include_router(map_points.router)
     app.include_router(users.router)
+    app.include_router(reference.router)
+    app.include_router(files.router)
+
+    @app.exception_handler(ServiceNotConfiguredError)
+    async def not_configured_handler(request, exc):
+        return JSONResponse(
+            status_code=503,
+            content={"detail": str(exc), "code": "SERVICE_NOT_CONFIGURED"},
+        )
+
+    @app.exception_handler(ServiceUnavailableError)
+    async def unavailable_handler(request, exc):
+        return JSONResponse(
+            status_code=503,
+            content={"detail": str(exc), "code": "SERVICE_UNAVAILABLE"},
+        )
 
     @app.get("/health")
     async def healthcheck():

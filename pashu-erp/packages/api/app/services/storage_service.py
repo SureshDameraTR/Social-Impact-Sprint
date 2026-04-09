@@ -1,0 +1,74 @@
+"""Storage service client.
+
+Proxies file upload/download requests to the configured storage backend.
+"""
+
+from typing import Optional, Tuple
+
+import httpx
+
+from app.config import settings
+from app.services.errors import ServiceNotConfiguredError
+
+
+def _base_url() -> str:
+    url = settings.storage_api_url
+    if not url:
+        raise ServiceNotConfiguredError("STORAGE_API_URL")
+    return url.rstrip("/")
+
+
+async def upload_file(
+    file_bytes: bytes,
+    filename: str,
+    content_type: str,
+    category: str,
+    entity_type: str,
+    entity_id: str,
+) -> dict:
+    """Upload a file to the storage backend."""
+    base = _base_url()
+
+    files = {"file": (filename, file_bytes, content_type)}
+    data = {
+        "category": category,
+        "entity_type": entity_type,
+        "entity_id": entity_id,
+    }
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(f"{base}/files", files=files, data=data)
+        resp.raise_for_status()
+        return resp.json()
+
+
+async def get_file(file_id: str) -> Tuple[bytes, str]:
+    """Download a file from the storage backend.
+
+    Returns a tuple of (file_bytes, content_type).
+    """
+    base = _base_url()
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(f"{base}/files/{file_id}")
+        resp.raise_for_status()
+        ct = resp.headers.get("content-type", "application/octet-stream")
+        return resp.content, ct
+
+
+async def list_files(
+    entity_type: Optional[str] = None,
+    entity_id: Optional[str] = None,
+) -> dict:
+    """List files with optional entity filters."""
+    base = _base_url()
+    params: dict = {}
+    if entity_type is not None:
+        params["entity_type"] = entity_type
+    if entity_id is not None:
+        params["entity_id"] = entity_id
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(f"{base}/files", params=params)
+        resp.raise_for_status()
+        return resp.json()

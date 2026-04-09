@@ -1,37 +1,137 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Button, Card, Text, ProgressBar } from 'react-native-paper';
+import { Button, Card, Text, ProgressBar, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../src/config/theme';
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
+import { EmptyState } from '../src/components/EmptyState';
+import { useSnackbar } from '../src/hooks/useSnackbar';
+import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors, statusColors } from '../src/config/theme';
+import { api } from '../src/config/api';
 
-const TODAY_WEATHER = {
-  temp: 32,
-  humidity: 68,
-  rainfall: 0,
-  wind: 12,
-  condition: 'Partly Cloudy',
-  emoji: '⛅',
-};
+interface WeatherCurrent {
+  temp: number;
+  humidity: number;
+  rainfall: number;
+  wind: number;
+  condition: string;
+  emoji: string;
+  location: string;
+}
 
-const FORECAST = [
-  { day: 'Tue', temp: 33, emoji: '☀️', rain: 0 },
-  { day: 'Wed', temp: 31, emoji: '🌤️', rain: 10 },
-  { day: 'Thu', temp: 28, emoji: '🌧️', rain: 80 },
-  { day: 'Fri', temp: 29, emoji: '🌦️', rain: 40 },
-  { day: 'Sat', temp: 30, emoji: '⛅', rain: 20 },
-];
+interface ForecastDay {
+  day: string;
+  temp: number;
+  emoji: string;
+  rain: number;
+}
+
+interface WeatherResponse {
+  current: WeatherCurrent;
+  forecast: ForecastDay[];
+}
+
+interface TtsResponse {
+  audio: string;
+  request_id: string;
+}
 
 function getHeatStress(temp: number, humidity: number): { level: string; color: string; thi: number } {
   const thi = temp - (0.55 - 0.0055 * humidity) * (temp - 14.5);
   if (thi < 72) return { level: 'normal', color: '#4CAF50', thi: Math.round(thi) };
   if (thi < 79) return { level: 'mild', color: '#FF9800', thi: Math.round(thi) };
-  return { level: 'severe', color: '#D32F2F', thi: Math.round(thi) };
+  return { level: 'severe', color: statusColors.urgent, thi: Math.round(thi) };
 }
 
 export default function WeatherScreen() {
   const { t } = useTranslation();
-  const heatStress = getHeatStress(TODAY_WEATHER.temp, TODAY_WEATHER.humidity);
-  const hasRainAlert = FORECAST.some((d) => d.rain >= 60);
+  const { showError } = useSnackbar();
+  const [weather, setWeather] = useState<WeatherResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [ttsLoading, setTtsLoading] = useState(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const playWeatherSummary = useCallback(async (district: string) => {
+    try {
+      setTtsLoading(true);
+      // Unload any previous sound
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+      const data = await api.get<TtsResponse>(`/weather/tts/${encodeURIComponent(district)}`);
+      const uri = FileSystem.cacheDirectory + 'weather_tts.wav';
+      await FileSystem.writeAsStringAsync(uri, data.audio, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const { sound } = await Audio.Sound.createAsync({ uri });
+      soundRef.current = sound;
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          sound.unloadAsync();
+          soundRef.current = null;
+        }
+      });
+      await sound.playAsync();
+    } catch (e) {
+      showError(t('weather.ttsError', 'Could not play weather summary'));
+    } finally {
+      setTtsLoading(false);
+    }
+  }, [showError, t]);
+
+  const fetchWeather = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    api.get<WeatherResponse>('/weather')
+      .then(res => setWeather(res))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchWeather();
+  }, [fetchWeather]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          icon={'\u26A0\uFE0F'}
+          title={t('common.error')}
+          subtitle={error}
+          actionLabel={t('common.retry')}
+          onAction={fetchWeather}
+        />
+      </View>
+    );
+  }
+
+  if (!weather) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          icon={'\uD83C\uDF24\uFE0F'}
+          title={t('common.noData')}
+          subtitle={t('weather.title')}
+        />
+      </View>
+    );
+  }
+
+  const current = weather.current;
+  const forecast = weather.forecast;
+  const heatStress = getHeatStress(current.temp, current.humidity);
+  const hasRainAlert = forecast.some((d) => d.rain >= 60);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -39,13 +139,13 @@ export default function WeatherScreen() {
         {t('weather.title')}
       </Text>
       <Text variant="bodyMedium" style={styles.location}>
-        📍 Mysore, Karnataka
+        {'\uD83D\uDCCD'} {current.location}
       </Text>
 
       {hasRainAlert && (
         <Card style={styles.alertBanner}>
           <Card.Content style={styles.alertContent}>
-            <Text style={styles.alertEmoji}>🌧️</Text>
+            <Text style={styles.alertEmoji}>{'\uD83C\uDF27\uFE0F'}</Text>
             <Text variant="titleSmall" style={styles.alertText}>
               {t('weather.rainfallAlert')}
             </Text>
@@ -55,28 +155,28 @@ export default function WeatherScreen() {
 
       <Card style={styles.heroCard}>
         <Card.Content style={styles.heroContent}>
-          <Text style={styles.heroEmoji}>{TODAY_WEATHER.emoji}</Text>
+          <Text style={styles.heroEmoji}>{current.emoji}</Text>
           <Text variant="displaySmall" style={styles.heroTemp}>
-            {TODAY_WEATHER.temp}°C
+            {current.temp}\u00B0C
           </Text>
           <Text variant="bodyLarge" style={styles.heroCondition}>
-            {TODAY_WEATHER.condition}
+            {current.condition}
           </Text>
           <View style={styles.heroStats}>
             <View style={styles.stat}>
-              <Text style={styles.statEmoji}>💧</Text>
+              <Text style={styles.statEmoji}>{'\uD83D\uDCA7'}</Text>
               <Text variant="bodyMedium">{t('weather.humidity')}</Text>
-              <Text variant="titleMedium" style={styles.statValue}>{TODAY_WEATHER.humidity}%</Text>
+              <Text variant="titleMedium" style={styles.statValue}>{current.humidity}%</Text>
             </View>
             <View style={styles.stat}>
-              <Text style={styles.statEmoji}>🌧️</Text>
+              <Text style={styles.statEmoji}>{'\uD83C\uDF27\uFE0F'}</Text>
               <Text variant="bodyMedium">{t('weather.rainfall')}</Text>
-              <Text variant="titleMedium" style={styles.statValue}>{TODAY_WEATHER.rainfall} mm</Text>
+              <Text variant="titleMedium" style={styles.statValue}>{current.rainfall} mm</Text>
             </View>
             <View style={styles.stat}>
-              <Text style={styles.statEmoji}>💨</Text>
+              <Text style={styles.statEmoji}>{'\uD83D\uDCA8'}</Text>
               <Text variant="bodyMedium">{t('weather.wind')}</Text>
-              <Text variant="titleMedium" style={styles.statValue}>{TODAY_WEATHER.wind} km/h</Text>
+              <Text variant="titleMedium" style={styles.statValue}>{current.wind} km/h</Text>
             </View>
           </View>
         </Card.Content>
@@ -98,28 +198,34 @@ export default function WeatherScreen() {
         </Card.Content>
       </Card>
 
-      <Text variant="titleMedium" style={styles.sectionTitle}>
-        {t('weather.fiveDayForecast')}
-      </Text>
-      <View style={styles.forecastRow}>
-        {FORECAST.map((day) => (
-          <Card key={day.day} style={styles.forecastCard}>
-            <Card.Content style={styles.forecastContent}>
-              <Text variant="labelLarge" style={styles.forecastDay}>{day.day}</Text>
-              <Text style={styles.forecastEmoji}>{day.emoji}</Text>
-              <Text variant="titleMedium" style={styles.forecastTemp}>{day.temp}°C</Text>
-              <Text variant="bodySmall" style={styles.forecastRain}>
-                🌧 {day.rain}%
-              </Text>
-            </Card.Content>
-          </Card>
-        ))}
-      </View>
+      {forecast.length > 0 && (
+        <>
+          <Text variant="titleMedium" style={styles.sectionTitle}>
+            {t('weather.fiveDayForecast')}
+          </Text>
+          <View style={styles.forecastRow}>
+            {forecast.map((day) => (
+              <Card key={day.day} style={styles.forecastCard}>
+                <Card.Content style={styles.forecastContent}>
+                  <Text variant="labelLarge" style={styles.forecastDay}>{day.day}</Text>
+                  <Text style={styles.forecastEmoji}>{day.emoji}</Text>
+                  <Text variant="titleMedium" style={styles.forecastTemp}>{day.temp}\u00B0C</Text>
+                  <Text variant="bodySmall" style={styles.forecastRain}>
+                    {'\uD83C\uDF27'} {day.rain}%
+                  </Text>
+                </Card.Content>
+              </Card>
+            ))}
+          </View>
+        </>
+      )}
 
       <Button
         mode="outlined"
         icon="volume-high"
-        onPress={() => {}}
+        onPress={() => playWeatherSummary(current.location)}
+        loading={ttsLoading}
+        disabled={ttsLoading}
         style={styles.voiceButton}
         contentStyle={styles.voiceContent}
       >
@@ -139,7 +245,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   heading: {
-    color: '#2E7D32',
+    color: colors.primary,
     fontWeight: 'bold',
   },
   location: {
@@ -178,7 +284,7 @@ const styles = StyleSheet.create({
     fontSize: 64,
   },
   heroTemp: {
-    color: '#2E7D32',
+    color: statusColors.healthy,
     fontWeight: 'bold',
   },
   heroCondition: {
@@ -199,7 +305,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   statValue: {
-    color: '#2E7D32',
+    color: statusColors.healthy,
     fontWeight: 'bold',
   },
   heatCard: {
@@ -245,7 +351,7 @@ const styles = StyleSheet.create({
     color: '#1565C0',
   },
   voiceButton: {
-    borderColor: '#2E7D32',
+    borderColor: colors.primary,
     borderRadius: CARD_BORDER_RADIUS,
   },
   voiceContent: {

@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,10 +15,17 @@ router = APIRouter(prefix="/v1/feed", tags=["Feed & Nutrition"])
 
 
 @router.get("/ingredients", response_model=list[FeedIngredientRead])
-async def list_ingredients(db: AsyncSession = Depends(get_db)):
+async def list_ingredients(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+):
     """List all feed ingredients."""
     result = await db.execute(
-        select(FeedIngredient).order_by(FeedIngredient.category, FeedIngredient.name_en)
+        select(FeedIngredient)
+        .order_by(FeedIngredient.category, FeedIngredient.name_en)
+        .offset(skip)
+        .limit(limit)
     )
     return result.scalars().all()
 

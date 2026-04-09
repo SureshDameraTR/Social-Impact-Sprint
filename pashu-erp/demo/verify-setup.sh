@@ -5,6 +5,8 @@ set -e
 
 echo "PashuRaksha Setup Verification"
 echo "================================="
+echo ""
+echo "WARNING: Using mock OTP (123456) - development mode only"
 
 # 1. Check Docker
 echo ""

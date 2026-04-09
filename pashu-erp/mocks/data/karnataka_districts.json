@@ -1,0 +1,14 @@
+{
+  "dharwad": {"lat": 15.46, "lon": 75.01, "elevation": 727},
+  "belgaum": {"lat": 15.85, "lon": 74.50, "elevation": 784},
+  "mysore": {"lat": 12.30, "lon": 76.66, "elevation": 770},
+  "tumkur": {"lat": 13.34, "lon": 77.10, "elevation": 822},
+  "shimoga": {"lat": 13.93, "lon": 75.57, "elevation": 569},
+  "hassan": {"lat": 13.01, "lon": 76.10, "elevation": 978},
+  "mandya": {"lat": 12.52, "lon": 76.90, "elevation": 694},
+  "davanagere": {"lat": 14.47, "lon": 75.92, "elevation": 597},
+  "haveri": {"lat": 14.79, "lon": 75.40, "elevation": 558},
+  "raichur": {"lat": 16.21, "lon": 77.37, "elevation": 407},
+  "bagalkot": {"lat": 16.18, "lon": 75.70, "elevation": 533},
+  "bidar": {"lat": 17.91, "lon": 77.52, "elevation": 670}
+}

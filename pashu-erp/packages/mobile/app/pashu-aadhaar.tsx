@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Button, Card, Text, TextInput } from 'react-native-paper';
+import { Button, Card, Text, TextInput, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../src/config/theme';
+import { api } from '../src/config/api';
 
 interface PashuRecord {
   id: string;
@@ -20,79 +21,31 @@ interface PashuRecord {
   synced: boolean;
 }
 
-const MOCK_DB: Record<string, PashuRecord> = {
-  '123456789012': {
-    id: '123456789012',
-    animalName: 'Lakshmi',
-    species: 'Cattle',
-    speciesEmoji: '🐄',
-    breed: 'Hallikar',
-    gender: 'Female',
-    age: '4 years',
-    ownerName: 'Ramesh Kumar',
-    ownerPhone: '+91 98765 43210',
-    district: 'Mysore',
-    village: 'Hullahalli',
-    vaccinations: [
-      { name: 'FMD', date: '2026-01-15', status: 'done' },
-      { name: 'HS-BQ', date: '2026-02-20', status: 'done' },
-      { name: 'Brucellosis', date: '2026-06-01', status: 'upcoming' },
-    ],
-    synced: true,
-  },
-  '234567890123': {
-    id: '234567890123',
-    animalName: 'Nandi',
-    species: 'Cattle',
-    speciesEmoji: '🐄',
-    breed: 'Amrit Mahal',
-    gender: 'Male',
-    age: '6 years',
-    ownerName: 'Suresh Gowda',
-    ownerPhone: '+91 99887 76655',
-    district: 'Mandya',
-    village: 'Srirangapatna',
-    vaccinations: [
-      { name: 'FMD', date: '2025-11-10', status: 'done' },
-      { name: 'HS-BQ', date: '2025-12-05', status: 'done' },
-    ],
-    synced: true,
-  },
-  '345678901234': {
-    id: '345678901234',
-    animalName: 'Malli',
-    species: 'Goat',
-    speciesEmoji: '🐐',
-    breed: 'Osmanabadi',
-    gender: 'Female',
-    age: '2 years',
-    ownerName: 'Parvathi Devi',
-    ownerPhone: '+91 97654 32100',
-    district: 'Hassan',
-    village: 'Channarayapatna',
-    vaccinations: [
-      { name: 'PPR', date: '2026-03-01', status: 'done' },
-      { name: 'Goat Pox', date: '2026-07-15', status: 'upcoming' },
-    ],
-    synced: false,
-  },
-};
-
 export default function PashuAadhaarScreen() {
   const { t } = useTranslation();
   const [idInput, setIdInput] = useState('');
   const [result, setResult] = useState<PashuRecord | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLookup = () => {
+  const handleLookup = async () => {
     const cleaned = idInput.replace(/\s/g, '');
-    const record = MOCK_DB[cleaned];
-    if (record) {
+    setLoading(true);
+    setError(null);
+    setNotFound(false);
+    setResult(null);
+    try {
+      const record = await api.get<PashuRecord>(`/bharat-pashudhan/lookup?id=${cleaned}`);
       setResult(record);
-      setNotFound(false);
-    } else {
-      setResult(null);
-      setNotFound(true);
+    } catch (err: any) {
+      if (err.message && err.message.includes('404')) {
+        setNotFound(true);
+      } else {
+        setError(err.message);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -125,16 +78,28 @@ export default function PashuAadhaarScreen() {
         style={styles.lookupButton}
         contentStyle={styles.lookupContent}
         labelStyle={styles.lookupLabel}
-        disabled={idInput.replace(/\s/g, '').length < 12}
+        disabled={idInput.replace(/\s/g, '').length < 12 || loading}
+        loading={loading}
         icon="magnify"
       >
         {t('pashuAadhaar.lookUp')}
       </Button>
 
+      {error && (
+        <Card style={styles.notFoundCard}>
+          <Card.Content style={styles.notFoundContent}>
+            <Text style={styles.notFoundEmoji}>{'\u26A0\uFE0F'}</Text>
+            <Text variant="titleMedium" style={styles.notFoundText}>
+              {error}
+            </Text>
+          </Card.Content>
+        </Card>
+      )}
+
       {notFound && (
         <Card style={styles.notFoundCard}>
           <Card.Content style={styles.notFoundContent}>
-            <Text style={styles.notFoundEmoji}>🔍</Text>
+            <Text style={styles.notFoundEmoji}>{'\uD83D\uDD0D'}</Text>
             <Text variant="titleMedium" style={styles.notFoundText}>
               {t('pashuAadhaar.notFound')}
             </Text>
@@ -197,7 +162,7 @@ export default function PashuAadhaarScreen() {
                       fontSize: 12,
                       fontWeight: 'bold',
                     }}>
-                      {v.status === 'done' ? '✓' : '⏳'}
+                      {v.status === 'done' ? '\u2713' : '\u23F3'}
                     </Text>
                   </View>
                 </View>
@@ -216,15 +181,6 @@ export default function PashuAadhaarScreen() {
           </Card>
         </View>
       )}
-
-      <View style={styles.demoHint}>
-        <Text variant="bodySmall" style={styles.demoText}>
-          {t('pashuAadhaar.demoHint')}
-        </Text>
-        <Text variant="bodySmall" style={styles.demoIds}>
-          123456789012 | 234567890123 | 345678901234
-        </Text>
-      </View>
     </ScrollView>
   );
 }
@@ -365,16 +321,5 @@ const styles = StyleSheet.create({
   syncContent: {
     alignItems: 'center',
     padding: SPACING.md,
-  },
-  demoHint: {
-    marginTop: SPACING.xl,
-    alignItems: 'center',
-  },
-  demoText: {
-    color: '#9E9E9E',
-  },
-  demoIds: {
-    color: '#1565C0',
-    marginTop: SPACING.xs,
   },
 });

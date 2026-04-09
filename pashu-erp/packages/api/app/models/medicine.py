@@ -25,7 +25,7 @@ class Medicine(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     administrations = relationship(
-        "MedicineAdministration", back_populates="medicine", foreign_keys="MedicineAdministration.medicine_id"
+        "MedicineAdministration", back_populates="medicine", foreign_keys="MedicineAdministration.medicine_id", lazy="noload"
     )
 
 
@@ -50,5 +50,5 @@ class MedicineAdministration(Base):
     withdrawal_meat_until: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Relationships
-    animal = relationship("Animal", foreign_keys=[animal_id])
-    medicine = relationship("Medicine", back_populates="administrations", foreign_keys=[medicine_id])
+    animal = relationship("Animal", foreign_keys=[animal_id], lazy="selectin")
+    medicine = relationship("Medicine", back_populates="administrations", foreign_keys=[medicine_id], lazy="selectin")

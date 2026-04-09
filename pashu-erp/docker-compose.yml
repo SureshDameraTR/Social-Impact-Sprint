@@ -4,9 +4,9 @@ services:
     environment:
       POSTGRES_DB: pashuraksha
       POSTGRES_USER: pashu
-      POSTGRES_PASSWORD: pashu_dev_2026
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pashu_dev_2026}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -14,21 +14,53 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+
+  mock-backends:
+    build: ./mocks
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./mocks/uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   api:
     build: ./packages/api
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://pashu:pashu_dev_2026@db:5432/pashuraksha
-      JWT_SECRET: dev-secret-change-in-production
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://pashu:pashu_dev_2026@db:5432/pashuraksha}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
       ENVIRONMENT: development
+      WEATHER_API_URL: http://mock-backends:8001/api/weather
+      BHARAT_PASHUDHAN_API_URL: http://mock-backends:8001/api/registry
+      IOT_GATEWAY_URL: http://mock-backends:8001/api/iot
+      STORAGE_API_URL: http://mock-backends:8001/api/storage
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./packages/api:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      mock-backends:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
 
 volumes:
   pgdata:

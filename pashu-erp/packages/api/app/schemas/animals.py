@@ -2,7 +2,7 @@ from datetime import date, datetime
 from enum import Enum
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class Species(str, Enum):
@@ -67,7 +67,7 @@ class AnimalRead(BaseModel):
     lactation_number: int | None = None
     body_condition_score: float | None = None
     is_insured: bool
-    metadata: dict | None = None
+    metadata_: dict | None = Field(None, alias="metadata_", serialization_alias="metadata")
     created_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)

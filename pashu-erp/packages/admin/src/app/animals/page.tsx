@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useList } from "@refinedev/core";
 import {
   Box,
@@ -20,69 +20,92 @@ import {
   FormControl,
   InputLabel,
   Stack,
+  Chip,
+  TableSortLabel,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import SpeciesChip from "@/components/SpeciesChip";
-import RiskBadge from "@/components/RiskBadge";
+import { colors, sxCodeCell, sxNameCell } from "@/theme/theme";
+import EmptyState from "@/components/EmptyState";
 
 interface Animal {
   id: string;
   name: string;
   species: string;
   breed: string;
-  owner: string;
-  pashu_aadhaar: string;
-  health_status: string;
+  user_id: string;
+  pashu_aadhaar_id: string;
+  sex: string;
 }
-
-const mockAnimals: Animal[] = [
-  { id: "A001", name: "Lakshmi", species: "Cattle", breed: "Gir", owner: "Ramesh Gowda", pashu_aadhaar: "PA-KA-MYS-00001", health_status: "low" },
-  { id: "A002", name: "Nandi", species: "Cattle", breed: "Hallikar", owner: "Ramesh Gowda", pashu_aadhaar: "PA-KA-MYS-00002", health_status: "low" },
-  { id: "A003", name: "Gauri", species: "Buffalo", breed: "Murrah", owner: "Lakshmi Devi", pashu_aadhaar: "PA-KA-MYS-00003", health_status: "medium" },
-  { id: "A004", name: "Meenu", species: "Goat", breed: "Osmanabadi", owner: "Manjunath K", pashu_aadhaar: "PA-KA-MDY-00004", health_status: "low" },
-  { id: "A005", name: "Raja", species: "Cattle", breed: "Amrit Mahal", owner: "Krishna Murthy", pashu_aadhaar: "PA-KA-MDY-00005", health_status: "high" },
-  { id: "A006", name: "Kaali", species: "Buffalo", breed: "Surti", owner: "Savitri Bai", pashu_aadhaar: "PA-KA-HSN-00006", health_status: "low" },
-  { id: "A007", name: "Sheru", species: "Goat", breed: "Jamunapari", owner: "Parvathi Amma", pashu_aadhaar: "PA-KA-CHN-00007", health_status: "critical" },
-  { id: "A008", name: "Sundari", species: "Cattle", breed: "Sahiwal", owner: "Suresh Babu", pashu_aadhaar: "PA-KA-KDG-00008", health_status: "low" },
-  { id: "A009", name: "Chinna", species: "Sheep", breed: "Bannur", owner: "Meenakshi H", pashu_aadhaar: "PA-KA-MYS-00009", health_status: "medium" },
-  { id: "A010", name: "Kokila", species: "Poultry", breed: "Kadaknath", owner: "Basavaraju N", pashu_aadhaar: "PA-KA-HSN-00010", health_status: "low" },
-  { id: "A011", name: "Bhadra", species: "Cattle", breed: "Deoni", owner: "Nagaraj P", pashu_aadhaar: "PA-KA-MYS-00011", health_status: "low" },
-  { id: "A012", name: "Kamala", species: "Buffalo", breed: "Pandharpuri", owner: "Shivamma R", pashu_aadhaar: "PA-KA-CHN-00012", health_status: "high" },
-];
 
 const speciesList = ["All", "Cattle", "Buffalo", "Goat", "Sheep", "Poultry"];
 
+type SortKey = "name" | "species" | "user_id" | "sex";
+
 export default function AnimalsPage() {
+  useEffect(() => {
+    document.title = 'Animals — PashuRaksha ERP';
+  }, []);
+
   const [search, setSearch] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("All");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [sortBy, setSortBy] = useState<SortKey | "">("");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  const { data } = useList<Animal>({ resource: "animals" });
-  const animals = data?.data ?? mockAnimals;
+  const { data, isLoading, isError } = useList<Animal>({ resource: "animals" });
+
+  const animals = data?.data ?? [];
+
+  const handleSort = useCallback((key: SortKey) => {
+    setSortBy((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        return prev;
+      }
+      setSortDir("asc");
+      return key;
+    });
+  }, []);
 
   const filtered = useMemo(
     () =>
       animals.filter((a) => {
         const matchSearch =
-          a.name.toLowerCase().includes(search.toLowerCase()) ||
-          a.pashu_aadhaar.toLowerCase().includes(search.toLowerCase());
-        const matchSpecies = speciesFilter === "All" || a.species === speciesFilter;
+          (a.name || "").toLowerCase().includes(search.toLowerCase()) ||
+          (a.pashu_aadhaar_id || "").toLowerCase().includes(search.toLowerCase());
+        const matchSpecies = speciesFilter === "All" || (a.species || "").toLowerCase() === speciesFilter.toLowerCase();
         return matchSearch && matchSpecies;
       }),
     [animals, search, speciesFilter]
   );
 
+  const sortedRows = useMemo(() => {
+    if (!sortBy) return filtered;
+    const sorted = [...filtered];
+    sorted.sort((a, b) => {
+      const cmp = a[sortBy].localeCompare(b[sortBy]);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [filtered, sortBy, sortDir]);
+
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress /></Box>;
+  if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
+
   return (
     <Box p={3}>
-      <Typography variant="h4" fontWeight={700} gutterBottom>
+      <Typography variant="h4" gutterBottom sx={{ color: colors.text }}>
         Animals
       </Typography>
       <Typography variant="body1" color="text.secondary" mb={3}>
         {filtered.length} registered animals with Pashu Aadhaar
       </Typography>
 
-      <Paper sx={{ borderRadius: 2 }}>
+      <Paper>
         <Box p={2}>
           <Stack direction="row" spacing={2} alignItems="center">
             <TextField
@@ -93,7 +116,7 @@ export default function AnimalsPage() {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon />
+                    <SearchIcon sx={{ color: colors.textLight }} />
                   </InputAdornment>
                 ),
               }}
@@ -122,39 +145,63 @@ export default function AnimalsPage() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Species</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Breed</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Owner</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Pashu Aadhaar</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Health Status</TableCell>
+                <TableCell>
+                  <TableSortLabel active={sortBy === "name"} direction={sortBy === "name" ? sortDir : "asc"} onClick={() => handleSort("name")}>
+                    Name
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel active={sortBy === "species"} direction={sortBy === "species" ? sortDir : "asc"} onClick={() => handleSort("species")}>
+                    Species
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>Breed</TableCell>
+                <TableCell>Owner ID</TableCell>
+                <TableCell>Pashu Aadhaar</TableCell>
+                <TableCell>
+                  <TableSortLabel active={sortBy === "sex"} direction={sortBy === "sex" ? sortDir : "asc"} onClick={() => handleSort("sex")}>
+                    Sex
+                  </TableSortLabel>
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filtered
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((animal) => (
-                  <TableRow key={animal.id} hover>
-                    <TableCell>{animal.name}</TableCell>
-                    <TableCell>
-                      <SpeciesChip species={animal.species} />
-                    </TableCell>
-                    <TableCell>{animal.breed}</TableCell>
-                    <TableCell>{animal.owner}</TableCell>
-                    <TableCell sx={{ fontFamily: "monospace", fontSize: 13 }}>
-                      {animal.pashu_aadhaar}
-                    </TableCell>
-                    <TableCell>
-                      <RiskBadge level={animal.health_status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {sortedRows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} sx={{ border: 0 }}>
+                    <EmptyState />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sortedRows
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((animal) => (
+                    <TableRow key={animal.id}>
+                      <TableCell sx={sxNameCell}>
+                        {animal.name}
+                      </TableCell>
+                      <TableCell>
+                        <SpeciesChip species={animal.species} />
+                      </TableCell>
+                      <TableCell>{animal.breed}</TableCell>
+                      <TableCell sx={{ fontSize: '11px', color: colors.textDim }}>{animal.user_id?.slice(0, 8)}</TableCell>
+                      <TableCell
+                        sx={sxCodeCell}
+                      >
+                        {animal.pashu_aadhaar_id}
+                      </TableCell>
+                      <TableCell>
+                        <Chip label={animal.sex} size="small" sx={{ textTransform: 'capitalize', bgcolor: colors.primaryLight, color: colors.primary, border: 'none', fontSize: '11.5px' }} />
+                      </TableCell>
+                    </TableRow>
+                  ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
         <TablePagination
           component="div"
-          count={filtered.length}
+          count={sortedRows.length}
           page={page}
           onPageChange={(_, p) => setPage(p)}
           rowsPerPage={rowsPerPage}

@@ -9,7 +9,7 @@ interface EarningsHeroProps {
   period: string;
 }
 
-export function EarningsHero({ amount, period }: EarningsHeroProps) {
+function EarningsHeroInner({ amount, period }: EarningsHeroProps) {
   const { t } = useTranslation();
 
   const formattedAmount = new Intl.NumberFormat('en-IN', {
@@ -20,40 +20,53 @@ export function EarningsHero({ amount, period }: EarningsHeroProps) {
 
   return (
     <View style={styles.container}>
-      <Text variant="bodyLarge" style={styles.label}>
-        {t('income.totalEarnings')} ({t(`income.${period}`)})
-      </Text>
-      <Text variant="displayMedium" style={styles.amount}>
-        {formattedAmount}
-      </Text>
-      <Text variant="bodyMedium" style={styles.subtitle}>
-        {t('income.earnings')}
-      </Text>
+      <View style={styles.gradient}>
+        <Text variant="bodyLarge" style={styles.label}>
+          {t('income.totalEarnings')} ({t(`income.${period}`)})
+        </Text>
+        <Text style={styles.amount}>
+          {formattedAmount}
+        </Text>
+        <Text variant="bodyMedium" style={styles.subtitle}>
+          {t('income.earnings')}
+        </Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: SPACING.md,
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#1B6B4A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  gradient: {
     alignItems: 'center',
     paddingVertical: SPACING.xl,
     paddingHorizontal: SPACING.md,
-    backgroundColor: '#2E7D32',
-    borderRadius: 24,
-    marginHorizontal: SPACING.md,
-    marginTop: SPACING.md,
+    backgroundColor: '#1B6B4A',
   },
   label: {
-    color: '#C8E6C9',
+    color: '#A8F5C8',
     marginBottom: SPACING.xs,
   },
   amount: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
+    fontWeight: '700',
     fontSize: 48,
+    lineHeight: 56,
   },
   subtitle: {
-    color: '#A5D6A7',
+    color: '#A8F5C8',
     marginTop: SPACING.xs,
+    opacity: 0.9,
   },
 });
+
+export const EarningsHero = React.memo(EarningsHeroInner);

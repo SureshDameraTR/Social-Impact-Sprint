@@ -1,30 +1,44 @@
 "use client";
 
+import React from "react";
 import { Chip } from "@mui/material";
+import { colors } from "@/theme/theme";
 
-const speciesEmoji: Record<string, string> = {
-  cattle: "\uD83D\uDC04",
-  cow: "\uD83D\uDC04",
-  buffalo: "\uD83D\uDC03",
-  goat: "\uD83D\uDC10",
-  sheep: "\uD83D\uDC11",
-  poultry: "\uD83D\uDC14",
-  chicken: "\uD83D\uDC14",
-  pig: "\uD83D\uDC16",
+const speciesConfig: Record<string, { emoji: string; bg: string; color: string }> = {
+  cattle: { emoji: "\uD83D\uDC04", bg: colors.primaryLight, color: colors.primary },
+  cow: { emoji: "\uD83D\uDC04", bg: colors.primaryLight, color: colors.primary },
+  buffalo: { emoji: "\uD83D\uDC03", bg: '#e8eef6', color: colors.secondary },
+  goat: { emoji: "\uD83D\uDC10", bg: colors.warningLight, color: colors.accentAmber },
+  sheep: { emoji: "\uD83D\uDC11", bg: colors.errorLight, color: colors.accentRed },
+  poultry: { emoji: "\uD83D\uDC14", bg: colors.infoLight, color: colors.accentBlue },
+  chicken: { emoji: "\uD83D\uDC14", bg: colors.infoLight, color: colors.accentBlue },
+  pig: { emoji: "\uD83D\uDC16", bg: colors.successLight, color: colors.accentGreen },
 };
 
 interface SpeciesChipProps {
   species: string;
 }
 
-export default function SpeciesChip({ species }: SpeciesChipProps) {
-  const emoji = speciesEmoji[species.toLowerCase()] || "\uD83D\uDC3E";
+function SpeciesChipInner({ species }: SpeciesChipProps) {
+  const config = speciesConfig[species.toLowerCase()] || {
+    emoji: "\uD83D\uDC3E",
+    bg: colors.primaryLight,
+    color: colors.primary,
+  };
   return (
     <Chip
-      label={`${emoji} ${species}`}
+      label={`${config.emoji} ${species}`}
       size="small"
-      variant="outlined"
-      sx={{ fontWeight: 500 }}
+      sx={{
+        fontWeight: 500,
+        bgcolor: config.bg,
+        color: config.color,
+        border: 'none',
+        fontSize: '12px',
+      }}
     />
   );
 }
+
+const SpeciesChip = React.memo(SpeciesChipInner);
+export default SpeciesChip;

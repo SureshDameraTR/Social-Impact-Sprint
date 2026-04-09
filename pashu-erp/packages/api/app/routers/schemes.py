@@ -27,7 +27,7 @@ class SchemeCreate(BaseModel):
     ministry: str | None = Field(None, max_length=200)
     description: str | None = None
     eligibility_criteria: str | None = None
-    required_documents: dict | None = None
+    required_documents: list | dict | None = None
     max_subsidy_amount: float | None = None
     subsidy_percentage: float | None = None
     is_active: bool = True
@@ -42,7 +42,7 @@ class SchemeRead(BaseModel):
     ministry: str | None = None
     description: str | None = None
     eligibility_criteria: str | None = None
-    required_documents: dict | None = None
+    required_documents: list | dict | None = None
     max_subsidy_amount: float | None = None
     subsidy_percentage: float | None = None
     is_active: bool
@@ -60,6 +60,8 @@ class SchemeRead(BaseModel):
 @router.get("", response_model=list[SchemeRead])
 async def list_schemes(
     ministry: str | None = Query(None, description="Filter by ministry name"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -67,7 +69,7 @@ async def list_schemes(
     stmt = select(GovtScheme).where(GovtScheme.is_active == True)  # noqa: E712
     if ministry:
         stmt = stmt.where(GovtScheme.ministry.ilike(f"%{ministry}%"))
-    stmt = stmt.order_by(GovtScheme.name)
+    stmt = stmt.order_by(GovtScheme.name).offset(skip).limit(limit)
     result = await db.execute(stmt)
     return result.scalars().all()
 

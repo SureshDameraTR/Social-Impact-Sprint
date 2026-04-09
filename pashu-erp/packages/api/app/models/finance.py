@@ -29,7 +29,7 @@ class Transaction(Base):
         server_default=text("gen_random_uuid()"),
     )
     user_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
     type: Mapped[str] = mapped_column(
         Enum(TransactionType, name="transaction_type"), nullable=False
@@ -48,4 +48,4 @@ class Transaction(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    user = relationship("User", back_populates="transactions", foreign_keys=[user_id])
+    user = relationship("User", back_populates="transactions", foreign_keys=[user_id], lazy="selectin")
