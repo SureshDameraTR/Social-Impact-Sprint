@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from jose import jwt
-from passlib.hash import bcrypt
+import bcrypt
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -103,7 +103,7 @@ async def request_otp(body: OTPRequest, db: AsyncSession = Depends(get_db)):
     )
 
     otp = _generate_otp()
-    otp_hash = bcrypt.hash(otp)
+    otp_hash = bcrypt.hashpw(otp.encode(), bcrypt.gensalt()).decode()
     otp_record = OTPRequestModel(
         phone=body.phone,
         otp_hash=otp_hash,
@@ -154,7 +154,7 @@ async def verify_otp(body: OTPVerify, db: AsyncSession = Depends(get_db)):
             "Too many failed attempts. Please request a new OTP.",
         )
 
-    if not bcrypt.verify(body.otp, otp_record.otp_hash):
+    if not bcrypt.checkpw(body.otp.encode(), otp_record.otp_hash.encode()):
         otp_record.attempts += 1
         await db.commit()
         raise _auth_error(
