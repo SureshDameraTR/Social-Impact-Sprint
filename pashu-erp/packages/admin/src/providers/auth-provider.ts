@@ -1,89 +1,120 @@
 import type { AuthProvider } from "@refinedev/core";
 
-const API_URL = "http://localhost:8000/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) {
+  throw new Error("NEXT_PUBLIC_API_URL environment variable is required");
+}
+
+let cachedIdentity: { id: string; name: string; role: string } | null = null;
+
+function getCsrfToken(): string {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : "";
+}
 
 export const authProvider: AuthProvider = {
-  login: async ({ phone, otp }) => {
+  login: async ({ phone, otp, rememberMe }) => {
     try {
       const response = await fetch(`${API_URL}/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
-          phone: phone || "+919999900000",
-          otp: otp || "123456",
+          phone,
+          otp,
+          remember_me: rememberMe ?? false,
+          client_type: "web",
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem("token", data.access_token || "demo-jwt-token");
-        localStorage.setItem(
-          "user",
-          JSON.stringify(
-            data.user || {
-              id: "admin-001",
-              name: "Dr. Rajesh Kumar",
-              role: "district_admin",
-              phone: "+919999900000",
-              district: "Mysuru",
-            }
-          )
-        );
-        return { success: true, redirectTo: "/" };
+      if (!response.ok) {
+        const err = await response.json();
+        return {
+          success: false,
+          error: {
+            name: err.code || "LoginError",
+            message: err.detail || "Authentication failed",
+          },
+        };
       }
-    } catch {
-      // Fallback for demo: auto-login with mock data
-      localStorage.setItem("token", "demo-jwt-token");
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          id: "admin-001",
-          name: "Dr. Rajesh Kumar",
-          role: "district_admin",
-          phone: "+919999900000",
-          district: "Mysuru",
-        })
-      );
-      return { success: true, redirectTo: "/" };
-    }
 
-    return {
-      success: false,
-      error: { name: "LoginError", message: "Invalid credentials" },
-    };
+      const data = await response.json();
+      cachedIdentity = {
+        id: data.user_id,
+        name: data.name || "Unknown",
+        role: data.role,
+      };
+      return { success: true, redirectTo: "/" };
+    } catch {
+      return {
+        success: false,
+        error: { name: "NetworkError", message: "Could not reach the server" },
+      };
+    }
   },
 
   logout: async () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    cachedIdentity = null;
+    try {
+      await fetch(`${API_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "X-CSRF-Token": getCsrfToken() },
+      });
+    } catch {
+      // Best-effort — cookies will expire anyway
+    }
     return { success: true, redirectTo: "/login" };
   },
 
   check: async () => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      return { authenticated: true };
+    try {
+      const response = await fetch(`${API_URL}/auth/me`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        cachedIdentity = { id: data.user_id, name: data.name, role: data.role };
+        return { authenticated: true };
+      }
+    } catch {
+      // Network error — treat as unauthenticated
     }
+    cachedIdentity = null;
     return { authenticated: false, redirectTo: "/login" };
   },
 
   getIdentity: async () => {
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      const user = JSON.parse(userStr);
+    if (cachedIdentity) {
       return {
-        id: user.id,
-        name: user.name,
-        avatar: undefined,
+        id: cachedIdentity.id,
+        name: cachedIdentity.name,
       };
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/auth/me`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        cachedIdentity = { id: data.user_id, name: data.name, role: data.role };
+        return { id: data.user_id, name: data.name };
+      }
+    } catch {
+      // Swallow — return null below
     }
     return null;
   },
 
   onError: async (error) => {
     if (error?.statusCode === 401) {
+      cachedIdentity = null;
       return { logout: true };
     }
     return { error };
   },
 };
+
+export { getCsrfToken };
