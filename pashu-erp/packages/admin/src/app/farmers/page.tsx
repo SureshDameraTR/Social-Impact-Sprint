@@ -72,6 +72,7 @@ export default function FarmersPage() {
   });
 
   const farmers = data?.data ?? [];
+  const serverTotal = data?.total ?? 0;
 
   const handleSort = useCallback((key: SortKey) => {
     setSortBy((prev) => {
@@ -237,7 +238,7 @@ export default function FarmersPage() {
         </TableContainer>
         <TablePagination
           component="div"
-          count={sortedRows.length}
+          count={search ? sortedRows.length : serverTotal}
           page={page}
           onPageChange={(_, p) => setPage(p)}
           rowsPerPage={rowsPerPage}

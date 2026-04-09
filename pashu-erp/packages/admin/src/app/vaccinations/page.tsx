@@ -66,6 +66,37 @@ function urgencyColor(daysUntil: number) {
 
 /* ---------- interfaces ---------- */
 
+/** Raw shape from GET /vaccinations/village-coverage */
+interface VillageCoverageRaw {
+  village_code?: string;
+  code?: string;
+  name?: string;
+  total_animals?: number;
+  totalAnimals?: number;
+  coverage_pct?: number;
+  vaccinated?: number;
+}
+
+/** Raw shape from GET /vaccinations/species-breakdown */
+interface SpeciesBreakdownRaw {
+  species: string;
+  animal_count: number;
+  vaccination_count: number;
+}
+
+/** Raw shape from GET /vaccinations/schedule */
+interface ScheduleEntryRaw {
+  species?: string;
+  animal?: string;
+  owner?: string;
+  vaccine?: string;
+  vaccine_name?: string;
+  due_date?: string;
+  dueDate?: string;
+  days_until_due?: number;
+  daysUntilDue?: number;
+}
+
 interface VillageCoverage {
   code: string;
   name: string;
@@ -99,16 +130,16 @@ export default function VaccinationsPage() {
     document.title = 'Vaccinations — PashuRaksha ERP';
   }, []);
 
-  const { data: villageRaw, isLoading: vLoading, isError: vError } = useList<any>({ resource: "vaccinations/village-coverage" });
-  const { data: speciesRaw, isLoading: sLoading, isError: sError } = useList<any>({ resource: "vaccinations/species-breakdown" });
-  const { data: scheduleRaw, isLoading: schLoading, isError: schError } = useList<any>({ resource: "vaccinations/schedule" });
+  const { data: villageRaw, isLoading: vLoading, isError: vError } = useList<VillageCoverageRaw>({ resource: "vaccinations/village-coverage" });
+  const { data: speciesRaw, isLoading: sLoading, isError: sError } = useList<SpeciesBreakdownRaw>({ resource: "vaccinations/species-breakdown" });
+  const { data: scheduleRaw, isLoading: schLoading, isError: schError } = useList<ScheduleEntryRaw>({ resource: "vaccinations/schedule" });
 
   const isLoading = vLoading || sLoading || schLoading;
   const isError = vError || sError || schError;
 
   // Map API response shapes to expected UI shapes
   const villages: VillageCoverage[] = useMemo(() =>
-    (villageRaw?.data ?? []).map((v: any) => ({
+    (villageRaw?.data ?? []).map((v: VillageCoverageRaw) => ({
       code: v.village_code ?? v.code ?? "",
       name: v.village_code ?? v.name ?? "",
       totalAnimals: v.total_animals ?? v.totalAnimals ?? 0,
@@ -120,7 +151,7 @@ export default function VaccinationsPage() {
   );
 
   const speciesList: SpeciesBreakdown[] = useMemo(() =>
-    (speciesRaw?.data ?? []).map((s: any) => ({
+    (speciesRaw?.data ?? []).map((s: SpeciesBreakdownRaw) => ({
       species: s.species ?? "",
       emoji: s.species === "Cattle" || s.species === "cattle" ? "\uD83D\uDC04"
         : s.species === "Goat" || s.species === "goat" ? "\uD83D\uDC10"
@@ -135,7 +166,7 @@ export default function VaccinationsPage() {
   );
 
   const scheduleList: ScheduleEntry[] = useMemo(() =>
-    (scheduleRaw?.data ?? []).map((s: any) => ({
+    (scheduleRaw?.data ?? []).map((s: ScheduleEntryRaw) => ({
       animal: s.species ?? s.animal ?? "",
       owner: s.species ?? s.owner ?? "",
       vaccine: s.vaccine ?? s.vaccine_name ?? "",

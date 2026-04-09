@@ -51,7 +51,7 @@ def upgrade() -> None:
     )
 
     # -- medicine_catalog --
-    op.create_table(
+    medicine_catalog = op.create_table(
         'medicine_catalog',
         sa.Column('id', sa.UUID(), server_default=sa.text('gen_random_uuid()'), nullable=False),
         sa.Column('name', sa.String(length=100), nullable=False),
@@ -80,6 +80,34 @@ def upgrade() -> None:
         {"product": "curd", "unit": "kg", "min_price": 40.0, "max_price": 60.0, "avg_price": 50.0, "district": "Mysore", "label": "Fresh Curd"},
         {"product": "chicken_broiler", "unit": "kg", "min_price": 150.0, "max_price": 200.0, "avg_price": 175.0, "district": "Mysore", "label": "Broiler Chicken (live)"},
         {"product": "chicken_country", "unit": "kg", "min_price": 350.0, "max_price": 500.0, "avg_price": 425.0, "district": "Mysore", "label": "Country Chicken (live)"},
+    ])
+
+    # -- Seed medicine_catalog: 19 common veterinary medicines --
+    op.bulk_insert(medicine_catalog, [
+        # Antibiotics (5)
+        {"name": "Oxytetracycline", "category": "antibiotic", "dosage_info": "5-10 mg/kg bodyweight IM/IV, twice daily for 3-5 days", "species_applicable": "{cattle,buffalo,goat,sheep}", "withdrawal_period_days": 5, "is_active": True},
+        {"name": "Enrofloxacin", "category": "antibiotic", "dosage_info": "5 mg/kg bodyweight IM/SC, once daily for 3-5 days", "species_applicable": "{cattle,buffalo}", "withdrawal_period_days": 7, "is_active": True},
+        {"name": "Amoxicillin", "category": "antibiotic", "dosage_info": "7-15 mg/kg bodyweight IM, once daily for 3-5 days", "species_applicable": "{cattle,buffalo,goat,sheep}", "withdrawal_period_days": 5, "is_active": True},
+        {"name": "Gentamicin", "category": "antibiotic", "dosage_info": "4-6 mg/kg bodyweight IM/IV, once daily for 5-7 days", "species_applicable": "{cattle,buffalo}", "withdrawal_period_days": 10, "is_active": True},
+        {"name": "Penicillin G", "category": "antibiotic", "dosage_info": "10,000-20,000 IU/kg bodyweight IM, once daily for 3-5 days", "species_applicable": "{cattle,buffalo,goat,sheep}", "withdrawal_period_days": 3, "is_active": True},
+        # Anti-parasitic (3)
+        {"name": "Ivermectin", "category": "anti_parasitic", "dosage_info": "0.2 mg/kg bodyweight SC, single dose; repeat after 14 days if needed", "species_applicable": "{cattle,buffalo,goat,sheep}", "withdrawal_period_days": 28, "is_active": True},
+        {"name": "Albendazole", "category": "anti_parasitic", "dosage_info": "7.5 mg/kg bodyweight oral, single dose", "species_applicable": "{cattle,buffalo,goat,sheep}", "withdrawal_period_days": 7, "is_active": True},
+        {"name": "Fenbendazole", "category": "anti_parasitic", "dosage_info": "5-10 mg/kg bodyweight oral, single dose for 3 consecutive days", "species_applicable": "{cattle,goat,sheep}", "withdrawal_period_days": 8, "is_active": True},
+        # Anti-inflammatory (2)
+        {"name": "Meloxicam", "category": "anti_inflammatory", "dosage_info": "0.5 mg/kg bodyweight SC/IV, single dose; may repeat after 24 hours", "species_applicable": "{cattle,buffalo}", "withdrawal_period_days": 15, "is_active": True},
+        {"name": "Flunixin Meglumine", "category": "anti_inflammatory", "dosage_info": "1.1-2.2 mg/kg bodyweight IV, once daily for up to 3 days", "species_applicable": "{cattle}", "withdrawal_period_days": 4, "is_active": True},
+        # Vaccines (6)
+        {"name": "FMD Vaccine", "category": "vaccine", "dosage_info": "2 ml SC in neck region; primary at 4 months, booster at 6-month intervals", "species_applicable": "{cattle,buffalo,goat,sheep}", "withdrawal_period_days": 0, "is_active": True},
+        {"name": "Brucella Vaccine", "category": "vaccine", "dosage_info": "2 ml SC; single dose for female calves at 4-8 months of age", "species_applicable": "{cattle,buffalo}", "withdrawal_period_days": 0, "is_active": True},
+        {"name": "HS Vaccine", "category": "vaccine", "dosage_info": "3 ml SC; primary before monsoon, annual booster", "species_applicable": "{cattle,buffalo}", "withdrawal_period_days": 0, "is_active": True},
+        {"name": "BQ Vaccine", "category": "vaccine", "dosage_info": "2 ml SC; primary at 6 months, annual booster before monsoon", "species_applicable": "{cattle,buffalo}", "withdrawal_period_days": 0, "is_active": True},
+        {"name": "PPR Vaccine", "category": "vaccine", "dosage_info": "1 ml SC; primary at 3 months, booster every 3 years", "species_applicable": "{goat,sheep}", "withdrawal_period_days": 0, "is_active": True},
+        {"name": "Enterotoxaemia Vaccine", "category": "vaccine", "dosage_info": "2 ml SC; primary at 4 months, annual booster before monsoon", "species_applicable": "{goat,sheep}", "withdrawal_period_days": 0, "is_active": True},
+        # Supplements (3)
+        {"name": "Calcium Borogluconate", "category": "supplement", "dosage_info": "250-500 ml of 25% solution IV slow drip; for acute milk fever", "species_applicable": "{cattle,buffalo}", "withdrawal_period_days": 0, "is_active": True},
+        {"name": "Iron Dextran", "category": "supplement", "dosage_info": "5-10 ml deep IM; for iron-deficiency anemia in young animals", "species_applicable": "{cattle,buffalo,goat,sheep}", "withdrawal_period_days": 0, "is_active": True},
+        {"name": "Vitamin AD3E", "category": "supplement", "dosage_info": "5-10 ml IM; repeat every 2-4 weeks as nutritional supplement", "species_applicable": "{cattle,buffalo,goat,sheep}", "withdrawal_period_days": 0, "is_active": True},
     ])
 
     # -- Seed insurance_premiums: 4 species x 3 breed types = 12 rows --

@@ -1,6 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -8,7 +9,9 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import engine, get_db
+from app.logging_config import setup_logging
 from app.middleware.csrf import CSRFMiddleware
+from app.middleware.request_logging import RequestLoggingMiddleware
 from app.services.errors import ServiceNotConfiguredError, ServiceUnavailableError
 
 logger = logging.getLogger(__name__)
@@ -84,6 +87,8 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    setup_logging(settings.environment)
+
     app = FastAPI(
         title="PashuRaksha ERP",
         description="Livestock management ERP for rural Indian farmers",
@@ -101,6 +106,7 @@ def create_app() -> FastAPI:
     )
 
     app.add_middleware(CSRFMiddleware)
+    app.add_middleware(RequestLoggingMiddleware)
 
     app.include_router(auth.router)
     app.include_router(animals.router)
@@ -157,6 +163,46 @@ def create_app() -> FastAPI:
                 status_code=503,
                 content={"status": "unhealthy", "database": "disconnected"},
             )
+
+    @app.get("/ready")
+    async def readiness():
+        """Readiness probe -- checks all dependencies."""
+        checks = {"database": "unknown", "weather": "unknown", "iot": "unknown"}
+
+        # Check DB
+        try:
+            async for session in get_db():
+                await session.execute(text("SELECT 1"))
+            checks["database"] = "connected"
+        except Exception:
+            checks["database"] = "disconnected"
+
+        # Check external services (just connectivity, not full requests)
+        for name, url in [
+            ("weather", settings.weather_api_url),
+            ("iot", settings.iot_gateway_url),
+        ]:
+            if url:
+                try:
+                    async with httpx.AsyncClient(timeout=3) as client:
+                        resp = await client.get(f"{url.rstrip('/')}/../../health")
+                        checks[name] = (
+                            "connected" if resp.status_code == 200 else "error"
+                        )
+                except Exception:
+                    checks[name] = "unreachable"
+            else:
+                checks[name] = "not_configured"
+
+        all_ok = checks["database"] == "connected"
+        status_code = 200 if all_ok else 503
+        return JSONResponse(
+            status_code=status_code,
+            content={
+                "status": "ready" if all_ok else "not_ready",
+                "checks": checks,
+            },
+        )
 
     return app
 

@@ -83,12 +83,14 @@ export const restDataProvider: DataProvider = {
     return { data: await res.json() };
   },
 
+  // @ts-expect-error -- Refine's deleteOne is generic over TData which cannot
+  // be satisfied by a concrete data-provider; this is a known Refine limitation.
   deleteOne: async ({ resource, id }) => {
     const res = await fetchWithAuth(`${API_URL}/${resource}/${id}`, {
       method: "DELETE",
     });
     if (!res.ok) throw new Error(`API error ${res.status}`);
-    return { data: { id } as any };
+    return { data: { id } };
   },
 
   getApiUrl: () => API_URL!,

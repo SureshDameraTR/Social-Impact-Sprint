@@ -16,6 +16,14 @@ interface IncomeCategory {
   amount: number;
 }
 
+/** Raw shape from GET /income/by-category — may have nested breakdown */
+interface IncomeCategoryRaw {
+  period?: string;
+  breakdown?: Record<string, number>;
+  category?: string;
+  amount?: number;
+}
+
 interface MonthlyIncome {
   month: string;
   income: number;
@@ -118,7 +126,7 @@ export default function IncomePage() {
     document.title = 'Income Analytics — PashuRaksha ERP';
   }, []);
 
-  const { data: categoryData, isLoading: catLoading, isError: catError } = useList<any>({ resource: "income/by-category" });
+  const { data: categoryData, isLoading: catLoading, isError: catError } = useList<IncomeCategoryRaw>({ resource: "income/by-category" });
   const { data: monthlyData, isLoading: monthLoading, isError: monthError } = useList<MonthlyIncome>({ resource: "income/monthly" });
 
   const isLoading = catLoading || monthLoading;
@@ -133,14 +141,14 @@ export default function IncomePage() {
         .filter(([k]) => !k.startsWith("marketplace_")) // avoid dupes
         .map(([category, amount]) => ({ category, amount: amount as number }));
     }
-    if (first?.category) return rawCat as IncomeCategory[];
+    if (first?.category) return rawCat.map((c) => ({ category: c.category ?? "", amount: c.amount ?? 0 }));
     return [];
   }, [rawCat]);
 
   const monthlyIncome: MonthlyIncome[] = monthlyData?.data ?? [];
 
   const { totalIncome, avgPerFarmer } = useMemo(() => {
-    const total = incomeByCategory.reduce((s: number, c: any) => s + c.amount, 0);
+    const total = incomeByCategory.reduce((s: number, c: IncomeCategory) => s + c.amount, 0);
     const count = incomeByCategory.length;
     return { totalIncome: total, avgPerFarmer: count > 0 ? Math.round(total / count) : 0 };
   }, [incomeByCategory]);
