@@ -1,8 +1,9 @@
 "use client";
 
-import { Refine, Authenticated } from "@refinedev/core";
+import React, { useEffect, useState } from "react";
+import { Refine } from "@refinedev/core";
 import routerProvider from "@refinedev/nextjs-router";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ThemeProvider, CssBaseline, Box, CircularProgress } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
@@ -22,42 +23,60 @@ import { adminTheme } from "@/theme/theme";
 import EmotionCacheProvider from "@/theme/EmotionCache";
 import AdminSidebar, { SIDEBAR_WIDTH } from "@/components/AdminSidebar";
 
-function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
+function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [status, setStatus] = useState<"loading" | "authenticated" | "unauthenticated">("loading");
+
+  useEffect(() => {
+    if (pathname === "/login") {
+      setStatus("authenticated");
+      return;
+    }
+    authProvider.check().then((result) => {
+      if (result.authenticated) {
+        setStatus("authenticated");
+      } else {
+        router.replace("/login");
+      }
+    });
+  }, [pathname, router]);
 
   if (pathname === "/login") {
     return <>{children}</>;
   }
 
-  return (
-    <Authenticated
-      key="auth-guard"
-      redirectOnFail="/login"
-      loading={
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
-          <CircularProgress />
-        </Box>
-      }
-    >
-      <Box sx={{ display: "flex", minHeight: "100vh" }}>
-        <Box component="nav" aria-label="Primary navigation">
-          <AdminSidebar />
-        </Box>
-        <Box
-          component="main"
-          role="main"
-          id="main-content"
-          sx={{
-            flexGrow: 1,
-            ml: `${SIDEBAR_WIDTH}px`,
-            minHeight: "100vh",
-            bgcolor: "background.default",
-          }}
-        >
-          {children}
-        </Box>
+  if (status === "loading") {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
+        <CircularProgress />
       </Box>
-    </Authenticated>
+    );
+  }
+
+  if (status !== "authenticated") {
+    return null;
+  }
+
+  return (
+    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+      <Box component="nav" aria-label="Primary navigation">
+        <AdminSidebar />
+      </Box>
+      <Box
+        component="main"
+        role="main"
+        id="main-content"
+        sx={{
+          flexGrow: 1,
+          ml: `${SIDEBAR_WIDTH}px`,
+          minHeight: "100vh",
+          bgcolor: "background.default",
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
   );
 }
 
@@ -132,7 +151,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           warnWhenUnsavedChanges: true,
         }}
       >
-        <AuthenticatedLayout>{children}</AuthenticatedLayout>
+        <AuthGuard>{children}</AuthGuard>
       </Refine>
     </ThemeProvider>
     </EmotionCacheProvider>
