@@ -1,5 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import FastAPI
@@ -184,8 +185,10 @@ def create_app() -> FastAPI:
         ]:
             if url:
                 try:
+                    parsed = urlparse(url)
+                    health_url = f"{parsed.scheme}://{parsed.netloc}/health"
                     async with httpx.AsyncClient(timeout=3) as client:
-                        resp = await client.get(f"{url.rstrip('/')}/../../health")
+                        resp = await client.get(health_url)
                         checks[name] = (
                             "connected" if resp.status_code == 200 else "error"
                         )

@@ -74,7 +74,7 @@ export class ApiClient {
   }
 
   async post<T>(path: string, body: unknown): Promise<T> {
-    const res = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
+    const res = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: await this.getHeaders(),
       body: JSON.stringify(body),

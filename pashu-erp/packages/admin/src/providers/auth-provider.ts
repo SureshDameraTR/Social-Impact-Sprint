@@ -46,7 +46,8 @@ export const authProvider: AuthProvider = {
         role: data.role,
       };
       return { success: true, redirectTo: "/" };
-    } catch {
+    } catch (err) {
+      console.warn("Login network error:", err);
       return {
         success: false,
         error: { name: "NetworkError", message: "Could not reach the server" },
@@ -62,8 +63,8 @@ export const authProvider: AuthProvider = {
         credentials: "include",
         headers: { "X-CSRF-Token": getCsrfToken() },
       });
-    } catch {
-      // Best-effort — cookies will expire anyway
+    } catch (err) {
+      console.warn("Logout request failed (best-effort):", err);
     }
     return { success: true, redirectTo: "/login" };
   },
@@ -78,8 +79,8 @@ export const authProvider: AuthProvider = {
         cachedIdentity = { id: data.user_id, name: data.name, role: data.role };
         return { authenticated: true };
       }
-    } catch {
-      // Network error — treat as unauthenticated
+    } catch (err) {
+      console.warn("Auth check failed:", err);
     }
     cachedIdentity = null;
     return { authenticated: false, redirectTo: "/login" };
@@ -102,8 +103,8 @@ export const authProvider: AuthProvider = {
         cachedIdentity = { id: data.user_id, name: data.name, role: data.role };
         return { id: data.user_id, name: data.name };
       }
-    } catch {
-      // Swallow — return null below
+    } catch (err) {
+      console.warn("getIdentity failed:", err);
     }
     return null;
   },

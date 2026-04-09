@@ -1,5 +1,7 @@
 """Double-submit cookie CSRF protection middleware."""
 
+import hmac
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -35,7 +37,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 content={"detail": "CSRF token missing", "code": "CSRF_MISSING"},
             )
 
-        if cookie_token != header_token:
+        if not hmac.compare_digest(cookie_token, header_token):
             return JSONResponse(
                 status_code=403,
                 content={"detail": "CSRF token mismatch", "code": "CSRF_MISMATCH"},

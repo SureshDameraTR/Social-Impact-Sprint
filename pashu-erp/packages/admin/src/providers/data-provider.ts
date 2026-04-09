@@ -41,7 +41,12 @@ export const restDataProvider: DataProvider = {
       throw new Error(`API error ${res.status}: ${await res.text()}`);
     }
 
-    const body = await res.json();
+    let body: Record<string, unknown>;
+    try {
+      body = await res.json();
+    } catch {
+      throw new Error(`Invalid JSON response from ${url}`);
+    }
 
     if (Array.isArray(body)) {
       return { data: body, total: body.length };
@@ -62,7 +67,11 @@ export const restDataProvider: DataProvider = {
   getOne: async ({ resource, id }) => {
     const res = await fetchWithAuth(`${API_URL}/${resource}/${id}`);
     if (!res.ok) throw new Error(`API error ${res.status}`);
-    return { data: await res.json() };
+    try {
+      return { data: await res.json() };
+    } catch {
+      throw new Error(`Invalid JSON from ${resource}/${id}`);
+    }
   },
 
   create: async ({ resource, variables }) => {
