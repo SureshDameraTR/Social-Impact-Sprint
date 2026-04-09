@@ -1,8 +1,9 @@
 "use client";
 
-import { Refine } from "@refinedev/core";
+import { Refine, Authenticated } from "@refinedev/core";
 import routerProvider from "@refinedev/nextjs-router";
-import { ThemeProvider, CssBaseline, Box } from "@mui/material";
+import { usePathname } from "next/navigation";
+import { ThemeProvider, CssBaseline, Box, CircularProgress } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
 import PetsIcon from "@mui/icons-material/Pets";
@@ -20,6 +21,45 @@ import { restDataProvider } from "@/providers/data-provider";
 import { adminTheme } from "@/theme/theme";
 import EmotionCacheProvider from "@/theme/EmotionCache";
 import AdminSidebar, { SIDEBAR_WIDTH } from "@/components/AdminSidebar";
+
+function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  if (pathname === "/login") {
+    return <>{children}</>;
+  }
+
+  return (
+    <Authenticated
+      key="auth-guard"
+      redirectOnFail="/login"
+      loading={
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
+          <CircularProgress />
+        </Box>
+      }
+    >
+      <Box sx={{ display: "flex", minHeight: "100vh" }}>
+        <Box component="nav" aria-label="Primary navigation">
+          <AdminSidebar />
+        </Box>
+        <Box
+          component="main"
+          role="main"
+          id="main-content"
+          sx={{
+            flexGrow: 1,
+            ml: `${SIDEBAR_WIDTH}px`,
+            minHeight: "100vh",
+            bgcolor: "background.default",
+          }}
+        >
+          {children}
+        </Box>
+      </Box>
+    </Authenticated>
+  );
+}
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -92,24 +132,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           warnWhenUnsavedChanges: true,
         }}
       >
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-          <Box component="nav" aria-label="Primary navigation">
-            <AdminSidebar />
-          </Box>
-          <Box
-            component="main"
-            role="main"
-            id="main-content"
-            sx={{
-              flexGrow: 1,
-              ml: `${SIDEBAR_WIDTH}px`,
-              minHeight: '100vh',
-              bgcolor: 'background.default',
-            }}
-          >
-            {children}
-          </Box>
-        </Box>
+        <AuthenticatedLayout>{children}</AuthenticatedLayout>
       </Refine>
     </ThemeProvider>
     </EmotionCacheProvider>

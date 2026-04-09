@@ -41,7 +41,8 @@ export const restDataProvider: DataProvider = {
       throw new Error(`API error ${res.status}: ${await res.text()}`);
     }
 
-    let body: Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any;
     try {
       body = await res.json();
     } catch {
