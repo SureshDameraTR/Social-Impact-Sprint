@@ -1,0 +1,9 @@
+{
+  "name": "PashuRaksha Collection Centre",
+  "short_name": "PashuRaksha",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0f4f3",
+  "theme_color": "#0d6b58",
+  "icons": []
+}
