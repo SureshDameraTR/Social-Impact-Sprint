@@ -1,11 +1,12 @@
 """Milk collection center management endpoints."""
 
+import hashlib
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -178,4 +179,91 @@ async def get_farmer_settlements(
         "settlements": result_list,
         "total_farmers": len(result_list),
         "total_payout_inr": round(total_payout, 2),
+    }
+
+
+@router.get("/farmers/search")
+async def search_farmers(
+    phone: str | None = Query(None, min_length=3, max_length=15),
+    aadhaar_last4: str | None = Query(None, min_length=4, max_length=4),
+    name: str | None = Query(None, min_length=2, max_length=100),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Search farmers by phone, last 4 Aadhaar digits, or name."""
+    if not any([phone, aadhaar_last4, name]):
+        raise HTTPException(status_code=400, detail="At least one search parameter required")
+
+    filters = []
+    if phone:
+        filters.append(User.phone.ilike(f"%{phone}%"))
+    if aadhaar_last4:
+        filters.append(User.aadhaar_last4 == aadhaar_last4)
+    if name:
+        filters.append(User.name.ilike(f"%{name}%"))
+
+    result = await db.execute(
+        select(User)
+        .where(User.role == "farmer", or_(*filters))
+        .limit(10)
+    )
+    farmers = result.scalars().all()
+
+    return [
+        {
+            "id": str(f.id),
+            "name": f.name,
+            "phone": f.phone,
+            "aadhaar_last4": f.aadhaar_last4,
+            "village_code": f.village_code,
+            "district": f.location_district,
+        }
+        for f in farmers
+    ]
+
+
+class QuickEnrollRequest(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100)
+    phone: str = Field(..., pattern=r"^\+91[6-9]\d{9}$")
+    aadhaar: str = Field(..., pattern=r"^\d{12}$")
+    village_code: str | None = Field(None, max_length=20)
+
+
+@router.post("/farmers/enroll", status_code=status.HTTP_201_CREATED)
+async def quick_enroll_farmer(
+    body: QuickEnrollRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Quick-enroll a new farmer at the collection centre."""
+    # Check if phone already exists
+    existing = await db.execute(select(User).where(User.phone == body.phone))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="Phone number already registered")
+
+    # Check Aadhaar dedup via hash
+    aadhaar_hash = hashlib.sha256(body.aadhaar.encode()).hexdigest()
+    dup_check = await db.execute(select(User).where(User.aadhaar_hash == aadhaar_hash))
+    if dup_check.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="Aadhaar already registered")
+
+    farmer = User(
+        name=body.name,
+        phone=body.phone,
+        role="farmer",
+        aadhaar_hash=aadhaar_hash,
+        aadhaar_last4=body.aadhaar[-4:],
+        village_code=body.village_code,
+        lang_pref="kn",
+    )
+    db.add(farmer)
+    await db.commit()
+    await db.refresh(farmer)
+
+    return {
+        "id": str(farmer.id),
+        "name": farmer.name,
+        "phone": farmer.phone,
+        "aadhaar_last4": farmer.aadhaar_last4,
+        "message": "Farmer enrolled successfully",
     }

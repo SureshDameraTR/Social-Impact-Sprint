@@ -30,6 +30,8 @@ class User(Base):
     location_district: Mapped[str | None] = mapped_column(String(100), nullable=True)
     location_state: Mapped[str] = mapped_column(String(50), default="Karnataka", server_default="Karnataka")
     village_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    aadhaar_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    aadhaar_last4: Mapped[str | None] = mapped_column(String(4), nullable=True, index=True)
     preferences: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
