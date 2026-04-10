@@ -1,0 +1,20 @@
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #receipt-content,
+  #receipt-content * {
+    visibility: visible;
+  }
+  #receipt-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    font-size: 12px;
+    font-family: monospace;
+  }
+  button {
+    display: none !important;
+  }
+}
