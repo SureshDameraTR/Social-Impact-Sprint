@@ -16,18 +16,10 @@ import SearchIcon from "@mui/icons-material/Search";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useNavigate } from "react-router-dom";
 import { searchFarmers } from "../api/milk";
-
-interface Farmer {
-  id: string;
-  name: string;
-  phone: string;
-  aadhaar_last4: string | null;
-  village_code: string | null;
-  district: string | null;
-}
+import type { Farmer } from "../types";
 
 interface FarmerSearchProps {
-  onSelect: (farmer: Farmer) => void;
+  onSelect: (farmer: Farmer | null) => void;
   selected: Farmer | null;
 }
 
@@ -89,7 +81,7 @@ export default function FarmerSearch({ onSelect, selected }: FarmerSearchProps) 
             {selected.phone} {selected.aadhaar_last4 ? `· Aadhaar ****${selected.aadhaar_last4}` : ""}
           </Typography>
         </Box>
-        <Button size="small" onClick={() => onSelect(null as unknown as Farmer)}>Change</Button>
+        <Button size="small" onClick={() => onSelect(null)}>Change</Button>
       </Box>
     );
   }

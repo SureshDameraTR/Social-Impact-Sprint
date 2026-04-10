@@ -196,11 +196,13 @@ async def search_farmers(
 
     filters = []
     if phone:
-        filters.append(User.phone.ilike(f"%{phone}%"))
+        escaped = phone.replace("%", "").replace("_", "")
+        filters.append(User.phone.ilike(f"%{escaped}%"))
     if aadhaar_last4:
         filters.append(User.aadhaar_last4 == aadhaar_last4)
     if name:
-        filters.append(User.name.ilike(f"%{name}%"))
+        escaped_name = name.replace("%", "").replace("_", "")
+        filters.append(User.name.ilike(f"%{escaped_name}%"))
 
     result = await db.execute(
         select(User)
@@ -236,15 +238,15 @@ async def quick_enroll_farmer(
     db: AsyncSession = Depends(get_db),
 ):
     """Quick-enroll a new farmer at the collection centre."""
-    # Check if phone already exists
-    existing = await db.execute(select(User).where(User.phone == body.phone))
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=409, detail="Phone number already registered")
-
-    # Check Aadhaar dedup via hash
     aadhaar_hash = hashlib.sha256(body.aadhaar.encode()).hexdigest()
-    dup_check = await db.execute(select(User).where(User.aadhaar_hash == aadhaar_hash))
-    if dup_check.scalar_one_or_none():
+
+    dup_result = await db.execute(
+        select(User).where(or_(User.phone == body.phone, User.aadhaar_hash == aadhaar_hash))
+    )
+    dup = dup_result.scalar_one_or_none()
+    if dup:
+        if dup.phone == body.phone:
+            raise HTTPException(status_code=409, detail="Phone number already registered")
         raise HTTPException(status_code=409, detail="Aadhaar already registered")
 
     farmer = User(

@@ -7,25 +7,17 @@ import {
   Typography,
   TextField,
   Button,
-  Alert,
   CircularProgress,
+  Alert,
 } from "@mui/material";
 import FarmerSearch from "../components/FarmerSearch";
 import ShiftSelector from "../components/ShiftSelector";
 import RatePreview from "../components/RatePreview";
 import { receiveMilk } from "../api/milk";
 import { useCentre } from "../hooks/useCentre";
+import type { Farmer, Shift } from "../types";
 
-interface Farmer {
-  id: string;
-  name: string;
-  phone: string;
-  aadhaar_last4: string | null;
-  village_code: string | null;
-  district: string | null;
-}
-
-function getDefaultShift(): "morning" | "evening" {
+function getDefaultShift(): Shift {
   return new Date().getHours() < 12 ? "morning" : "evening";
 }
 
@@ -37,7 +29,7 @@ export default function Intake() {
   const [quantity, setQuantity] = useState("");
   const [fatPct, setFatPct] = useState("");
   const [snfPct, setSnfPct] = useState("");
-  const [shift, setShift] = useState<"morning" | "evening">(getDefaultShift());
+  const [shift, setShift] = useState<Shift>(getDefaultShift());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -74,16 +66,6 @@ export default function Intake() {
       setLoading(false);
     }
   };
-
-  if (!centreId) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="warning">
-          No collection centre selected. Please contact your administrator.
-        </Alert>
-      </Box>
-    );
-  }
 
   return (
     <Box sx={{ maxWidth: 600, mx: "auto", p: 2 }}>

@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { getFarmerSettlements } from "../api/milk";
 import { useCentre } from "../hooks/useCentre";
+import { inrFormatter } from "../types";
 
 interface FarmerSettlement {
   farmer_user_id: string;
@@ -33,11 +34,6 @@ interface SettlementsResponse {
   total_farmers: number;
   total_payout_inr: number;
 }
-
-const inrFormatter = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-});
 
 const PERIOD_OPTIONS = [15, 30, 45] as const;
 
@@ -77,16 +73,6 @@ export default function Settlements() {
       setPeriod(newPeriod);
     }
   };
-
-  if (!centreId) {
-    return (
-      <Box p={3}>
-        <Alert severity="warning">
-          Please select a collection centre to view settlements.
-        </Alert>
-      </Box>
-    );
-  }
 
   return (
     <Box p={3}>

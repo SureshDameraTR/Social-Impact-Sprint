@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
 
 interface CentreContextValue {
   centreId: string | null;
@@ -20,15 +20,20 @@ export function CentreProvider({ children }: { children: ReactNode }) {
     localStorage.getItem("collection_centre_name")
   );
 
-  const setCentre = (id: string, name: string) => {
+  const setCentre = useCallback((id: string, name: string) => {
     setCentreId(id);
     setCentreName(name);
     localStorage.setItem("collection_centre_id", id);
     localStorage.setItem("collection_centre_name", name);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ centreId, centreName, setCentre }),
+    [centreId, centreName, setCentre]
+  );
 
   return (
-    <CentreContext.Provider value={{ centreId, centreName, setCentre }}>
+    <CentreContext.Provider value={value}>
       {children}
     </CentreContext.Provider>
   );

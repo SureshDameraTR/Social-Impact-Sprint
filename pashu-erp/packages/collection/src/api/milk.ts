@@ -1,4 +1,5 @@
 import api from "./client";
+import type { Shift } from "../types";
 
 export async function receiveMilk(data: {
   center_id: string;
@@ -6,7 +7,7 @@ export async function receiveMilk(data: {
   quantity_liters: number;
   fat_pct: number;
   snf_pct: number;
-  shift: "morning" | "evening";
+  shift: Shift;
 }) {
   return api.post("/milk-center/receive", data);
 }

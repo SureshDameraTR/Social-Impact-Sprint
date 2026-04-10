@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import axios from "axios";
 import {
   Box,
   Card,
@@ -68,11 +69,12 @@ export default function Enroll() {
         setSuccess(true);
       }
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { status?: number; data?: { detail?: string } } };
-      if (axiosErr.response?.status === 409) {
-        setError(axiosErr.response.data?.detail || "A farmer with this phone or Aadhaar already exists.");
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        setError(err.response.data?.detail || "A farmer with this phone or Aadhaar already exists.");
+      } else if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || "Something went wrong. Please try again.");
       } else {
-        setError(axiosErr.response?.data?.detail || "Something went wrong. Please try again.");
+        setError("Something went wrong. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -86,7 +88,7 @@ export default function Enroll() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        bgcolor: "#f0f4f3",
+        bgcolor: "background.default",
         p: 2,
       }}
     >
@@ -97,7 +99,7 @@ export default function Enroll() {
               component="button"
               variant="body2"
               onClick={() => navigate(returnTo)}
-              sx={{ display: "flex", alignItems: "center", mb: 2, color: "#0f6b42" }}
+              sx={{ display: "flex", alignItems: "center", mb: 2, color: "primary.main" }}
             >
               <ArrowBackIcon sx={{ fontSize: 18, mr: 0.5 }} />
               Back
@@ -125,7 +127,7 @@ export default function Enroll() {
                 size="large"
                 onClick={resetForm}
                 sx={{
-                  bgcolor: "#0f6b42",
+                  bgcolor: "primary.main",
                   "&:hover": { bgcolor: "#0a5534" },
                   textTransform: "none",
                   fontWeight: 700,
@@ -215,7 +217,7 @@ export default function Enroll() {
                 size="large"
                 disabled={!canSubmit}
                 sx={{
-                  bgcolor: "#0f6b42",
+                  bgcolor: "primary.main",
                   "&:hover": { bgcolor: "#0a5534" },
                   textTransform: "none",
                   fontWeight: 700,

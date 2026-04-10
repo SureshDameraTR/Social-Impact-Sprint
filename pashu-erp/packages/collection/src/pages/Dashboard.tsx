@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { getDailyReport } from "../api/milk";
 import { useCentre } from "../hooks/useCentre";
+import { inrFormatterRounded } from "../types";
 
 interface ShiftData {
   liters: number;
@@ -33,11 +34,6 @@ interface DailyReport {
 
 const REFRESH_INTERVAL_MS = 60_000;
 
-const inrFormatter = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 0,
-});
 
 function StatCard({
   value,
@@ -121,16 +117,6 @@ export default function Dashboard() {
     return () => clearInterval(id);
   }, [fetchReport]);
 
-  if (!centreId) {
-    return (
-      <Box p={3}>
-        <Alert severity="warning">
-          Please select a collection centre to view the dashboard.
-        </Alert>
-      </Box>
-    );
-  }
-
   if (loading) {
     return (
       <Box p={3}>
@@ -172,7 +158,7 @@ export default function Dashboard() {
         </Grid>
         <Grid item xs={6} md={3}>
           <StatCard
-            value={inrFormatter.format(summary.total_amount_inr)}
+            value={inrFormatterRounded.format(summary.total_amount_inr)}
             label="Today's Revenue"
           />
         </Grid>

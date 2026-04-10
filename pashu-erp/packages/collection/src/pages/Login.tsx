@@ -15,6 +15,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import PhoneIcon from "@mui/icons-material/Phone";
+import axios from "axios";
 import { requestOtp, verifyOtp } from "../api/auth";
 import { useAuth } from "../hooks/useAuth";
 
@@ -57,8 +58,7 @@ export default function Login() {
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } catch (e: unknown) {
-      const axiosErr = e as { response?: { data?: { detail?: string } } };
-      setError(axiosErr.response?.data?.detail || (e instanceof Error ? e.message : "Network error"));
+      setError(axios.isAxiosError(e) ? e.response?.data?.detail || "Failed to send OTP" : "Network error");
     } finally {
       setLoading(false);
     }
@@ -73,9 +73,8 @@ export default function Login() {
       await auth.refresh();
       navigate("/intake");
     } catch (e: unknown) {
-      const axiosErr = e as { response?: { data?: { detail?: string; code?: string } } };
-      const detail = axiosErr.response?.data?.detail || (e instanceof Error ? e.message : "Network error");
-      const code = axiosErr.response?.data?.code;
+      const detail = axios.isAxiosError(e) ? e.response?.data?.detail || "Verification failed" : "Network error";
+      const code = axios.isAxiosError(e) ? e.response?.data?.code : undefined;
       setError(detail);
       if (code === "OTP_MAX_ATTEMPTS" || code === "OTP_EXPIRED") {
         setStep("phone");
@@ -132,7 +131,7 @@ export default function Login() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        bgcolor: "#f0f4f3",
+        bgcolor: "background.default",
         p: 2,
       }}
     >
@@ -140,7 +139,7 @@ export default function Login() {
         {/* Header */}
         <Box
           sx={{
-            bgcolor: "#0f6b42",
+            bgcolor: "primary.dark",
             color: "#fff",
             textAlign: "center",
             py: 4,
@@ -153,7 +152,7 @@ export default function Login() {
           <Typography variant="h5" fontWeight={700}>
             PashuRaksha
           </Typography>
-          <Typography variant="body2" sx={{ color: "#a8f5c8", mt: 0.5 }}>
+          <Typography variant="body2" sx={{ color: "primary.light", mt: 0.5 }}>
             Collection Centre
           </Typography>
         </Box>
@@ -200,13 +199,8 @@ export default function Login() {
                 onClick={handleSendOtp}
                 disabled={!isPhoneValid || loading}
                 sx={{
-                  bgcolor: "#0f6b42",
-                  "&:hover": { bgcolor: "#0a5534" },
-                  textTransform: "none",
-                  fontWeight: 700,
-                  fontSize: 16,
                   py: 1.5,
-                  borderRadius: 2,
+                  fontSize: 16,
                 }}
               >
                 {loading ? <CircularProgress size={24} color="inherit" /> : "Send OTP"}
@@ -222,7 +216,7 @@ export default function Login() {
                   component="button"
                   variant="body2"
                   onClick={handleChangePhone}
-                  sx={{ color: "#0f6b42" }}
+                  sx={{ color: "primary.main" }}
                 >
                   Change
                 </Link>
@@ -253,7 +247,7 @@ export default function Login() {
                   <Checkbox
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    sx={{ color: "#0f6b42", "&.Mui-checked": { color: "#0f6b42" } }}
+                    sx={{ color: "primary.main", "&.Mui-checked": { color: "primary.main" } }}
                   />
                 }
                 label="Remember this device (7 days)"
@@ -266,16 +260,7 @@ export default function Login() {
                 size="large"
                 onClick={handleVerifyOtp}
                 disabled={!isOtpComplete || loading}
-                sx={{
-                  bgcolor: "#0f6b42",
-                  "&:hover": { bgcolor: "#0a5534" },
-                  textTransform: "none",
-                  fontWeight: 700,
-                  fontSize: 16,
-                  py: 1.5,
-                  borderRadius: 2,
-                  mb: 1.5,
-                }}
+                sx={{ py: 1.5, fontSize: 16, mb: 1.5 }}
               >
                 {loading ? <CircularProgress size={24} color="inherit" /> : "Verify & Login"}
               </Button>
@@ -291,7 +276,7 @@ export default function Login() {
                     variant="body2"
                     onClick={handleResend}
                     disabled={loading}
-                    sx={{ color: "#0f6b42" }}
+                    sx={{ color: "primary.main" }}
                   >
                     Resend OTP
                   </Link>

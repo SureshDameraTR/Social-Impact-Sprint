@@ -1,10 +1,11 @@
 import { ToggleButtonGroup, ToggleButton, Typography, Box } from "@mui/material";
 import WbSunnyIcon from "@mui/icons-material/WbSunny";
 import NightsStayIcon from "@mui/icons-material/NightsStay";
+import type { Shift } from "../types";
 
 interface ShiftSelectorProps {
-  value: "morning" | "evening";
-  onChange: (shift: "morning" | "evening") => void;
+  value: Shift;
+  onChange: (shift: Shift) => void;
 }
 
 export default function ShiftSelector({ value, onChange }: ShiftSelectorProps) {

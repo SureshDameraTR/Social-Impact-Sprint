@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 import { getMe, logout as apiLogout } from "../api/auth";
 
 interface AuthUser {
@@ -43,8 +43,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  const value = useMemo(
+    () => ({ user, loading, refresh, logout: handleLogout }),
+    [user, loading, refresh, handleLogout]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, loading, refresh, logout: handleLogout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

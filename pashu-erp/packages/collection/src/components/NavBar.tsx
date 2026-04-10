@@ -33,7 +33,7 @@ export default function NavBar() {
   };
 
   return (
-    <AppBar position="sticky" sx={{ bgcolor: "#0d6b58" }}>
+    <AppBar position="sticky" sx={{ bgcolor: "primary.main" }}>
       <Toolbar sx={{ gap: 2 }}>
         <Box sx={{ minWidth: 180 }}>
           <Typography variant="subtitle1" fontWeight={700}>
