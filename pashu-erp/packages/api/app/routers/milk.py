@@ -99,13 +99,17 @@ async def get_daily_summary(
     now = datetime.now(timezone.utc)
     start_date = (now - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
+    base_filter = YieldLog.recorded_at >= start_date
+    if current_user.role != "admin":
+        base_filter = (YieldLog.recorded_at >= start_date) & (YieldLog.user_id == current_user.id)
+
     result = await db.execute(
         select(
             cast(YieldLog.recorded_at, Date).label("day"),
             func.coalesce(func.sum(YieldLog.quantity_liters), 0.0).label("total"),
             func.count(func.distinct(YieldLog.user_id)).label("farmers"),
         )
-        .where(YieldLog.recorded_at >= start_date)
+        .where(base_filter)
         .group_by(cast(YieldLog.recorded_at, Date))
     )
     rows = {row.day: {"liters": float(row.total), "farmers": row.farmers} for row in result.all()}

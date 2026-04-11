@@ -3,9 +3,9 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
-from jose import jwt
+import jwt
 import bcrypt
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -46,7 +46,8 @@ def _get_provider():
 def _auth_error(status_code: int, code: AuthErrorCode, detail: str):
     return HTTPException(
         status_code=status_code,
-        detail={"detail": detail, "code": code.value},
+        detail=detail,
+        headers={"X-Error-Code": code.value},
     )
 
 
@@ -83,33 +84,52 @@ def _clear_auth_cookies(response: Response):
 
 @router.post("/request-otp")
 async def request_otp(body: OTPRequest, db: AsyncSession = Depends(get_db)):
-    one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
+    # CRIT-2 fix: check rate limit BEFORE any mutation.
+    # Since `phone` has a unique constraint (only one row per phone), we track
+    # request_count on the record itself to survive the upsert cycle.
     result = await db.execute(
-        select(OTPRequestModel).where(
-            OTPRequestModel.phone == body.phone,
-            OTPRequestModel.created_at > one_hour_ago,
-        )
+        select(OTPRequestModel).where(OTPRequestModel.phone == body.phone)
     )
-    recent = result.scalars().all()
-    if len(recent) >= MAX_OTP_REQUESTS_PER_HOUR:
-        raise _auth_error(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            AuthErrorCode.RATE_LIMITED,
-            "Too many OTP requests. Try again later.",
-        )
+    existing = result.scalar_one_or_none()
 
-    await db.execute(
-        delete(OTPRequestModel).where(OTPRequestModel.phone == body.phone)
-    )
+    one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
+    if existing and existing.created_at > one_hour_ago:
+        if existing.request_count >= MAX_OTP_REQUESTS_PER_HOUR:
+            raise _auth_error(
+                status.HTTP_429_TOO_MANY_REQUESTS,
+                AuthErrorCode.RATE_LIMITED,
+                "Too many OTP requests. Try again later.",
+            )
 
     otp = _generate_otp()
     otp_hash = bcrypt.hashpw(otp.encode(), bcrypt.gensalt()).decode()
-    otp_record = OTPRequestModel(
-        phone=body.phone,
-        otp_hash=otp_hash,
-        expires_at=datetime.now(timezone.utc) + timedelta(minutes=OTP_EXPIRY_MINUTES),
-    )
-    db.add(otp_record)
+    now = datetime.now(timezone.utc)
+
+    # HIGH-5 fix: upsert instead of DELETE+INSERT to avoid race condition
+    # with the unique constraint on phone.
+    if existing:
+        # If the last request was within the hour, increment; otherwise reset.
+        new_count = (existing.request_count + 1) if existing.created_at > one_hour_ago else 1
+        await db.execute(
+            update(OTPRequestModel)
+            .where(OTPRequestModel.phone == body.phone)
+            .values(
+                otp_hash=otp_hash,
+                attempts=0,
+                expires_at=now + timedelta(minutes=OTP_EXPIRY_MINUTES),
+                created_at=now,
+                request_count=new_count,
+            )
+        )
+    else:
+        otp_record = OTPRequestModel(
+            phone=body.phone,
+            otp_hash=otp_hash,
+            expires_at=now + timedelta(minutes=OTP_EXPIRY_MINUTES),
+            request_count=1,
+        )
+        db.add(otp_record)
+
     await db.commit()
 
     provider = _get_provider()
@@ -125,11 +145,15 @@ async def verify_otp(body: OTPVerify, db: AsyncSession = Depends(get_db)):
     )
     otp_record = result.scalar_one_or_none()
 
+    # MED-3 fix: use a single generic message for all OTP verification failures
+    # to prevent attackers from enumerating which phones have active OTPs.
+    _otp_fail_msg = "Invalid or expired OTP"
+
     if not otp_record:
         raise _auth_error(
             status.HTTP_401_UNAUTHORIZED,
             AuthErrorCode.OTP_INVALID,
-            "No OTP request found. Please request a new OTP.",
+            _otp_fail_msg,
         )
 
     if datetime.now(timezone.utc) > otp_record.expires_at:
@@ -139,8 +163,8 @@ async def verify_otp(body: OTPVerify, db: AsyncSession = Depends(get_db)):
         await db.commit()
         raise _auth_error(
             status.HTTP_401_UNAUTHORIZED,
-            AuthErrorCode.OTP_EXPIRED,
-            "OTP has expired. Please request a new one.",
+            AuthErrorCode.OTP_INVALID,
+            _otp_fail_msg,
         )
 
     if otp_record.attempts >= MAX_OTP_ATTEMPTS:
@@ -150,8 +174,8 @@ async def verify_otp(body: OTPVerify, db: AsyncSession = Depends(get_db)):
         await db.commit()
         raise _auth_error(
             status.HTTP_401_UNAUTHORIZED,
-            AuthErrorCode.OTP_MAX_ATTEMPTS,
-            "Too many failed attempts. Please request a new OTP.",
+            AuthErrorCode.OTP_INVALID,
+            _otp_fail_msg,
         )
 
     if not bcrypt.checkpw(body.otp.encode(), otp_record.otp_hash.encode()):
@@ -160,7 +184,7 @@ async def verify_otp(body: OTPVerify, db: AsyncSession = Depends(get_db)):
         raise _auth_error(
             status.HTTP_401_UNAUTHORIZED,
             AuthErrorCode.OTP_INVALID,
-            "Invalid OTP. Please try again.",
+            _otp_fail_msg,
         )
 
     await db.execute(
@@ -193,7 +217,6 @@ async def verify_otp(body: OTPVerify, db: AsyncSession = Depends(get_db)):
     token_data = {
         "sub": str(user.id),
         "role": user.role,
-        "phone": user.phone,
         "exp": datetime.now(timezone.utc) + expiry,
     }
     access_token = jwt.encode(token_data, settings.jwt_secret, algorithm=settings.jwt_algorithm)

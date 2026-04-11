@@ -1,7 +1,7 @@
 import enum
 from datetime import date, datetime
 
-from sqlalchemy import String, Integer, Float, Boolean, Date, DateTime, Enum, ForeignKey, text, func
+from sqlalchemy import String, Integer, Boolean, Date, DateTime, Enum, ForeignKey, Numeric, text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -46,7 +46,7 @@ class Animal(Base):
     date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
     sex: Mapped[str] = mapped_column(Enum(AnimalSex, name="animal_sex"), nullable=False)
     lactation_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    body_condition_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    body_condition_score: Mapped[float | None] = mapped_column(Numeric(3, 1), nullable=True)
     is_insured: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

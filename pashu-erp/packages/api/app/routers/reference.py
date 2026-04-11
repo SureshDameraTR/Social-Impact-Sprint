@@ -3,7 +3,10 @@
 import time
 from uuid import UUID
 
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +16,31 @@ from app.models.reference import InsurancePremium, MarketRate, MedicineCatalog
 from app.models.user import User
 
 router = APIRouter(prefix="/v1/reference", tags=["Reference Data"])
+
+
+# ---------------------------------------------------------------------------
+# Pydantic schemas for PUT endpoints
+# ---------------------------------------------------------------------------
+
+
+class MarketRateUpdate(BaseModel):
+    product: str | None = Field(None, max_length=100)
+    unit: str | None = Field(None, max_length=20)
+    min_price: Decimal | None = Field(None, ge=0)
+    max_price: Decimal | None = Field(None, ge=0)
+    avg_price: Decimal | None = Field(None, ge=0)
+    district: str | None = Field(None, max_length=100)
+    label: str | None = Field(None, max_length=200)
+    source: str | None = Field(None, max_length=200)
+
+
+class InsurancePremiumUpdate(BaseModel):
+    species: str | None = Field(None, max_length=50)
+    breed_type: str | None = Field(None, max_length=50)
+    premium_pct: Decimal | None = Field(None, ge=0, le=100)
+    animal_value_inr: int | None = Field(None, ge=0)
+    scheme_name: str | None = Field(None, max_length=200)
+
 
 # ---------------------------------------------------------------------------
 # Simple in-memory cache: key -> (data, timestamp)
@@ -49,6 +77,7 @@ def _invalidate_prefix(prefix: str) -> None:
 async def list_market_rates(
     district: str | None = Query(None, description="Filter by district"),
     product: str | None = Query(None, description="Filter by product key"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List market rates with optional filters."""
@@ -76,7 +105,7 @@ async def list_market_rates(
 @router.put("/market-rates/{rate_id}")
 async def update_market_rate(
     rate_id: UUID,
-    body: dict,
+    body: MarketRateUpdate,
     current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
@@ -88,10 +117,8 @@ async def update_market_rate(
     if rate is None:
         raise HTTPException(status_code=404, detail="Market rate not found")
 
-    allowed = {"product", "unit", "min_price", "max_price", "avg_price", "district", "label", "source"}
-    for field, value in body.items():
-        if field in allowed:
-            setattr(rate, field, value)
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(rate, field, value)
 
     await db.commit()
     await db.refresh(rate)
@@ -111,6 +138,7 @@ async def update_market_rate(
 async def list_insurance_premiums(
     species: str | None = Query(None, description="Filter by species"),
     breed_type: str | None = Query(None, description="Filter by breed type"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List insurance premium rates with optional filters."""
@@ -138,7 +166,7 @@ async def list_insurance_premiums(
 @router.put("/insurance-premiums/{premium_id}")
 async def update_insurance_premium(
     premium_id: UUID,
-    body: dict,
+    body: InsurancePremiumUpdate,
     current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
@@ -150,10 +178,8 @@ async def update_insurance_premium(
     if premium is None:
         raise HTTPException(status_code=404, detail="Insurance premium not found")
 
-    allowed = {"species", "breed_type", "premium_pct", "animal_value_inr", "scheme_name"}
-    for field, value in body.items():
-        if field in allowed:
-            setattr(premium, field, value)
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(premium, field, value)
 
     await db.commit()
     await db.refresh(premium)
@@ -174,6 +200,7 @@ async def list_medicines(
     species: str | None = Query(None, description="Filter by applicable species"),
     category: str | None = Query(None, description="Filter by category"),
     is_active: bool | None = Query(None, description="Filter by active status"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List medicine catalog entries with optional filters."""

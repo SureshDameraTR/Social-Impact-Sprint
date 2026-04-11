@@ -4,7 +4,8 @@ import time
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import InvalidTokenError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,7 +16,7 @@ from app.models.user import User
 security = HTTPBearer(auto_error=False)
 
 _user_cache: dict[str, tuple[User, float]] = {}
-_CACHE_TTL = 60
+_CACHE_TTL = 10
 
 
 def _get_cached_user(user_id: str) -> User | None:
@@ -70,7 +71,7 @@ async def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token: missing subject",
             )
-    except JWTError:
+    except InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",

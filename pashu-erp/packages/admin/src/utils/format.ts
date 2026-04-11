@@ -10,5 +10,5 @@ export const fmtDate = (d: string | null | undefined): string => {
   if (!d) return "\u2014";
   const date = new Date(d);
   if (isNaN(date.getTime())) return d;
-  return date.toLocaleDateString("en-IN");
+  return date.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
 };

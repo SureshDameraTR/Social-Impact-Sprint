@@ -3,9 +3,10 @@ from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy import text
 
 from app.config import settings
@@ -46,6 +47,22 @@ from app.routers import (
     reference,
     files,
 )
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add security headers to all responses."""
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        if settings.environment != "development":
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains"
+            )
+        return response
 
 
 def _validate_settings():
@@ -90,11 +107,16 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     setup_logging(settings.environment)
 
+    docs_url = "/docs" if settings.environment == "development" else None
+    redoc_url = "/redoc" if settings.environment == "development" else None
+
     app = FastAPI(
         title="PashuRaksha ERP",
         description="Livestock management ERP for rural Indian farmers",
         version="0.1.0",
         lifespan=lifespan,
+        docs_url=docs_url,
+        redoc_url=redoc_url,
     )
 
     origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
@@ -106,6 +128,7 @@ def create_app() -> FastAPI:
         allow_headers=["Authorization", "Content-Type", "X-CSRF-Token"],
     )
 
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(CSRFMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
 

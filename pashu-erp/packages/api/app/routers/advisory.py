@@ -7,7 +7,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.middleware.auth import get_current_user
 from app.models.advisory import AdvisoryTip
+from app.models.user import User
 from app.schemas.advisory import AdvisoryTipRead
 
 router = APIRouter(prefix="/v1/advisory", tags=["Advisory"])
@@ -19,6 +21,7 @@ async def list_tips(
     category: str | None = Query(None, description="Filter by category"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List advisory tips with optional species and category filters."""
@@ -39,7 +42,7 @@ async def list_tips(
 
 
 @router.get("/tips/{tip_id}", response_model=AdvisoryTipRead)
-async def get_tip(tip_id: UUID, db: AsyncSession = Depends(get_db)):
+async def get_tip(tip_id: UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Get a specific advisory tip by ID."""
     result = await db.execute(
         select(AdvisoryTip).where(AdvisoryTip.id == tip_id)

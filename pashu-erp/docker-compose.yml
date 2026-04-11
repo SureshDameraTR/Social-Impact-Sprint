@@ -27,7 +27,7 @@ services:
     volumes:
       - ./mocks/uploads:/app/uploads
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\""]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -38,7 +38,7 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://pashu:pashu_dev_2026@db:5432/pashuraksha}
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
+      JWT_SECRET: ${JWT_SECRET:-dd5e8b3aca588d42950311149a3bc5e0f2d32d2e51e93af2b19184e067491ef1}
       ENVIRONMENT: development
       WEATHER_API_URL: http://mock-backends:8001/api/weather
       BHARAT_PASHUDHAN_API_URL: http://mock-backends:8001/api/registry

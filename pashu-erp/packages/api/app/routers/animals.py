@@ -5,6 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select, delete
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -15,6 +16,8 @@ from app.schemas.animals import AnimalCreate, AnimalRead, AnimalUpdate
 
 router = APIRouter(prefix="/v1/animals", tags=["Animals"])
 
+_MAX_ID_RETRIES = 3
+
 
 @router.post("", response_model=AnimalRead, status_code=status.HTTP_201_CREATED)
 async def create_animal(
@@ -23,30 +26,46 @@ async def create_animal(
     db: AsyncSession = Depends(get_db),
 ):
     """Register a new animal for the authenticated farmer."""
-    # Auto-generate pashu_aadhaar_id if not provided
-    pashu_id = body.pashu_aadhaar_id
-    if not pashu_id:
-        pashu_id = f"{secrets.randbelow(900000000000) + 100000000000}"
+    for attempt in range(_MAX_ID_RETRIES):
+        # Auto-generate pashu_aadhaar_id if not provided
+        pashu_id = body.pashu_aadhaar_id
+        if not pashu_id:
+            pashu_id = f"{secrets.randbelow(900000000000) + 100000000000}"
 
-    animal = Animal(
-        user_id=current_user.id,
-        pashu_aadhaar_id=pashu_id,
-        species=body.species.value,
-        breed=body.breed,
-        breed_type=body.breed_type.value,
-        tag_id=body.tag_id,
-        name=body.name,
-        date_of_birth=body.date_of_birth,
-        sex=body.sex.value,
-        lactation_number=body.lactation_number,
-        body_condition_score=body.body_condition_score,
-        is_insured=body.is_insured,
-        metadata_=body.metadata,
-    )
-    db.add(animal)
-    await db.commit()
-    await db.refresh(animal)
-    return animal
+        animal = Animal(
+            user_id=current_user.id,
+            pashu_aadhaar_id=pashu_id,
+            species=body.species.value,
+            breed=body.breed,
+            breed_type=body.breed_type.value,
+            tag_id=body.tag_id,
+            name=body.name,
+            date_of_birth=body.date_of_birth,
+            sex=body.sex.value,
+            lactation_number=body.lactation_number,
+            body_condition_score=body.body_condition_score,
+            is_insured=body.is_insured,
+            metadata_=body.metadata,
+        )
+        try:
+            db.add(animal)
+            await db.commit()
+            await db.refresh(animal)
+            return animal
+        except IntegrityError:
+            await db.rollback()
+            # If the caller supplied a specific ID, don't retry with a random one
+            if body.pashu_aadhaar_id:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="pashu_aadhaar_id already exists",
+                )
+            # Auto-generated ID collided — retry with a new random value
+            if attempt == _MAX_ID_RETRIES - 1:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Could not generate a unique Pashu Aadhaar ID; please retry",
+                )
 
 
 @router.get("")
@@ -58,7 +77,9 @@ async def list_animals(
     db: AsyncSession = Depends(get_db),
 ):
     """List all animals owned by the authenticated user with pagination."""
-    base = select(Animal).where(Animal.user_id == current_user.id)
+    base = select(Animal)
+    if current_user.role != "admin":
+        base = base.where(Animal.user_id == current_user.id)
     if species:
         base = base.where(Animal.species == species)
 

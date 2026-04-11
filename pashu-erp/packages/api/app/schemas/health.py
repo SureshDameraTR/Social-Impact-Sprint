@@ -1,8 +1,18 @@
+import re
 from datetime import datetime
 from enum import Enum
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _strip_html(v: str | None) -> str | None:
+    if v is None:
+        return v
+    return _HTML_TAG_RE.sub("", v).strip()
 
 
 class HealthEventType(str, Enum):
@@ -18,6 +28,11 @@ class HealthEventCreate(BaseModel):
     description: str | None = None
     symptoms: list[str] = Field(default_factory=list)
     event_date: datetime | None = None
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def strip_html_tags(cls, v: str | None) -> str | None:
+        return _strip_html(v)
 
 
 class HealthEventRead(BaseModel):

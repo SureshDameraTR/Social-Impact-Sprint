@@ -6,18 +6,21 @@ import App from "./App";
 import { collectionTheme } from "./theme";
 import { AuthProvider } from "./hooks/useAuth";
 import { CentreProvider } from "./hooks/useCentre";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ThemeProvider theme={collectionTheme}>
       <CssBaseline />
-      <BrowserRouter>
-        <AuthProvider>
-          <CentreProvider>
-            <App />
-          </CentreProvider>
-        </AuthProvider>
-      </BrowserRouter>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <AuthProvider>
+            <CentreProvider>
+              <App />
+            </CentreProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </ErrorBoundary>
     </ThemeProvider>
   </React.StrictMode>
 );

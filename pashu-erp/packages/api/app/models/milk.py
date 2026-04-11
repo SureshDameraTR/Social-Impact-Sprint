@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import String, Float, Boolean, DateTime, Enum, ForeignKey, Numeric, text, func
+from sqlalchemy import String, Boolean, DateTime, Enum, ForeignKey, Numeric, text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -27,7 +27,7 @@ class YieldLog(Base):
     user_id: Mapped[str] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
-    quantity_liters: Mapped[float] = mapped_column(Float, nullable=False)
+    quantity_liters: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     session: Mapped[str] = mapped_column(Enum(MilkSession, name="milk_session"), nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -76,9 +76,9 @@ class MilkCollectionRecord(Base):
     farmer_user_id: Mapped[str] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
-    quantity_liters: Mapped[float] = mapped_column(Float, nullable=False)
-    fat_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
-    snf_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    quantity_liters: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    fat_pct: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
+    snf_pct: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
     rate_per_liter: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     total_amount: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     shift: Mapped[str] = mapped_column(Enum(MilkSession, name="milk_session", create_type=False), nullable=False)

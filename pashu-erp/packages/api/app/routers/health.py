@@ -17,7 +17,7 @@ from app.database import get_db
 # Admin dashboard configuration (previously in constants.py)
 RISK_SCORE_THRESHOLD: float = 0.5
 ALERT_WINDOW_DAYS: int = 7
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user, require_admin
 from app.models.animal import Animal
 from app.models.health import HealthEvent
 from app.models.user import User
@@ -130,7 +130,7 @@ async def list_health_events(
 
 @router.get("/health/alerts/map")
 async def get_health_alerts_map(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
     """Health events with coordinates for GIS map display."""

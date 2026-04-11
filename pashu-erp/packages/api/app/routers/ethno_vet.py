@@ -7,7 +7,9 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.middleware.auth import get_current_user
 from app.models.ethno_vet import TraditionalRemedy
+from app.models.user import User
 from app.schemas.ethno_vet import TraditionalRemedyRead
 
 router = APIRouter(prefix="/v1/ethno-vet", tags=["Ethno-Veterinary"])
@@ -19,6 +21,7 @@ async def list_remedies(
     condition: str | None = Query(None, description="Filter by condition treated"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List traditional remedies with optional filters."""
@@ -41,7 +44,7 @@ async def list_remedies(
 
 
 @router.get("/remedies/{remedy_id}", response_model=TraditionalRemedyRead)
-async def get_remedy(remedy_id: UUID, db: AsyncSession = Depends(get_db)):
+async def get_remedy(remedy_id: UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Get detailed information about a traditional remedy."""
     result = await db.execute(
         select(TraditionalRemedy).where(TraditionalRemedy.id == remedy_id)
@@ -57,10 +60,12 @@ async def search_remedies(
     q: str = Query(..., min_length=2, description="Search keyword"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Search remedies by keyword across name, ingredient, and conditions."""
-    pattern = f"%{q.lower()}%"
+    escaped = q.replace("%", "\\%").replace("_", "\\_")
+    pattern = f"%{escaped.lower()}%"
     result = await db.execute(
         select(TraditionalRemedy).where(
             or_(

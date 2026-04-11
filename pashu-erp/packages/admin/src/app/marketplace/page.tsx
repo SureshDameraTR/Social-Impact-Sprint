@@ -204,7 +204,7 @@ export default function MarketplacePage() {
                       <TableCell
                         sx={{ ...sxCodeCell, whiteSpace: "nowrap" }}
                       >
-                        {new Date(tx.sold_at).toLocaleDateString("en-IN")}
+                        {new Date(tx.sold_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
                       </TableCell>
                       <TableCell sx={{ fontSize: '11px', color: colors.textDim }}>
                         {tx.user_id?.slice(0, 8)}

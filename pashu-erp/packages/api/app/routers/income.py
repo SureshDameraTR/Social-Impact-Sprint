@@ -1,6 +1,7 @@
 """Income dashboard endpoints."""
 
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -46,27 +47,27 @@ async def income_summary(
         .where(Transaction.user_id == user_id, Transaction.created_at >= since)
         .group_by(Transaction.type)
     )
-    txn_totals = {row.type: float(row.total) for row in txn_result.all()}
-    txn_income = txn_totals.get("income", 0.0)
-    txn_expense = txn_totals.get("expense", 0.0)
+    txn_totals = {row.type: Decimal(str(row.total)) for row in txn_result.all()}
+    txn_income = txn_totals.get("income", Decimal("0"))
+    txn_expense = txn_totals.get("expense", Decimal("0"))
 
     # Sell record total via SQL aggregation
     sell_result = await db.execute(
         select(func.coalesce(func.sum(SellRecord.total_amount), 0))
         .where(SellRecord.user_id == user_id, SellRecord.sold_at >= since)
     )
-    sell_income = float(sell_result.scalar() or 0)
+    sell_income = Decimal(str(sell_result.scalar() or 0))
 
     total_income = txn_income + sell_income
 
     return {
         "user_id": str(user_id),
         "period": period,
-        "total_income": round(total_income, 2),
-        "transaction_income": round(txn_income, 2),
-        "marketplace_income": round(sell_income, 2),
-        "total_expense": round(txn_expense, 2),
-        "net": round(total_income - txn_expense, 2),
+        "total_income": float(total_income.quantize(Decimal("0.01"))),
+        "transaction_income": float(txn_income.quantize(Decimal("0.01"))),
+        "marketplace_income": float(sell_income.quantize(Decimal("0.01"))),
+        "total_expense": float(txn_expense.quantize(Decimal("0.01"))),
+        "net": float((total_income - txn_expense).quantize(Decimal("0.01"))),
     }
 
 
@@ -98,7 +99,7 @@ async def income_breakdown(
     )
     by_category: dict[str, float] = {}
     for row in txn_result.all():
-        by_category[row.category] = round(float(row.total), 2)
+        by_category[row.category] = float(Decimal(str(row.total)).quantize(Decimal("0.01")))
 
     # Sell record income by product type via SQL GROUP BY
     sell_result = await db.execute(
@@ -113,7 +114,7 @@ async def income_breakdown(
         .group_by(SellRecord.product_type)
     )
     for row in sell_result.all():
-        by_category[f"marketplace_{row.product_type}"] = round(float(row.total), 2)
+        by_category[f"marketplace_{row.product_type}"] = float(Decimal(str(row.total)).quantize(Decimal("0.01")))
 
     return {
         "user_id": str(user_id),
@@ -156,7 +157,7 @@ async def income_history(
         history.append({
             "type": "transaction",
             "sub_type": t.type,
-            "amount": float(t.amount),
+            "amount": float(Decimal(str(t.amount))),
             "category": t.category,
             "description": t.description,
             "date": t.created_at.isoformat(),
@@ -165,9 +166,9 @@ async def income_history(
         history.append({
             "type": "sale",
             "sub_type": "income",
-            "amount": float(s.total_amount),
+            "amount": float(Decimal(str(s.total_amount))),
             "category": s.product_type,
-            "description": f"{s.quantity} {s.unit} @ {float(s.price_per_unit)}/{s.unit}",
+            "description": f"{s.quantity} {s.unit} @ {float(Decimal(str(s.price_per_unit)))}/{s.unit}",
             "date": s.sold_at.isoformat(),
         })
 
@@ -207,26 +208,26 @@ async def my_income_summary(
         .where(Transaction.user_id == current_user.id, Transaction.created_at >= since)
         .group_by(Transaction.type)
     )
-    txn_totals = {row.type: float(row.total) for row in txn_result.all()}
-    txn_income = txn_totals.get("income", 0.0)
-    txn_expense = txn_totals.get("expense", 0.0)
+    txn_totals = {row.type: Decimal(str(row.total)) for row in txn_result.all()}
+    txn_income = txn_totals.get("income", Decimal("0"))
+    txn_expense = txn_totals.get("expense", Decimal("0"))
 
     sell_result = await db.execute(
         select(func.coalesce(func.sum(SellRecord.total_amount), 0))
         .where(SellRecord.user_id == current_user.id, SellRecord.sold_at >= since)
     )
-    sell_income = float(sell_result.scalar() or 0)
+    sell_income = Decimal(str(sell_result.scalar() or 0))
 
     total_income = txn_income + sell_income
 
     return {
         "user_id": str(current_user.id),
         "period": period,
-        "total_income": round(total_income, 2),
-        "transaction_income": round(txn_income, 2),
-        "marketplace_income": round(sell_income, 2),
-        "total_expense": round(txn_expense, 2),
-        "net": round(total_income - txn_expense, 2),
+        "total_income": float(total_income.quantize(Decimal("0.01"))),
+        "transaction_income": float(txn_income.quantize(Decimal("0.01"))),
+        "marketplace_income": float(sell_income.quantize(Decimal("0.01"))),
+        "total_expense": float(txn_expense.quantize(Decimal("0.01"))),
+        "net": float((total_income - txn_expense).quantize(Decimal("0.01"))),
     }
 
 
@@ -283,7 +284,7 @@ async def income_by_category(
     txn_result = await db.execute(txn_query)
     by_category: dict[str, float] = {}
     for row in txn_result.all():
-        by_category[row.category] = round(float(row.total), 2)
+        by_category[row.category] = float(Decimal(str(row.total)).quantize(Decimal("0.01")))
 
     # Sell record income by product type
     sell_query = (
@@ -300,7 +301,7 @@ async def income_by_category(
     sell_result = await db.execute(sell_query)
     for row in sell_result.all():
         key = f"marketplace_{row.product_type}"
-        by_category[key] = round(float(row.total), 2)
+        by_category[key] = float(Decimal(str(row.total)).quantize(Decimal("0.01")))
 
     return {"period": period, "breakdown": by_category}
 
@@ -330,12 +331,12 @@ async def income_monthly_trend(
 
     txn_result = await db.execute(txn_query)
 
-    month_data: dict[str, dict[str, float]] = {}
+    month_data: dict[str, dict[str, Decimal]] = {}
     for row in txn_result.all():
         key = f"{int(row.yr)}-{int(row.mo):02d}"
         if key not in month_data:
-            month_data[key] = {"income": 0.0, "expense": 0.0, "marketplace": 0.0}
-        month_data[key][row.type] = float(row.total)
+            month_data[key] = {"income": Decimal("0"), "expense": Decimal("0"), "marketplace": Decimal("0")}
+        month_data[key][row.type] = Decimal(str(row.total))
 
     # Sell records grouped by month
     sell_query = (
@@ -354,18 +355,19 @@ async def income_monthly_trend(
     for row in sell_result.all():
         key = f"{int(row.yr)}-{int(row.mo):02d}"
         if key not in month_data:
-            month_data[key] = {"income": 0.0, "expense": 0.0, "marketplace": 0.0}
-        month_data[key]["marketplace"] = float(row.total)
+            month_data[key] = {"income": Decimal("0"), "expense": Decimal("0"), "marketplace": Decimal("0")}
+        month_data[key]["marketplace"] = Decimal(str(row.total))
 
     # Sort by month key
     trend = []
     for key in sorted(month_data.keys()):
         d = month_data[key]
+        total_inc = d["income"] + d["marketplace"]
         trend.append({
             "month": key,
-            "income": round(d["income"] + d["marketplace"], 2),
-            "expense": round(d["expense"], 2),
-            "net": round(d["income"] + d["marketplace"] - d["expense"], 2),
+            "income": float(total_inc.quantize(Decimal("0.01"))),
+            "expense": float(d["expense"].quantize(Decimal("0.01"))),
+            "net": float((total_inc - d["expense"]).quantize(Decimal("0.01"))),
         })
 
     return {"months": months, "data": trend}

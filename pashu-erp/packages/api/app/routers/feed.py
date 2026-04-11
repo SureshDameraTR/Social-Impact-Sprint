@@ -7,7 +7,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.middleware.auth import get_current_user
 from app.models.feed import FeedIngredient
+from app.models.user import User
 from app.schemas.feed import FeedIngredientRead, RationRequest, RationResult
 from app.services.feed_calculator import calculate_ration
 
@@ -18,6 +20,7 @@ router = APIRouter(prefix="/v1/feed", tags=["Feed & Nutrition"])
 async def list_ingredients(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List all feed ingredients."""
@@ -31,7 +34,7 @@ async def list_ingredients(
 
 
 @router.post("/calculate-ration", response_model=RationResult)
-async def calculate_balanced_ration(body: RationRequest):
+async def calculate_balanced_ration(body: RationRequest, current_user: User = Depends(get_current_user)):
     """Calculate a balanced daily ration based on NDDB feeding standards."""
     return calculate_ration(
         species=body.species,

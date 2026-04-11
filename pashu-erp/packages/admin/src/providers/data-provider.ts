@@ -41,8 +41,7 @@ export const restDataProvider: DataProvider = {
       throw new Error(`API error ${res.status}: ${await res.text()}`);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let body: any;
+    let body: unknown;
     try {
       body = await res.json();
     } catch {
@@ -53,16 +52,23 @@ export const restDataProvider: DataProvider = {
       return { data: body, total: body.length };
     }
 
-    if (body.data && Array.isArray(body.data)) {
-      return { data: body.data, total: body.total ?? body.data.length };
+    if (typeof body === "object" && body !== null) {
+      const obj = body as Record<string, unknown>;
+
+      if (Array.isArray(obj.data)) {
+        return { data: obj.data, total: (obj.total as number) ?? obj.data.length };
+      }
+
+      const arrayKey = Object.keys(obj).find((k) => Array.isArray(obj[k]));
+      if (arrayKey) {
+        const arr = obj[arrayKey] as unknown[];
+        return { data: arr, total: (obj.total as number) ?? arr.length };
+      }
+
+      return { data: [obj], total: 1 };
     }
 
-    const arrayKey = Object.keys(body).find((k) => Array.isArray(body[k]));
-    if (arrayKey) {
-      return { data: body[arrayKey], total: body.total ?? body[arrayKey].length };
-    }
-
-    return { data: [body], total: 1 };
+    return { data: [], total: 0 };
   },
 
   getOne: async ({ resource, id }) => {

@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 class TransactionCreate(BaseModel):
     type: str = Field(..., description="income or expense")
-    amount: float = Field(..., gt=0)
+    amount: float = Field(..., gt=0, le=99_999_999.99)
     category: str = Field(..., max_length=50)
     description: str | None = Field(None, max_length=500)
     reference_id: UUID | None = None
@@ -90,21 +90,21 @@ async def financial_summary(
     )
     txns = result.scalars().all()
 
-    total_income = sum(float(t.amount) for t in txns if t.type == "income")
-    total_expense = sum(float(t.amount) for t in txns if t.type == "expense")
+    total_income = sum((Decimal(str(t.amount)) for t in txns if t.type == "income"), Decimal("0"))
+    total_expense = sum((Decimal(str(t.amount)) for t in txns if t.type == "expense"), Decimal("0"))
 
-    # Category breakdown
+    # Category breakdown using Decimal
     income_by_category: dict[str, float] = {}
     expense_by_category: dict[str, float] = {}
     for t in txns:
         bucket = income_by_category if t.type == "income" else expense_by_category
-        bucket[t.category] = bucket.get(t.category, 0) + float(t.amount)
+        bucket[t.category] = bucket.get(t.category, 0) + float(Decimal(str(t.amount)))
 
     return {
         "period": period,
-        "total_income": round(total_income, 2),
-        "total_expense": round(total_expense, 2),
-        "net": round(total_income - total_expense, 2),
+        "total_income": float(total_income.quantize(Decimal("0.01"))),
+        "total_expense": float(total_expense.quantize(Decimal("0.01"))),
+        "net": float((total_income - total_expense).quantize(Decimal("0.01"))),
         "transaction_count": len(txns),
         "income_by_category": income_by_category,
         "expense_by_category": expense_by_category,

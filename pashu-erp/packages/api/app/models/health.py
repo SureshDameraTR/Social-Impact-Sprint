@@ -1,7 +1,7 @@
 import enum
 from datetime import date, datetime
 
-from sqlalchemy import String, Float, Date, DateTime, Enum, ForeignKey, Text, text, func
+from sqlalchemy import String, Date, DateTime, Enum, ForeignKey, Numeric, Text, text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -31,7 +31,7 @@ class HealthEvent(Base):
     )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     symptoms: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    ai_risk_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    ai_risk_score: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
     recommended_action: Mapped[str | None] = mapped_column(Text, nullable=True)
     probable_diseases: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     recorded_by: Mapped[str | None] = mapped_column(

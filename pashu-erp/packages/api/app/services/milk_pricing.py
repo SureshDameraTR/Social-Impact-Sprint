@@ -1,32 +1,34 @@
 """Karnataka Milk Federation FAT/SNF slab-based rate calculator."""
 
+from decimal import Decimal, ROUND_HALF_UP
+
 # KMF pricing slabs (approximate rates as of 2025-26)
 # Rate = Base rate + FAT premium + SNF premium
 # Base rate varies by district and season
 
 FAT_SLABS = [
-    {"min": 3.0, "max": 3.5, "rate_per_unit": 7.50},
-    {"min": 3.5, "max": 4.0, "rate_per_unit": 8.00},
-    {"min": 4.0, "max": 4.5, "rate_per_unit": 8.50},
-    {"min": 4.5, "max": 5.0, "rate_per_unit": 9.00},
-    {"min": 5.0, "max": 5.5, "rate_per_unit": 9.50},
-    {"min": 5.5, "max": 6.0, "rate_per_unit": 10.00},
-    {"min": 6.0, "max": 7.0, "rate_per_unit": 10.50},
-    {"min": 7.0, "max": 10.0, "rate_per_unit": 11.00},
+    {"min": Decimal("3.0"), "max": Decimal("3.5"), "rate_per_unit": Decimal("7.50")},
+    {"min": Decimal("3.5"), "max": Decimal("4.0"), "rate_per_unit": Decimal("8.00")},
+    {"min": Decimal("4.0"), "max": Decimal("4.5"), "rate_per_unit": Decimal("8.50")},
+    {"min": Decimal("4.5"), "max": Decimal("5.0"), "rate_per_unit": Decimal("9.00")},
+    {"min": Decimal("5.0"), "max": Decimal("5.5"), "rate_per_unit": Decimal("9.50")},
+    {"min": Decimal("5.5"), "max": Decimal("6.0"), "rate_per_unit": Decimal("10.00")},
+    {"min": Decimal("6.0"), "max": Decimal("7.0"), "rate_per_unit": Decimal("10.50")},
+    {"min": Decimal("7.0"), "max": Decimal("10.0"), "rate_per_unit": Decimal("11.00")},
 ]
 
 SNF_SLABS = [
-    {"min": 8.0, "max": 8.3, "rate_per_unit": 5.00},
-    {"min": 8.3, "max": 8.5, "rate_per_unit": 5.50},
-    {"min": 8.5, "max": 8.8, "rate_per_unit": 6.00},
-    {"min": 8.8, "max": 9.0, "rate_per_unit": 6.50},
-    {"min": 9.0, "max": 10.0, "rate_per_unit": 7.00},
+    {"min": Decimal("8.0"), "max": Decimal("8.3"), "rate_per_unit": Decimal("5.00")},
+    {"min": Decimal("8.3"), "max": Decimal("8.5"), "rate_per_unit": Decimal("5.50")},
+    {"min": Decimal("8.5"), "max": Decimal("8.8"), "rate_per_unit": Decimal("6.00")},
+    {"min": Decimal("8.8"), "max": Decimal("9.0"), "rate_per_unit": Decimal("6.50")},
+    {"min": Decimal("9.0"), "max": Decimal("10.0"), "rate_per_unit": Decimal("7.00")},
 ]
 
-BASE_RATE = 20.0  # Base rate per liter (Karnataka average)
+TWO_PLACES = Decimal("0.01")
 
 
-def _get_slab_rate(value: float, slabs: list[dict]) -> float:
+def _get_slab_rate(value: Decimal, slabs: list[dict]) -> Decimal:
     """Find the applicable slab rate for a given value."""
     for slab in slabs:
         if slab["min"] <= value < slab["max"]:
@@ -38,7 +40,7 @@ def _get_slab_rate(value: float, slabs: list[dict]) -> float:
     return slabs[0]["rate_per_unit"]
 
 
-def calculate_rate(fat_pct: float, snf_pct: float) -> float:
+def calculate_rate(fat_pct: float, snf_pct: float) -> Decimal:
     """Calculate milk rate per liter based on FAT and SNF percentages.
 
     Uses KMF slab-based pricing:
@@ -49,11 +51,14 @@ def calculate_rate(fat_pct: float, snf_pct: float) -> float:
         snf_pct: Solids-Not-Fat percentage (typically 8.0 - 9.5)
 
     Returns:
-        Rate per liter in INR
+        Rate per liter in INR as Decimal
     """
-    fat_rate = _get_slab_rate(fat_pct, FAT_SLABS)
-    snf_rate = _get_slab_rate(snf_pct, SNF_SLABS)
+    fat_d = Decimal(str(fat_pct))
+    snf_d = Decimal(str(snf_pct))
 
-    rate_per_liter = (fat_pct * fat_rate + snf_pct * snf_rate) / 2
+    fat_rate = _get_slab_rate(fat_d, FAT_SLABS)
+    snf_rate = _get_slab_rate(snf_d, SNF_SLABS)
 
-    return round(rate_per_liter, 2)
+    rate_per_liter = (fat_d * fat_rate + snf_d * snf_rate) / Decimal("2")
+
+    return rate_per_liter.quantize(TWO_PLACES, rounding=ROUND_HALF_UP)

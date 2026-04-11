@@ -1,9 +1,28 @@
 import axios from "axios";
 
+const MUTATING_METHODS = new Set(["post", "put", "delete", "patch"]);
+
+function getCsrfToken(): string {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
 const api = axios.create({
-  baseURL: "/v1",
+  baseURL: import.meta.env.VITE_API_URL || "/v1",
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
+});
+
+// Attach CSRF token on mutating requests
+api.interceptors.request.use((config) => {
+  if (MUTATING_METHODS.has((config.method ?? "").toLowerCase())) {
+    const token = getCsrfToken();
+    if (token) {
+      config.headers.set("X-CSRF-Token", token);
+    }
+  }
+  return config;
 });
 
 api.interceptors.response.use(

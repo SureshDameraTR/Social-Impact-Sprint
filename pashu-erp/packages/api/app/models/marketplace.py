@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import String, Float, Numeric, DateTime, Enum, ForeignKey, text, func
+from sqlalchemy import String, Numeric, DateTime, Enum, ForeignKey, text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -33,7 +33,7 @@ class SellRecord(Base):
     product_type: Mapped[str] = mapped_column(
         Enum(ProductType, name="product_type"), nullable=False
     )
-    quantity: Mapped[float] = mapped_column(Float, nullable=False)
+    quantity: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     unit: Mapped[str] = mapped_column(String(20), nullable=False)
     price_per_unit: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     total_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)

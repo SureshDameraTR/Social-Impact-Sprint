@@ -12,7 +12,7 @@ class MilkSession(str, Enum):
 
 class YieldLogCreate(BaseModel):
     animal_id: UUID
-    quantity_liters: float = Field(..., gt=0)
+    quantity_liters: float = Field(..., gt=0, le=100)
     session: MilkSession
     notes: str | None = Field(None, max_length=500)
 
@@ -39,7 +39,7 @@ class MilkHistoryResponse(BaseModel):
 class CollectionRecordCreate(BaseModel):
     center_id: UUID
     farmer_user_id: UUID
-    quantity_liters: float = Field(..., gt=0)
+    quantity_liters: float = Field(..., gt=0, le=100)
     fat_pct: float | None = None
     snf_pct: float | None = None
     shift: MilkSession

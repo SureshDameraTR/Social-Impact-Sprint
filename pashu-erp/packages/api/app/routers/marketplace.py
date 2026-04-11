@@ -51,15 +51,16 @@ async def record_sale(
     db: AsyncSession = Depends(get_db),
 ):
     """Record a product sale."""
-    total_amount = round(body.quantity * body.price_per_unit, 2)
+    total_amount = Decimal(str(body.quantity)) * Decimal(str(body.price_per_unit))
+    total_amount = total_amount.quantize(Decimal("0.01"))
 
     record = SellRecord(
         user_id=current_user.id,
         product_type=body.product_type.value,
-        quantity=body.quantity,
+        quantity=Decimal(str(body.quantity)),
         unit=body.unit,
         price_per_unit=Decimal(str(body.price_per_unit)),
-        total_amount=Decimal(str(total_amount)),
+        total_amount=total_amount,
         buyer_name=body.buyer_name,
         buyer_phone=body.buyer_phone,
         sold_at=datetime.now(timezone.utc),

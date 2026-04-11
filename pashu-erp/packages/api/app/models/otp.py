@@ -18,6 +18,7 @@ class OTPRequest(Base):
     phone: Mapped[str] = mapped_column(String(15), unique=True, nullable=False)
     otp_hash: Mapped[str] = mapped_column(String(128), nullable=False)
     attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    request_count: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import String, Float, Boolean, Date, DateTime, Numeric, Text, text, func
+from sqlalchemy import String, Boolean, Date, DateTime, Numeric, Text, text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -23,7 +23,7 @@ class GovtScheme(Base):
     eligibility_criteria: Mapped[str | None] = mapped_column(Text, nullable=True)
     required_documents: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     max_subsidy_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
-    subsidy_percentage: Mapped[float | None] = mapped_column(Float, nullable=True)
+    subsidy_percentage: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     valid_from: Mapped[date] = mapped_column(Date, nullable=False)
     valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)

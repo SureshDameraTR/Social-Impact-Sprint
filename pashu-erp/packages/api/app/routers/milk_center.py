@@ -2,6 +2,7 @@
 
 import hashlib
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -18,10 +19,21 @@ from app.services.milk_pricing import calculate_rate
 router = APIRouter(prefix="/v1/milk-center", tags=["Milk Center"])
 
 
+async def require_milk_center_staff(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    if current_user.role not in {"milk_center", "admin"}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Milk center staff access required",
+        )
+    return current_user
+
+
 class MilkReceiveRequest(BaseModel):
     center_id: UUID
     farmer_user_id: UUID
-    quantity_liters: float = Field(..., gt=0)
+    quantity_liters: float = Field(..., gt=0, le=100)
     fat_pct: float = Field(..., ge=1.0, le=12.0)
     snf_pct: float = Field(..., ge=6.0, le=12.0)
     shift: str = Field(..., pattern="^(morning|evening)$")
@@ -30,7 +42,7 @@ class MilkReceiveRequest(BaseModel):
 @router.post("/receive", status_code=status.HTTP_201_CREATED)
 async def receive_milk(
     body: MilkReceiveRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_milk_center_staff),
     db: AsyncSession = Depends(get_db),
 ):
     """Record milk receipt with quality parameters and auto-calculated rate."""
@@ -42,9 +54,10 @@ async def receive_milk(
     if center is None:
         raise HTTPException(status_code=404, detail="Milk center not found")
 
-    # Calculate rate based on FAT/SNF
+    # Calculate rate based on FAT/SNF (Decimal arithmetic)
     rate = calculate_rate(body.fat_pct, body.snf_pct)
-    total_amount = round(rate * body.quantity_liters, 2)
+    qty = Decimal(str(body.quantity_liters))
+    total_amount = (rate * qty).quantize(Decimal("0.01"))
 
     record = MilkCollectionRecord(
         center_id=str(body.center_id),
@@ -64,11 +77,11 @@ async def receive_milk(
         "id": str(record.id),
         "center_id": str(body.center_id),
         "farmer_user_id": str(body.farmer_user_id),
-        "quantity_liters": body.quantity_liters,
+        "quantity_liters": float(qty),
         "fat_pct": body.fat_pct,
         "snf_pct": body.snf_pct,
-        "rate_per_liter": rate,
-        "total_amount": total_amount,
+        "rate_per_liter": float(rate),
+        "total_amount": float(total_amount),
         "shift": body.shift,
         "collected_at": record.collected_at.isoformat() if record.collected_at else None,
     }
@@ -77,7 +90,7 @@ async def receive_milk(
 @router.get("/{center_id}/daily-report")
 async def get_daily_report(
     center_id: UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_milk_center_staff),
     db: AsyncSession = Depends(get_db),
 ):
     """Get daily milk collection report for a center."""
@@ -98,29 +111,29 @@ async def get_daily_report(
     morning = [r for r in records if r.shift == "morning"]
     evening = [r for r in records if r.shift == "evening"]
 
-    total_liters = sum(r.quantity_liters for r in records)
-    total_amount = sum(float(r.total_amount or 0) for r in records)
+    total_liters = sum((Decimal(str(r.quantity_liters)) for r in records), Decimal("0"))
+    total_amount = sum((Decimal(str(r.total_amount or 0)) for r in records), Decimal("0"))
     farmer_ids = {str(r.farmer_user_id) for r in records}
-    avg_fat = sum(r.fat_pct or 0 for r in records) / len(records) if records else 0
-    avg_snf = sum(r.snf_pct or 0 for r in records) / len(records) if records else 0
+    avg_fat = sum((Decimal(str(r.fat_pct or 0)) for r in records), Decimal("0")) / len(records) if records else Decimal("0")
+    avg_snf = sum((Decimal(str(r.snf_pct or 0)) for r in records), Decimal("0")) / len(records) if records else Decimal("0")
 
     return {
         "center_id": str(center_id),
         "date": today_start.date().isoformat(),
         "summary": {
-            "total_liters": round(total_liters, 2),
-            "total_amount_inr": round(total_amount, 2),
+            "total_liters": float(total_liters.quantize(Decimal("0.01"))),
+            "total_amount_inr": float(total_amount.quantize(Decimal("0.01"))),
             "farmer_count": len(farmer_ids),
             "record_count": len(records),
-            "avg_fat_pct": round(avg_fat, 2),
-            "avg_snf_pct": round(avg_snf, 2),
+            "avg_fat_pct": float(avg_fat.quantize(Decimal("0.01"))),
+            "avg_snf_pct": float(avg_snf.quantize(Decimal("0.01"))),
         },
         "morning": {
-            "liters": round(sum(r.quantity_liters for r in morning), 2),
+            "liters": float(sum((Decimal(str(r.quantity_liters)) for r in morning), Decimal("0")).quantize(Decimal("0.01"))),
             "farmers": len({str(r.farmer_user_id) for r in morning}),
         },
         "evening": {
-            "liters": round(sum(r.quantity_liters for r in evening), 2),
+            "liters": float(sum((Decimal(str(r.quantity_liters)) for r in evening), Decimal("0")).quantize(Decimal("0.01"))),
             "farmers": len({str(r.farmer_user_id) for r in evening}),
         },
     }
@@ -132,7 +145,7 @@ async def get_farmer_settlements(
     days: int = Query(15, ge=1, le=90),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_milk_center_staff),
     db: AsyncSession = Depends(get_db),
 ):
     """Get payment settlement summary per farmer for a billing period."""
@@ -160,17 +173,17 @@ async def get_farmer_settlements(
     rows = agg_result.all()
 
     result_list = []
-    total_payout = 0.0
+    total_payout = Decimal("0")
     for row in rows:
-        amt = round(float(row.total_amount), 2)
+        amt = Decimal(str(row.total_amount)).quantize(Decimal("0.01"))
         total_payout += amt
         result_list.append({
             "farmer_user_id": str(row.farmer_user_id),
-            "total_liters": round(float(row.total_liters), 2),
-            "total_amount_inr": amt,
+            "total_liters": float(Decimal(str(row.total_liters)).quantize(Decimal("0.01"))),
+            "total_amount_inr": float(amt),
             "deliveries": row.deliveries,
-            "avg_fat_pct": round(float(row.avg_fat or 0), 2),
-            "avg_snf_pct": round(float(row.avg_snf or 0), 2),
+            "avg_fat_pct": float(Decimal(str(row.avg_fat or 0)).quantize(Decimal("0.01"))),
+            "avg_snf_pct": float(Decimal(str(row.avg_snf or 0)).quantize(Decimal("0.01"))),
         })
 
     return {
@@ -178,7 +191,7 @@ async def get_farmer_settlements(
         "period_days": days,
         "settlements": result_list,
         "total_farmers": len(result_list),
-        "total_payout_inr": round(total_payout, 2),
+        "total_payout_inr": float(total_payout.quantize(Decimal("0.01"))),
     }
 
 
@@ -187,7 +200,7 @@ async def search_farmers(
     phone: str | None = Query(None, min_length=3, max_length=15),
     aadhaar_last4: str | None = Query(None, min_length=4, max_length=4),
     name: str | None = Query(None, min_length=2, max_length=100),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_milk_center_staff),
     db: AsyncSession = Depends(get_db),
 ):
     """Search farmers by phone, last 4 Aadhaar digits, or name."""
@@ -234,7 +247,7 @@ class QuickEnrollRequest(BaseModel):
 @router.post("/farmers/enroll", status_code=status.HTTP_201_CREATED)
 async def quick_enroll_farmer(
     body: QuickEnrollRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_milk_center_staff),
     db: AsyncSession = Depends(get_db),
 ):
     """Quick-enroll a new farmer at the collection centre."""
