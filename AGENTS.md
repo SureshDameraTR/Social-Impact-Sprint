@@ -23,7 +23,6 @@ When starting a session:
 - **Monorepo**: `pashu-erp/` with 5 packages (api, admin, mobile, collection, vet)
 - **Workspace manifest**: `pashu-erp/WORKSPACE.md` — complete file registry (single source of truth)
 - **Package instructions**: Each package has its own `CLAUDE.md` that auto-loads per directory
-- **OpenSpec**: `openspec/` for change management
 - **Future**: Each package will become its own repo — no cross-package imports
 
 ## NVM Required

@@ -20,15 +20,15 @@ Before starting work, read `pashu-erp/WORKSPACE.md` for the complete file regist
 | Architecture | `docs/architecture.md` | Full system architecture (CLAUDE-ARCH-001) | Comprehensive |
 | Compliance | `docs/compliance.md` | DPDP Act, ISO 27001, WCAG 2.1 | Exists |
 | Data Flow | `docs/data-flow.md` | Event flows, sync, pipelines | Exists |
-| A11y Checklist | `docs/accessibility-checklist.md` | Accessibility tracking | Exists |
-| Testing Guide | `pashu-erp/TESTING.md` | Test running instructions | Exists |
-| Testing Plan | `pashu-erp/TESTING_PLAN.md` | Comprehensive test strategy | Exists |
-| Prod Readiness | `pashu-erp/PRODUCTION-READINESS-REVIEW.md` | Production audit | Exists |
-| A11y Audit | `pashu-erp/ACCESSIBILITY-AUDIT.md` | Accessibility findings | Exists |
-| Perf Audit | `pashu-erp/PERFORMANCE-AUDIT.md` | Performance analysis | Exists |
-| UI Audit | `pashu-erp/UI-AUDIT-REPORT.md` | UI/UX findings | Exists |
-| Vision Doc | `smart-farm-erp-vision.md` | Product vision | Exists |
-| Env Template | `pashu-erp/.env.example` | Environment setup | Exists |
+| A11y Checklist | `docs/research/accessibility-checklist.md` | Accessibility tracking | Exists |
+| Testing Guide | `docs/audits/TESTING.md` | Test running instructions | Exists |
+| Testing Plan | `docs/audits/TESTING_PLAN.md` | Comprehensive test strategy | Exists |
+| Prod Readiness | `docs/audits/PRODUCTION-READINESS-REVIEW.md` | Production audit | Exists |
+| A11y Audit | `docs/audits/ACCESSIBILITY-AUDIT.md` | Accessibility findings | Exists |
+| Perf Audit | `docs/audits/PERFORMANCE-AUDIT.md` | Performance analysis | Exists |
+| UI Audit | `docs/audits/UI-AUDIT-REPORT.md` | UI/UX findings | Exists |
+| Vision Doc | `docs/research/smart-farm-erp-vision.md` | Product vision | Exists |
+| Env Template | `pashu-erp/packages/api/.env.example` | Environment setup | Exists |
 | API Swagger | `/docs` (runtime) | Auto-generated API docs | Dev only |
 
 ### Documentation Gaps

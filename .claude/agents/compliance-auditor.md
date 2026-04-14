@@ -233,4 +233,4 @@ grep -rn "httpx\|requests\|fetch\|axios" pashu-erp/packages/api/app/services/ --
 ## Reference Documents
 - `docs/compliance.md` — existing compliance documentation
 - `docs/architecture.md` — security architecture section
-- `pashu-erp/PRODUCTION-READINESS-REVIEW.md` — security findings
+- `docs/audits/PRODUCTION-READINESS-REVIEW.md` — security findings

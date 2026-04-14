@@ -26,8 +26,8 @@ Before starting work, read `pashu-erp/WORKSPACE.md` for the complete file regist
 - Languages: Kannada (primary), Hindi, English — script diversity
 
 ### Existing Accessibility Documentation
-- **Audit report**: `pashu-erp/ACCESSIBILITY-AUDIT.md`
-- **Checklist**: `docs/accessibility-checklist.md`
+- **Audit report**: `docs/audits/ACCESSIBILITY-AUDIT.md`
+- **Checklist**: `docs/research/accessibility-checklist.md`
 - **Components with a11y**: StatCard, RiskBadge, SpeciesChip (in admin)
 
 ## Automated Testing

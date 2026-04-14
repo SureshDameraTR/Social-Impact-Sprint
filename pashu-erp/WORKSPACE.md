@@ -237,16 +237,18 @@ Config: `docker-compose.yml`, `.env`, `.env.example`
 
 ## Documentation
 
-| File | Purpose |
-|------|---------|
-| `TESTING.md` | Testing strategy |
-| `TESTING_PLAN.md` | Detailed test plan |
-| `PERFORMANCE-AUDIT.md` | Performance analysis |
-| `ACCESSIBILITY-AUDIT.md` | WCAG compliance |
-| `PRODUCTION-READINESS-REVIEW.md` | Production checklist |
-| `UI-AUDIT-REPORT.md` | UI/UX audit |
-| `docs/plans/*.md` | Design documents |
-| `demo/demo-script.md` | Demo walkthrough |
+All documentation lives in `docs/` at the project root (not in `pashu-erp/`).
+
+| Location | Contents |
+|----------|----------|
+| `docs/architecture.md` | System design, module decomposition |
+| `docs/compliance.md` | DPDP Act, Aadhaar Act compliance |
+| `docs/data-flow.md` | Data flow documentation |
+| `docs/diagrams/` | Mermaid architecture + pipeline diagrams |
+| `docs/plans/` | Design docs, implementation plans |
+| `docs/audits/` | Testing, performance, a11y, UI audit reports |
+| `docs/research/` | Early-phase research (dairy tech, i18n, compliance) |
+| `pashu-erp/demo/` | Demo script, deployment, warmup |
 
 ## Auth & Roles
 
