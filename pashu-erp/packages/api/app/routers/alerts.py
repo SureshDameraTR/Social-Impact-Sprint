@@ -89,8 +89,8 @@ async def verify_alert(
     db: AsyncSession = Depends(get_db),
 ):
     """Admin: verify a community disease alert."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can verify alerts")
+    if current_user.role not in ("admin", "vet"):
+        raise HTTPException(status_code=403, detail="Only admins and vets can verify alerts")
 
     result = await db.execute(
         select(CommunityAlert).where(CommunityAlert.id == alert_id)

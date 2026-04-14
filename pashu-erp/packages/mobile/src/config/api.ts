@@ -1,4 +1,5 @@
-import * as SecureStore from 'expo-secure-store';
+import { router } from 'expo-router';
+import * as Storage from './storage';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 if (!API_BASE_URL) {
@@ -19,8 +20,14 @@ export class ApiClient {
     this.baseUrl = baseUrl;
   }
 
+  private async handleUnauthorized(): Promise<never> {
+    await Storage.deleteItemAsync('auth_token');
+    router.replace('/(auth)/login');
+    throw new Error('Session expired');
+  }
+
   private async getHeaders(): Promise<HeadersInit> {
-    const token = await SecureStore.getItemAsync('auth_token');
+    const token = await Storage.getItemAsync('auth_token');
     return {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -50,7 +57,7 @@ export class ApiClient {
     for (let attempt = 0; attempt < retries; attempt++) {
       try {
         const res = await this.fetchWithTimeout(url, options);
-        if (res.ok || attempt === retries - 1) return res;
+        if (res.ok || res.status === 401 || attempt === retries - 1) return res;
         // Only retry on server errors (5xx)
         if (res.status < 500) return res;
       } catch (error) {
@@ -69,6 +76,7 @@ export class ApiClient {
     const res = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       headers: await this.getHeaders(),
     });
+    if (res.status === 401) await this.handleUnauthorized();
     if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
     return res.json();
   }
@@ -79,6 +87,7 @@ export class ApiClient {
       headers: await this.getHeaders(),
       body: JSON.stringify(body),
     });
+    if (res.status === 401) await this.handleUnauthorized();
     if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
     return res.json();
   }
@@ -89,6 +98,7 @@ export class ApiClient {
       headers: await this.getHeaders(),
       body: JSON.stringify(body),
     });
+    if (res.status === 401) await this.handleUnauthorized();
     if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
     return res.json();
   }
@@ -98,19 +108,20 @@ export class ApiClient {
       method: 'DELETE',
       headers: await this.getHeaders(),
     });
+    if (res.status === 401) await this.handleUnauthorized();
     if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
   }
 
   async upload<T>(path: string, formData: FormData): Promise<T> {
-    const token = await SecureStore.getItemAsync('auth_token');
+    const token = await Storage.getItemAsync('auth_token');
     const res = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'POST',
       body: formData,
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        // Content-Type intentionally omitted — fetch sets multipart boundary automatically
       },
     });
+    if (res.status === 401) await this.handleUnauthorized();
     if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
     return res.json();
   }

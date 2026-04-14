@@ -33,6 +33,7 @@
     "thisMonth": "ಈ ತಿಂಗಳು",
     "listen": "ಕೇಳಿ",
     "english": "English",
+    "hindi": "हिन्दी",
     "kannada": "ಕನ್ನಡ"
   },
   "auth": {
@@ -57,7 +58,9 @@
     "feeding": "ಆಹಾರ",
     "weather": "ಹವಾಮಾನ",
     "insurance": "ವಿಮೆ",
-    "milkToday": "ಇಂದಿನ ಹಾಲು"
+    "vetHelp": "ಪಶುವೈದ್ಯ ಸಹಾಯ",
+    "milkToday": "ಇಂದಿನ ಹಾಲು",
+    "myConsultations": "ನನ್ನ ಸಮಾಲೋಚನೆಗಳು"
   },
   "animals": {
     "myAnimals": "ನನ್ನ ಪ್ರಾಣಿಗಳು",
@@ -335,6 +338,26 @@
     "gpsDescription": "GPS ಕಾಲರ್\u200Cಗಳಿಂದ ಪ್ರಾಣಿ ಸ್ಥಳಗಳನ್ನು ನೇರ ನಕ್ಷೆ ತೋರಿಸುತ್ತದೆ",
     "iotDevices": "IoT ಸಾಧನಗಳು"
   },
+  "vetPhoto": {
+    "title": "ಪಶುವೈದ್ಯರಿಗೆ ಫೋಟೋ ಕಳುಹಿಸಿ",
+    "subtitle": "ಪಶುವೈದ್ಯ ರೋಗನಿರ್ಣಯಕ್ಕಾಗಿ ಪ್ರಭಾವಿತ ಭಾಗದ ಫೋಟೋ ತೆಗೆಯಿರಿ",
+    "takePhoto": "ಫೋಟೋ ತೆಗೆಯಿರಿ",
+    "chooseFromGallery": "ಗ್ಯಾಲರಿಯಿಂದ ಆಯ್ಕೆಮಾಡಿ",
+    "changePhoto": "ಫೋಟೋ ಬದಲಾಯಿಸಿ",
+    "selectPhotoSource": "ಫೋಟೋ ಮೂಲ ಆಯ್ಕೆಮಾಡಿ",
+    "describeLabel": "ಹೆಚ್ಚಿನ ವಿವರಗಳು",
+    "describePlaceholder": "ಸಮಸ್ಯೆ ವಿವರಿಸಿ (ಐಚ್ಛಿಕ)",
+    "sendForDiagnosis": "ರೋಗನಿರ್ಣಯಕ್ಕೆ ಕಳುಹಿಸಿ",
+    "sentSuccess": "ಫೋಟೋ ಯಶಸ್ವಿಯಾಗಿ ಕಳುಹಿಸಲಾಗಿದೆ",
+    "vetWillReview": "ಪಶುವೈದ್ಯರು ನಿಮ್ಮ ಫೋಟೋ ಪರಿಶೀಲಿಸಿ ಶೀಘ್ರದಲ್ಲೇ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತಾರೆ.",
+    "sendAnother": "ಇನ್ನೊಂದು ಫೋಟೋ ಕಳುಹಿಸಿ",
+    "photoRequired": "ದಯವಿಟ್ಟು ಮೊದಲು ಫೋಟೋ ತೆಗೆಯಿರಿ ಅಥವಾ ಆಯ್ಕೆಮಾಡಿ",
+    "photoFailed": "ಫೋಟೋ ತೆಗೆಯಲು ವಿಫಲವಾಗಿದೆ",
+    "sendFailed": "ಫೋಟೋ ಕಳುಹಿಸಲು ವಿಫಲವಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+    "cameraPermissionRequired": "ಫೋಟೋ ತೆಗೆಯಲು ಕ್ಯಾಮೆರಾ ಅನುಮತಿ ಅಗತ್ಯ",
+    "galleryPermissionRequired": "ಫೋಟೋ ಆಯ್ಕೆಮಾಡಲು ಗ್ಯಾಲರಿ ಅನುಮತಿ ಅಗತ್ಯ",
+    "photoSection": "ಪ್ರಾಣಿಯ ಫೋಟೋ"
+  },
   "communityAlerts": {
     "title": "ಸಮುದಾಯ ರೋಗ ಎಚ್ಚರಿಕೆ",
     "reportedNearby": "{{distance}}km ದೂರದಲ್ಲಿ ವರದಿಯಾಗಿದೆ — {{days}} ದಿನಗಳ ಹಿಂದೆ",
@@ -348,5 +371,31 @@
     "autoDetected": "ಸ್ವಯಂ ಪತ್ತೆ",
     "notes": "ಟಿಪ್ಪಣಿಗಳು",
     "submitReport": "ವರದಿ ಸಲ್ಲಿಸಿ"
+  },
+  "consultations": {
+    "title": "ನನ್ನ ಸಮಾಲೋಚನೆಗಳು",
+    "empty": "ಇನ್ನೂ ಯಾವುದೇ ಸಮಾಲೋಚನೆ ಇಲ್ಲ",
+    "emptySubtitle": "ಪಶುವೈದ್ಯ ಸಹಾಯಕ್ಕಾಗಿ ಫೋಟೋ ಕಳುಹಿಸಿ",
+    "sendPhoto": "ಪಶುವೈದ್ಯರಿಗೆ ಫೋಟೋ ಕಳುಹಿಸಿ",
+    "viewAll": "ಎಲ್ಲಾ ಸಮಾಲೋಚನೆಗಳನ್ನು ನೋಡಿ",
+    "submitted": "ಸಲ್ಲಿಸಲಾಗಿದೆ",
+    "pending": "ಬಾಕಿ ಇದೆ",
+    "inReview": "ಪರಿಶೀಲನೆಯಲ್ಲಿ",
+    "diagnosed": "ರೋಗನಿರ್ಣಯವಾಗಿದೆ",
+    "closed": "ಮುಚ್ಚಲಾಗಿದೆ",
+    "pendingMessage": "ಪಶುವೈದ್ಯರು ಶೀಘ್ರದಲ್ಲೇ ನಿಮ್ಮ ಕೇಸ್ ಪರಿಶೀಲಿಸುತ್ತಾರೆ",
+    "diagnosis": "ರೋಗನಿರ್ಣಯ",
+    "prescription": "ಔಷಧಿ ಚೀಟಿ",
+    "followUp": "ಮರು ಭೇಟಿ ದಿನಾಂಕ",
+    "joinVideoCall": "ವೀಡಿಯೊ ಕಾಲ್ ಸೇರಿ",
+    "sentToVet": "ನಿಮ್ಮ ವಿನಂತಿಯನ್ನು ಹತ್ತಿರದ ಪಶುವೈದ್ಯರಿಗೆ ಕಳುಹಿಸಲಾಗಿದೆ",
+    "priority": "ಆದ್ಯತೆ",
+    "routine": "ಸಾಮಾನ್ಯ",
+    "urgent": "ತುರ್ತು",
+    "emergency": "ತುರ್ತು ಪರಿಸ್ಥಿತಿ",
+    "channel": "ಮಾಧ್ಯಮ",
+    "photo": "ಫೋಟೋ",
+    "walkIn": "ನೇರ ಭೇಟಿ",
+    "referral": "ರೆಫರಲ್"
   }
 }

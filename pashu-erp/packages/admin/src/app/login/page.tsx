@@ -15,7 +15,7 @@ import {
   Link,
   CircularProgress,
 } from "@mui/material";
-import PhoneIcon from "@mui/icons-material/Phone";
+import PhoneIcon from "@mui/icons-material/Call";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 

@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     bharat_pashudhan_api_url: str = ""
     iot_gateway_url: str = ""
     storage_api_url: str = ""
-    cors_origins: str = "http://localhost:3000,http://localhost:8081"
+    cors_origins: str = "http://localhost:3000,http://localhost:3001,http://localhost:8081,http://localhost:8082"
     pool_size: int = 10
     max_overflow: int = 20
     pool_recycle: int = 3600

@@ -78,7 +78,15 @@ async def list_animals(
 ):
     """List all animals owned by the authenticated user with pagination."""
     base = select(Animal)
-    if current_user.role != "admin":
+    if current_user.role == "admin":
+        pass  # no filter — admin sees all
+    elif current_user.role == "vet":
+        # Vet sees all animals in their district
+        base = base.join(User, Animal.user_id == User.id).where(
+            User.location_district == current_user.location_district
+        )
+    else:
+        # Farmer: own animals only
         base = base.where(Animal.user_id == current_user.id)
     if species:
         base = base.where(Animal.species == species)

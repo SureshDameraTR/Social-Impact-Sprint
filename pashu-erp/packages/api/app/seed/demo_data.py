@@ -51,6 +51,7 @@ from app.models.insurance import ClaimStatus, PolicyStatus
 from app.models.marketplace import ProductType
 from app.models.milk import MilkSession
 from app.models.shg import SHGGrading
+from app.models.vet import ConsultationChannel, ConsultationPriority, ConsultationStatus, VetConsultation
 from app.models.weather import AlertSeverity as WeatherAlertSeverity
 
 # Fixed seed for reproducibility across runs
@@ -64,7 +65,7 @@ UTC = timezone.utc
 # 1. Users
 # ---------------------------------------------------------------------------
 async def seed_users(session: AsyncSession) -> dict:
-    """Create 4 users: 1 admin + 3 farmers. Returns {key: User}."""
+    """Create 5 users: 1 admin + 3 farmers + 1 vet. Returns {key: User}."""
     user_specs = [
         {
             "key": "admin",
@@ -73,6 +74,7 @@ async def seed_users(session: AsyncSession) -> dict:
             "role": "admin",
             "district": "Mysore",
             "village_code": None,
+            "gender": "male",
         },
         {
             "key": "lakshmi",
@@ -81,6 +83,7 @@ async def seed_users(session: AsyncSession) -> dict:
             "role": "farmer",
             "district": "Mysore",
             "village_code": "KA-MYS-001",
+            "gender": "female",
         },
         {
             "key": "annapurna",
@@ -89,6 +92,7 @@ async def seed_users(session: AsyncSession) -> dict:
             "role": "farmer",
             "district": "Mandya",
             "village_code": "KA-MAN-001",
+            "gender": "female",
         },
         {
             "key": "savitri",
@@ -97,6 +101,16 @@ async def seed_users(session: AsyncSession) -> dict:
             "role": "farmer",
             "district": "Mysore",
             "village_code": "KA-MYS-002",
+            "gender": "female",
+        },
+        {
+            "key": "vet_ramesh",
+            "name": "Dr. Ramesh",
+            "phone": "+919900000005",
+            "role": "vet",
+            "district": "Mysore",
+            "village_code": "KA-MYS-001",
+            "gender": "male",
         },
     ]
 
@@ -116,6 +130,7 @@ async def seed_users(session: AsyncSession) -> dict:
             role=spec["role"],
             location_district=spec["district"],
             village_code=spec["village_code"],
+            gender=spec.get("gender"),
             lang_pref="kn",
             location_state="Karnataka",
         )
@@ -1773,6 +1788,104 @@ async def seed_medicine_administrations(
 
 
 # ---------------------------------------------------------------------------
+# 20. Vet Consultations
+# ---------------------------------------------------------------------------
+async def seed_vet_consultations(
+    session: AsyncSession, users: dict, animals: dict
+) -> int:
+    """Create 3 sample VetConsultation records: pending, diagnosed, and one with video_call_url."""
+    count_result = await session.execute(select(VetConsultation))
+    if count_result.first() is not None:
+        print("  Vet consultations already exist, skipping.")
+        return 0
+
+    now = datetime.now(UTC)
+    vet_id = str(users["vet_ramesh"].id)
+
+    consultation_specs = [
+        # Pending — Gowri suspected mastitis, photo submission
+        {
+            "animal_key": "gowri",
+            "farmer_key": "lakshmi",
+            "status": ConsultationStatus.pending,
+            "priority": ConsultationPriority.emergency,
+            "channel": ConsultationChannel.photo,
+            "farmer_notes": "Gowri showing fever, reduced milk output, and swollen udder. Suspected mastitis.",
+            "photo_urls": [
+                "/uploads/gowri_udder_01.jpg",
+                "/uploads/gowri_udder_02.jpg",
+            ],
+            "diagnosis": None,
+            "prescription": None,
+            "follow_up_date": None,
+            "video_call_url": None,
+            "vet_id": None,
+            "district": "Mysore",
+            "days_ago": 2,
+        },
+        # Diagnosed — Nandini foot rot, vet assigned
+        {
+            "animal_key": "nandini",
+            "farmer_key": "annapurna",
+            "status": ConsultationStatus.diagnosed,
+            "priority": ConsultationPriority.urgent,
+            "channel": ConsultationChannel.referral,
+            "farmer_notes": "Nandini limping on right hind leg. Mild swelling observed.",
+            "photo_urls": None,
+            "diagnosis": "Foot Rot — interdigital necrobacillosis. Moderate infection, no systemic involvement.",
+            "prescription": "Clean wound with potassium permanganate. Apply oxytetracycline spray. Oral meloxicam 0.5mg/kg for 3 days.",
+            "follow_up_date": (TODAY + timedelta(days=5)),
+            "video_call_url": None,
+            "vet_id": vet_id,
+            "district": "Mandya",
+            "days_ago": 5,
+        },
+        # In-review — Gauri goat diarrhea, video call scheduled
+        {
+            "animal_key": "gauri_goat",
+            "farmer_key": "lakshmi",
+            "status": ConsultationStatus.in_review,
+            "priority": ConsultationPriority.routine,
+            "channel": ConsultationChannel.photo,
+            "farmer_notes": "Gauri has loose stools for 2 days. Eating normally.",
+            "photo_urls": ["/uploads/gauri_stool_sample.jpg"],
+            "diagnosis": None,
+            "prescription": None,
+            "follow_up_date": None,
+            "video_call_url": "https://meet.pashuraksha.in/consult/gauri-20260412",
+            "vet_id": vet_id,
+            "district": "Mysore",
+            "days_ago": 3,
+        },
+    ]
+
+    count = 0
+    for spec in consultation_specs:
+        created_at = now - timedelta(days=spec["days_ago"])
+        consultation = VetConsultation(
+            animal_id=str(animals[spec["animal_key"]].id),
+            farmer_id=str(users[spec["farmer_key"]].id),
+            vet_id=spec["vet_id"],
+            status=spec["status"],
+            priority=spec["priority"],
+            channel=spec["channel"],
+            farmer_notes=spec["farmer_notes"],
+            photo_urls=spec["photo_urls"],
+            diagnosis=spec["diagnosis"],
+            prescription=spec["prescription"],
+            follow_up_date=spec["follow_up_date"],
+            video_call_url=spec["video_call_url"],
+            district=spec["district"],
+        )
+        session.add(consultation)
+        count += 1
+
+    await session.flush()
+    print(f"  Vet consultations seeded: {count}")
+    return count
+
+
+# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 async def main():
@@ -1784,62 +1897,65 @@ async def main():
 
     async with async_session() as session:
         async with session.begin():
-            print("\n[1/19] Users")
+            print("\n[1/20] Users")
             users = await seed_users(session)
 
-            print("[2/19] Animals")
+            print("[2/20] Animals")
             animals = await seed_animals(session, users)
 
-            print("[3/19] Milk Collection Center")
+            print("[3/20] Milk Collection Center")
             centers = await seed_milk_center(session, users)
 
-            print("[4/19] Milk Yield Logs (30 days)")
+            print("[4/20] Milk Yield Logs (30 days)")
             await seed_yield_logs(session, users, animals)
 
-            print("[5/19] Milk Collection Records (30 days)")
+            print("[5/20] Milk Collection Records (30 days)")
             await seed_milk_collections(session, users, centers)
 
-            print("[6/19] Health Events")
+            print("[6/20] Health Events")
             await seed_health_events(session, users, animals)
 
-            print("[7/19] Vaccinations")
+            print("[7/20] Vaccinations")
             await seed_vaccinations(session, users, animals)
 
-            print("[8/19] Sell Records (15 days)")
+            print("[8/20] Sell Records (15 days)")
             sell_records = await seed_sell_records(session, users)
 
-            print("[9/19] Financial Transactions")
+            print("[9/20] Financial Transactions")
             await seed_transactions(session, sell_records)
 
-            print("[10/19] SHG Groups")
+            print("[10/20] SHG Groups")
             await seed_shg_groups(session, users)
 
-            print("[11/19] Government Schemes")
+            print("[11/20] Government Schemes")
             await seed_govt_schemes(session)
 
-            print("[12/19] Weather Alerts")
+            print("[12/20] Weather Alerts")
             await seed_weather_alerts(session)
 
-            print("[13/19] Feed Ingredients")
+            print("[13/20] Feed Ingredients")
             await seed_feed_ingredients(session)
 
-            print("[14/19] Ethno-Veterinary Remedies")
+            print("[14/20] Ethno-Veterinary Remedies")
             await seed_ethno_vet_remedies(session)
 
-            print("[15/19] Insurance Policies & Claims")
+            print("[15/20] Insurance Policies & Claims")
             await seed_insurance_policies(session, users, animals)
 
-            print("[16/19] Community Alerts")
+            print("[16/20] Community Alerts")
             await seed_community_alerts(session, users)
 
-            print("[17/19] Medicines")
+            print("[17/20] Medicines")
             medicines = await seed_medicines(session)
 
-            print("[18/19] Advisory Tips")
+            print("[18/20] Advisory Tips")
             await seed_advisory_tips(session)
 
-            print("[19/19] Medicine Administrations")
+            print("[19/20] Medicine Administrations")
             await seed_medicine_administrations(session, animals, medicines)
+
+            print("[20/20] Vet Consultations")
+            await seed_vet_consultations(session, users, animals)
 
         print("\n" + "=" * 50)
         print("Seed data loaded successfully!")

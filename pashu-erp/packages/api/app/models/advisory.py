@@ -5,7 +5,7 @@ from sqlalchemy import String, Text, Integer, Boolean, DateTime, Enum, text, fun
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
 class AdvisoryCategory(str, enum.Enum):
@@ -22,7 +22,7 @@ class AdvisorySource(str, enum.Enum):
     Community = "Community"
 
 
-class AdvisoryTip(Base):
+class AdvisoryTip(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "advisory_tips"
 
     id: Mapped[str] = mapped_column(

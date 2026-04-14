@@ -5,7 +5,7 @@ from sqlalchemy import String, Boolean, DateTime, Enum, Numeric, text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
 class FeedCategory(str, enum.Enum):
@@ -15,7 +15,7 @@ class FeedCategory(str, enum.Enum):
     mineral = "mineral"
 
 
-class FeedIngredient(Base):
+class FeedIngredient(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "feed_ingredients"
 
     id: Mapped[str] = mapped_column(

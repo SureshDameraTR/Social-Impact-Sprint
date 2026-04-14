@@ -27,6 +27,10 @@ dist/
 build/
 .expo/
 web-build/
+*.tsbuildinfo
+
+# Lock files (pnpm monorepo — only pnpm-lock.yaml at root)
+packages/*/package-lock.json
 
 # IDE
 .idea/

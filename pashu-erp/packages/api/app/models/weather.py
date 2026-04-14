@@ -5,7 +5,7 @@ from sqlalchemy import String, Text, DateTime, Enum, text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
 class AlertSeverity(str, enum.Enum):
@@ -15,7 +15,7 @@ class AlertSeverity(str, enum.Enum):
     extreme = "extreme"
 
 
-class WeatherAlert(Base):
+class WeatherAlert(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "weather_alerts"
 
     id: Mapped[str] = mapped_column(

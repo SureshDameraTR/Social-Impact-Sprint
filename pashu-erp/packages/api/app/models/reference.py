@@ -6,10 +6,10 @@ from sqlalchemy import Boolean, Date, DateTime, Integer, Numeric, String, Text, 
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
-class MarketRate(Base):
+class MarketRate(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "market_rates"
 
     id: Mapped[str] = mapped_column(
@@ -30,7 +30,7 @@ class MarketRate(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
-class InsurancePremium(Base):
+class InsurancePremium(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "insurance_premiums"
 
     id: Mapped[str] = mapped_column(
@@ -48,7 +48,7 @@ class InsurancePremium(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
-class MedicineCatalog(Base):
+class MedicineCatalog(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "medicine_catalog"
 
     id: Mapped[str] = mapped_column(

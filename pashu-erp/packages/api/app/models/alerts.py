@@ -5,7 +5,7 @@ from sqlalchemy import String, Float, Boolean, DateTime, Enum, ForeignKey, text,
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
 class AlertSeverity(str, enum.Enum):
@@ -15,7 +15,7 @@ class AlertSeverity(str, enum.Enum):
     critical = "critical"
 
 
-class CommunityAlert(Base):
+class CommunityAlert(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "community_alerts"
 
     id: Mapped[str] = mapped_column(

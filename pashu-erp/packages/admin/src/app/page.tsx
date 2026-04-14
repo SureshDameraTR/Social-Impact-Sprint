@@ -9,6 +9,9 @@ import LocalDrinkIcon from "@mui/icons-material/LocalDrink";
 import WarningIcon from "@mui/icons-material/Warning";
 import StoreIcon from "@mui/icons-material/Store";
 import StorefrontIcon from "@mui/icons-material/Storefront";
+import WomanIcon from "@mui/icons-material/Woman";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import GroupsIcon from "@mui/icons-material/Groups";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@mui/material";
 import StatCard from "@/components/StatCard";
@@ -88,6 +91,10 @@ interface DashboardStats {
   active_alerts: number;
   marketplace_revenue: number;
   active_sellers: number;
+  women_farmers: number;
+  women_revenue: number;
+  women_animals: number;
+  women_shg_count: number;
 }
 
 export default function DashboardPage() {
@@ -166,6 +173,70 @@ export default function DashboardPage() {
             value={statsLoading ? "\u2014" : stats?.active_sellers?.toLocaleString() ?? "\u2014"}
             color={colors.accentAmber}
             trend={{ value: 9, label: "this month" }}
+          />
+        </Grid>
+      </Grid>
+
+      {/* Women Empowerment Section */}
+      <Typography variant="h5" gutterBottom sx={{ color: colors.primary, mt: 1 }}>
+        Women Empowerment
+      </Typography>
+      <Typography variant="body2" color="text.secondary" mb={2}>
+        Gender-disaggregated metrics for women farmer participation and economic impact
+      </Typography>
+      <Grid container spacing={2.5} mb={4}>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            icon={<WomanIcon sx={{ fontSize: 28, color: colors.accentGreen }} />}
+            title="Women Farmers"
+            value={
+              statsLoading
+                ? "\u2014"
+                : stats?.women_farmers != null
+                  ? `${stats.women_farmers} (${stats.farmer_count ? Math.round((stats.women_farmers / stats.farmer_count) * 100) : 0}%)`
+                  : "\u2014"
+            }
+            color={colors.accentGreen}
+            trend={{ value: 18, label: "this quarter" }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            icon={<AccountBalanceWalletIcon sx={{ fontSize: 28, color: colors.primary }} />}
+            title="Women's Revenue"
+            value={
+              statsLoading
+                ? "\u2014"
+                : stats?.women_revenue != null
+                  ? `\u20B9${stats.women_revenue.toLocaleString()}`
+                  : "\u2014"
+            }
+            color={colors.primary}
+            trend={{ value: 25, label: "this quarter" }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            icon={<PetsIcon sx={{ fontSize: 28, color: colors.accentAmber }} />}
+            title="Women's Livestock"
+            value={
+              statsLoading
+                ? "\u2014"
+                : stats?.women_animals != null
+                  ? `${stats.women_animals} (${stats.animal_count ? Math.round((stats.women_animals / stats.animal_count) * 100) : 0}%)`
+                  : "\u2014"
+            }
+            color={colors.accentAmber}
+            trend={{ value: 12, label: "this quarter" }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            icon={<GroupsIcon sx={{ fontSize: 28, color: colors.secondary }} />}
+            title="SHG Groups"
+            value={statsLoading ? "\u2014" : stats?.women_shg_count?.toLocaleString() ?? "\u2014"}
+            color={colors.secondary}
+            trend={{ value: 5, label: "this quarter" }}
           />
         </Grid>
       </Grid>

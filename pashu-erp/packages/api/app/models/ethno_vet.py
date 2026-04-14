@@ -5,7 +5,7 @@ from sqlalchemy import String, Text, DateTime, Enum, text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
 class EvidenceRating(str, enum.Enum):
@@ -14,7 +14,7 @@ class EvidenceRating(str, enum.Enum):
     icar_validated = "icar_validated"
 
 
-class TraditionalRemedy(Base):
+class TraditionalRemedy(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "traditional_remedies"
 
     id: Mapped[str] = mapped_column(

@@ -5,7 +5,7 @@ from sqlalchemy import String, DateTime, Enum, text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
 class UserRole(str, enum.Enum):
@@ -15,7 +15,13 @@ class UserRole(str, enum.Enum):
     milk_center = "milk_center"
 
 
-class User(Base):
+class Gender(str, enum.Enum):
+    male = "male"
+    female = "female"
+    other = "other"
+
+
+class User(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(
@@ -30,7 +36,8 @@ class User(Base):
     location_district: Mapped[str | None] = mapped_column(String(100), nullable=True)
     location_state: Mapped[str] = mapped_column(String(50), default="Karnataka", server_default="Karnataka")
     village_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    aadhaar_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    gender: Mapped[str | None] = mapped_column(Enum(Gender, name="gender"), nullable=True)
+    aadhaar_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True, index=True)
     aadhaar_last4: Mapped[str | None] = mapped_column(String(4), nullable=True, index=True)
     preferences: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

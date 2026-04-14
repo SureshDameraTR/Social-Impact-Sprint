@@ -16,7 +16,22 @@ export default function MapPage() {
   if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress /></Box>;
   if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
 
-  const allPoints = data?.data ?? [];
+  // Map API response format to GISMap MapPoint format
+  const rawPoints = data?.data ?? [];
+  const allPoints: MapPoint[] = rawPoints
+    .filter((p: Record<string, unknown>) => p.lat != null && (p.lng != null || p.lon != null))
+    .map((p: Record<string, unknown>) => ({
+      id: String(p.id ?? p.village_code ?? Math.random()),
+      lat: Number(p.lat),
+      lng: Number(p.lng ?? p.lon),
+      label: String(p.label ?? p.disease_name ?? ""),
+      details: p.details ? String(p.details) : undefined,
+      severity: p.severity as MapPoint["severity"] ?? (p.risk_score != null ? (Number(p.risk_score) >= 0.8 ? "critical" : Number(p.risk_score) >= 0.6 ? "high" : "medium") : undefined),
+      type: p.type === "health_alert" || p.type === "community_alert" ? "alert" as const
+        : p.type === "milk_center" ? "center" as const
+        : p.type === "farmer_cluster" ? "farmer" as const
+        : undefined,
+    }));
 
   return (
     <Box p={3}>

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet, Text as RNText, Pressable } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { Stack, Redirect } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from '../src/config/storage';
 import { useTranslation } from 'react-i18next';
 import { theme, colors } from '../src/config/theme';
 import { SnackbarProvider } from '../src/hooks/useSnackbar';
@@ -73,7 +73,7 @@ export default function RootLayout() {
   useEffect(() => {
     (async () => {
       try {
-        const token = await SecureStore.getItemAsync('auth_token');
+        const token = await Storage.getItemAsync('auth_token');
         if (!token) {
           setAuthState('unauthenticated');
           return;
@@ -85,7 +85,7 @@ export default function RootLayout() {
         if (res.ok) {
           setAuthState('authenticated');
         } else {
-          await SecureStore.deleteItemAsync('auth_token');
+          await Storage.deleteItemAsync('auth_token');
           setAuthState('unauthenticated');
         }
       } catch {
@@ -105,15 +105,24 @@ export default function RootLayout() {
   }
 
   if (authState === 'unauthenticated') {
-    // Redirect handled via initialRouteName — show auth stack
+    return (
+      <ErrorBoundary>
+        <PaperProvider theme={theme}>
+          <SnackbarProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(auth)" />
+            </Stack>
+          </SnackbarProvider>
+        </PaperProvider>
+      </ErrorBoundary>
+    );
   }
 
   return (
     <ErrorBoundary>
       <PaperProvider theme={theme}>
         <SnackbarProvider>
-          <Stack screenOptions={{ headerShown: false }} initialRouteName={authState === 'authenticated' ? '(tabs)' : '(auth)'}>
-            <Stack.Screen name="(auth)" />
+          <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen
               name="animal/[id]"
@@ -134,6 +143,14 @@ export default function RootLayout() {
             <Stack.Screen
               name="profile"
               options={{ headerShown: true, title: '' }}
+            />
+            <Stack.Screen
+              name="vet-photo"
+              options={{ headerShown: true, title: '' }}
+            />
+            <Stack.Screen
+              name="my-consultations"
+              options={{ headerShown: true, title: 'My Consultations' }}
             />
           </Stack>
         </SnackbarProvider>

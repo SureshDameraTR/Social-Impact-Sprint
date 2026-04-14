@@ -5,7 +5,7 @@ from sqlalchemy import String, Date, DateTime, Enum, ForeignKey, Numeric, Text, 
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
 class HealthEventType(str, enum.Enum):
@@ -15,7 +15,7 @@ class HealthEventType(str, enum.Enum):
     emergency = "emergency"
 
 
-class HealthEvent(Base):
+class HealthEvent(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "health_events"
 
     id: Mapped[str] = mapped_column(
@@ -46,7 +46,7 @@ class HealthEvent(Base):
     recorder = relationship("User", foreign_keys=[recorded_by], lazy="noload")
 
 
-class Vaccination(Base):
+class Vaccination(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "vaccinations"
 
     id: Mapped[str] = mapped_column(

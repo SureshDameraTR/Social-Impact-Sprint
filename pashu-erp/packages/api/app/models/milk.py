@@ -5,7 +5,7 @@ from sqlalchemy import String, Boolean, DateTime, Enum, ForeignKey, Numeric, tex
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
 class MilkSession(str, enum.Enum):
@@ -13,7 +13,7 @@ class MilkSession(str, enum.Enum):
     evening = "evening"
 
 
-class YieldLog(Base):
+class YieldLog(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "yield_logs"
 
     id: Mapped[str] = mapped_column(
@@ -37,7 +37,7 @@ class YieldLog(Base):
     user = relationship("User", back_populates="yield_logs", foreign_keys=[user_id], lazy="selectin")
 
 
-class MilkCollectionCenter(Base):
+class MilkCollectionCenter(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "milk_collection_centers"
 
     id: Mapped[str] = mapped_column(
@@ -62,7 +62,7 @@ class MilkCollectionCenter(Base):
     )
 
 
-class MilkCollectionRecord(Base):
+class MilkCollectionRecord(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "milk_collection_records"
 
     id: Mapped[str] = mapped_column(

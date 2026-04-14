@@ -21,6 +21,7 @@ from app.middleware.auth import get_current_user, require_admin
 from app.models.animal import Animal
 from app.models.health import HealthEvent
 from app.models.user import User
+from app.models.vet import VetConsultation
 from app.schemas.health import (
     HealthEventCreate,
     HealthEventRead,
@@ -66,6 +67,40 @@ async def log_health_event(
     db.add(event)
     await db.commit()
     await db.refresh(event)
+
+    # Auto-create VetConsultation when symptoms are present
+    if body.symptoms:
+        risk_score = triage["risk_score"]
+        if risk_score > 0.8:
+            priority = "emergency"
+        elif risk_score > 0.5:
+            priority = "urgent"
+        else:
+            priority = "routine"
+
+        channel = "photo" if body.photo_urls else "referral"
+
+        # Resolve district from animal owner
+        farmer = await db.get(User, animal.user_id)
+        district = (
+            (farmer.location_district if farmer else None)
+            or current_user.location_district
+            or "unknown"
+        )
+
+        consultation = VetConsultation(
+            animal_id=str(animal.id),
+            farmer_id=str(current_user.id),
+            status="pending",
+            priority=priority,
+            channel=channel,
+            farmer_notes=body.description,
+            photo_urls=body.photo_urls,
+            district=district,
+        )
+        db.add(consultation)
+        await db.commit()
+
     return event
 
 
@@ -114,7 +149,15 @@ async def list_health_events(
     """List recent health events (admin: all, farmer: own animals only)."""
     week_ago = datetime.now(timezone.utc) - timedelta(days=ALERT_WINDOW_DAYS)
     base = select(HealthEvent).where(HealthEvent.event_date >= week_ago)
-    if current_user.role != "admin":
+    if current_user.role == "admin":
+        pass  # no filter — admin sees all
+    elif current_user.role == "vet":
+        # Vet sees all health events in their district
+        base = base.join(Animal, HealthEvent.animal_id == Animal.id).join(
+            User, Animal.user_id == User.id
+        ).where(User.location_district == current_user.location_district)
+    else:
+        # Farmer: own animals only
         animal_ids_q = select(Animal.id).where(Animal.user_id == current_user.id)
         base = base.where(HealthEvent.animal_id.in_(animal_ids_q))
 

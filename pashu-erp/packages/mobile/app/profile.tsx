@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Text, Card, Button, Switch, Divider, List, ActivityIndicator } from 'react-native-paper';
+import { Text, Card, Button, Divider, List, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from '../src/config/storage';
 import { EmptyState } from '../src/components/EmptyState';
 import { SPACING, CARD_BORDER_RADIUS, colors, statusColors } from '../src/config/theme';
 import { api } from '../src/config/api';
+import { loadLanguage } from '../src/i18n';
 
 interface UserProfile {
   name: string;
@@ -21,7 +22,7 @@ interface UserProfile {
 
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
-  const [isKannada, setIsKannada] = useState(i18n.language === 'kn');
+  const [language, setLanguage] = useState(i18n.language || 'en');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,14 +40,13 @@ export default function ProfileScreen() {
     fetchProfile();
   }, [fetchProfile]);
 
-  const toggleLanguage = () => {
-    const newLang = isKannada ? 'en' : 'kn';
-    i18n.changeLanguage(newLang);
-    setIsKannada(!isKannada);
+  const handleLanguageChange = (lang: string) => {
+    setLanguage(lang);
+    loadLanguage(lang);
   };
 
   const handleLogout = async () => {
-    await SecureStore.deleteItemAsync('auth_token');
+    await Storage.deleteItemAsync('auth_token');
     router.replace('/(auth)/login');
   };
 
@@ -90,23 +90,31 @@ export default function ProfileScreen() {
         </Text>
       </View>
 
-      {/* Language toggle */}
+      {/* Language selector */}
       <Card style={styles.card}>
         <Card.Content>
-          <View style={styles.settingRow}>
-            <View>
-              <Text variant="titleMedium">
-                {isKannada ? t('common.kannada') : t('common.english')}
-              </Text>
-              <Text variant="bodySmall" style={styles.settingHint}>
-                {isKannada ? 'Switch to English' : '\u0C95\u0CA8\u0CCD\u0CA8\u0CA1\u0C95\u0CCD\u0C95\u0CC6 \u0CAC\u0CA6\u0CB2\u0CBF\u0CB8\u0CBF'}
-              </Text>
-            </View>
-            <Switch
-              value={isKannada}
-              onValueChange={toggleLanguage}
-              color={colors.primary}
-            />
+          <Text variant="titleMedium" style={styles.cardTitle}>
+            {t('onboarding.selectLanguage')}
+          </Text>
+          <View style={styles.langGrid}>
+            {[
+              { value: 'en', label: 'English' },
+              { value: 'hi', label: '\u0939\u093F\u0928\u094D\u0926\u0940' },
+              { value: 'kn', label: '\u0C95\u0CA8\u0CCD\u0CA8\u0CA1' },
+              { value: 'ta', label: '\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD' },
+              { value: 'te', label: '\u0C24\u0C46\u0C32\u0C41\u0C17\u0C41' },
+              { value: 'gu', label: '\u0A97\u0AC1\u0A9C\u0AB0\u0ABE\u0AA4\u0AC0' },
+            ].map((lang) => (
+              <Button
+                key={lang.value}
+                mode={language === lang.value ? 'contained' : 'outlined'}
+                onPress={() => handleLanguageChange(lang.value)}
+                style={styles.langButton}
+                compact
+              >
+                {lang.label}
+              </Button>
+            ))}
           </View>
         </Card.Content>
       </Card>
@@ -221,14 +229,16 @@ const styles = StyleSheet.create({
   cardDivider: {
     marginVertical: SPACING.sm,
   },
-  settingRow: {
+  langGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
   },
-  settingHint: {
-    color: '#9E9E9E',
-    marginTop: 2,
+  langButton: {
+    borderRadius: 12,
+    minWidth: '30%' as unknown as number,
+    flexGrow: 1,
   },
   statsRow: {
     flexDirection: 'row',

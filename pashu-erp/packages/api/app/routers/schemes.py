@@ -65,8 +65,8 @@ async def list_schemes(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all active government schemes."""
-    stmt = select(GovtScheme).where(GovtScheme.is_active == True)  # noqa: E712
+    """List all government schemes."""
+    stmt = select(GovtScheme)
     if ministry:
         stmt = stmt.where(GovtScheme.ministry.ilike(f"%{ministry}%"))
     stmt = stmt.order_by(GovtScheme.name).offset(skip).limit(limit)

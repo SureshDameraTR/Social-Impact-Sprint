@@ -90,6 +90,7 @@ export const authProvider: AuthProvider = {
       return {
         id: cachedIdentity.id,
         name: cachedIdentity.name,
+        role: cachedIdentity.role,
       };
     }
 
@@ -100,7 +101,7 @@ export const authProvider: AuthProvider = {
       if (response.ok) {
         const data = await response.json();
         cachedIdentity = { id: data.user_id, name: data.name, role: data.role };
-        return { id: data.user_id, name: data.name };
+        return { id: data.user_id, name: data.name, role: data.role };
       }
     } catch {
       // identity fetch failed

@@ -54,7 +54,7 @@ export default function MedicineLogScreen() {
       api.get<WithdrawalEntry[]>('/medicine-log/withdrawals'),
     ])
       .then(([animalsData, withdrawalsData]) => {
-        setAnimals(animalsData);
+        setAnimals(Array.isArray(animalsData) ? animalsData : (animalsData as any).data ?? []);
         setWithdrawals(withdrawalsData);
       })
       .catch(err => setError(err.message))

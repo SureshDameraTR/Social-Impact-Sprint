@@ -16,6 +16,10 @@ i18n.use(initReactI18next).init({
 
 const bundles: Record<string, () => Record<string, string>> = {
   kn: () => require('./kn.json'),
+  hi: () => require('./hi.json'),
+  ta: () => require('./ta.json'),
+  te: () => require('./te.json'),
+  gu: () => require('./gu.json'),
 };
 
 export function loadLanguage(lang: string) {

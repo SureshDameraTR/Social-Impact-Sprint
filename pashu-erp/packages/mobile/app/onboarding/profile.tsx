@@ -3,7 +3,7 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { Button, Text, TextInput, Menu } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from '../../src/config/storage';
 import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../../src/config/theme';
 
 const KARNATAKA_DISTRICTS = [
@@ -22,7 +22,7 @@ export default function ProfileScreen() {
   const [phone, setPhone] = useState('');
 
   React.useEffect(() => {
-    SecureStore.getItemAsync('user_phone').then((val) => {
+    Storage.getItemAsync('user_phone').then((val) => {
       if (val) setPhone(val);
     });
   }, []);

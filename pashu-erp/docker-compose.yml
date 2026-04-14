@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: pashuraksha
       POSTGRES_USER: pashu
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pashu_dev_2026}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -36,10 +36,13 @@ services:
     build: ./packages/api
     ports:
       - "8000:8000"
+    volumes:
+      - ./packages/api/app:/app/app
+      - ./packages/api/alembic:/app/alembic
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://pashu:pashu_dev_2026@db:5432/pashuraksha}
-      JWT_SECRET: ${JWT_SECRET:-dd5e8b3aca588d42950311149a3bc5e0f2d32d2e51e93af2b19184e067491ef1}
-      ENVIRONMENT: development
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       WEATHER_API_URL: http://mock-backends:8001/api/weather
       BHARAT_PASHUDHAN_API_URL: http://mock-backends:8001/api/registry
       IOT_GATEWAY_URL: http://mock-backends:8001/api/iot
@@ -49,7 +52,12 @@ services:
         condition: service_healthy
       mock-backends:
         condition: service_healthy
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    command: >
+      sh -c "if [ \"$ENVIRONMENT\" = 'development' ]; then
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload;
+      else
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2;
+      fi"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

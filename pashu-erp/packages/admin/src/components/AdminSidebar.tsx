@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -24,6 +24,10 @@ import StoreIcon from '@mui/icons-material/Store';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import SensorsIcon from '@mui/icons-material/Sensors';
 import MapIcon from '@mui/icons-material/Map';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import { useGetIdentity } from '@refinedev/core';
 import { colors } from '@/theme/theme';
 
 interface NavItem {
@@ -37,7 +41,13 @@ interface NavSection {
   items: NavItem[];
 }
 
-const navSections: NavSection[] = [
+interface UserIdentity {
+  id: string;
+  name: string;
+  role?: string;
+}
+
+const adminNavSections: NavSection[] = [
   {
     title: 'CORE OPERATIONS',
     items: [
@@ -47,6 +57,13 @@ const navSections: NavSection[] = [
       { label: 'Milk Collection', href: '/milk', icon: <LocalDrinkIcon /> },
       { label: 'Health Alerts', href: '/health', icon: <LocalHospitalIcon /> },
       { label: 'Vaccinations', href: '/vaccinations', icon: <VaccinesIcon /> },
+    ],
+  },
+  {
+    title: 'VETERINARY',
+    items: [
+      { label: 'Vet Dashboard', href: '/vet', icon: <MedicalServicesIcon /> },
+      { label: 'Vet Cases', href: '/vet/cases', icon: <AssignmentIcon /> },
     ],
   },
   {
@@ -71,10 +88,42 @@ const navSections: NavSection[] = [
   },
 ];
 
+const vetNavSections: NavSection[] = [
+  {
+    title: 'VETERINARY',
+    items: [
+      { label: 'Vet Dashboard', href: '/vet', icon: <MedicalServicesIcon /> },
+      { label: 'My Cases', href: '/vet/cases', icon: <AssignmentIcon /> },
+      { label: 'District Alerts', href: '/vet/alerts', icon: <NotificationsActiveIcon /> },
+    ],
+  },
+  {
+    title: 'LOOKUP',
+    items: [
+      { label: 'Animals', href: '/animals', icon: <PetsIcon /> },
+      { label: 'Vaccinations', href: '/vaccinations', icon: <VaccinesIcon /> },
+      { label: 'Health Events', href: '/health', icon: <LocalHospitalIcon /> },
+      { label: 'Map View', href: '/map', icon: <MapIcon /> },
+    ],
+  },
+];
+
 const SIDEBAR_WIDTH = 260;
 
 function AdminSidebar() {
   const pathname = usePathname();
+  const { data: identity } = useGetIdentity<UserIdentity>();
+  const [role, setRole] = useState<string>('admin');
+
+  useEffect(() => {
+    if (identity?.role) {
+      setRole(identity.role);
+    }
+  }, [identity?.role]);
+
+  const navSections = role === 'vet' ? vetNavSections : adminNavSections;
+  const displayName = identity?.name ?? (role === 'vet' ? 'Veterinarian' : 'Admin');
+  const displayRole = role === 'vet' ? 'District Veterinarian' : 'District Admin';
 
   return (
     <Box
@@ -137,7 +186,7 @@ function AdminSidebar() {
                 textTransform: 'uppercase',
               }}
             >
-              ERP Admin
+              {role === 'vet' ? 'Vet Portal' : 'ERP Admin'}
             </Typography>
           </Box>
         </Box>
@@ -233,7 +282,7 @@ function AdminSidebar() {
             fontWeight: 600,
           }}
         >
-          A
+          {displayName.charAt(0).toUpperCase()}
         </Avatar>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography
@@ -247,7 +296,7 @@ function AdminSidebar() {
               textOverflow: 'ellipsis',
             }}
           >
-            Admin
+            {displayName}
           </Typography>
           <Typography
             sx={{
@@ -256,7 +305,7 @@ function AdminSidebar() {
               lineHeight: 1.2,
             }}
           >
-            District Admin
+            {displayRole}
           </Typography>
         </Box>
       </Box>

@@ -3,6 +3,7 @@ import { View, StyleSheet, Image } from 'react-native';
 import { Button, Text, ToggleButton } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
+import { loadLanguage } from '../../src/i18n';
 import { SPACING, TOUCH_TARGET_MIN, ICON_SIZE_LARGE } from '../../src/config/theme';
 
 export default function WelcomeScreen() {
@@ -12,7 +13,7 @@ export default function WelcomeScreen() {
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
-    i18n.changeLanguage(lang);
+    loadLanguage(lang);
   };
 
   return (
@@ -33,25 +34,26 @@ export default function WelcomeScreen() {
         <Text variant="titleMedium" style={[styles.sectionLabel, highContrast && styles.sectionLabelHC]}>
           {t('onboarding.selectLanguage')}
         </Text>
-        <View style={styles.languageRow}>
-          <Button
-            mode={language === 'kn' ? 'contained' : 'outlined'}
-            onPress={() => handleLanguageChange('kn')}
-            style={styles.langButton}
-            contentStyle={styles.langButtonContent}
-            labelStyle={styles.langLabel}
-          >
-            ಕನ್ನಡ
-          </Button>
-          <Button
-            mode={language === 'en' ? 'contained' : 'outlined'}
-            onPress={() => handleLanguageChange('en')}
-            style={styles.langButton}
-            contentStyle={styles.langButtonContent}
-            labelStyle={styles.langLabel}
-          >
-            English
-          </Button>
+        <View style={styles.languageGrid}>
+          {[
+            { value: 'en', label: 'English' },
+            { value: 'hi', label: '\u0939\u093F\u0928\u094D\u0926\u0940' },
+            { value: 'kn', label: '\u0C95\u0CA8\u0CCD\u0CA8\u0CA1' },
+            { value: 'ta', label: '\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD' },
+            { value: 'te', label: '\u0C24\u0C46\u0C32\u0C41\u0C17\u0C41' },
+            { value: 'gu', label: '\u0A97\u0AC1\u0A9C\u0AB0\u0ABE\u0AA4\u0AC0' },
+          ].map((lang) => (
+            <Button
+              key={lang.value}
+              mode={language === lang.value ? 'contained' : 'outlined'}
+              onPress={() => handleLanguageChange(lang.value)}
+              style={styles.langButton}
+              contentStyle={styles.langButtonContent}
+              labelStyle={styles.langLabel}
+            >
+              {lang.label}
+            </Button>
+          ))}
         </View>
       </View>
 
@@ -127,20 +129,22 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     textAlign: 'center',
   },
-  languageRow: {
+  languageGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: SPACING.md,
+    gap: SPACING.sm,
   },
   langButton: {
     borderRadius: 16,
-    minWidth: 140,
+    minWidth: '30%' as unknown as number,
+    flexGrow: 1,
   },
   langButtonContent: {
-    minHeight: TOUCH_TARGET_MIN + 16,
+    minHeight: TOUCH_TARGET_MIN + 8,
   },
   langLabel: {
-    fontSize: 20,
+    fontSize: 18,
   },
   accessibilitySection: {
     marginBottom: SPACING.xl,

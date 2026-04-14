@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
 
 security = HTTPBearer(auto_error=False)
 
@@ -34,6 +34,11 @@ def _set_cached_user(user_id: str, user: User) -> None:
         for k in stale:
             del _user_cache[k]
     _user_cache[user_id] = (user, time.monotonic())
+
+
+def invalidate_user_cache(user_id: str) -> None:
+    """Evict a user from the auth cache (call after role/permission changes)."""
+    _user_cache.pop(user_id, None)
 
 
 def _extract_token(
@@ -100,5 +105,16 @@ async def require_admin(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
+        )
+    return current_user
+
+
+async def require_vet_or_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    if current_user.role not in (UserRole.vet, UserRole.admin):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Vet or admin access required",
         )
     return current_user

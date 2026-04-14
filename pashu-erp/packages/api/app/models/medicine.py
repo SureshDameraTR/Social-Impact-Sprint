@@ -5,10 +5,10 @@ from sqlalchemy import String, Integer, Date, DateTime, ForeignKey, text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
-class Medicine(Base):
+class Medicine(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "medicines"
 
     id: Mapped[str] = mapped_column(
@@ -29,7 +29,7 @@ class Medicine(Base):
     )
 
 
-class MedicineAdministration(Base):
+class MedicineAdministration(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "medicine_administrations"
 
     id: Mapped[str] = mapped_column(

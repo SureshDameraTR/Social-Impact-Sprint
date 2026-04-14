@@ -27,17 +27,17 @@ import EmptyState from "@/components/EmptyState";
 
 interface GovtScheme {
   id: string;
-  code: string;
+  scheme_code: string;
   name: string;
   ministry: string;
-  max_subsidy: number;
-  subsidy_pct: number;
-  active: boolean;
+  max_subsidy_amount: number | null;
+  subsidy_percentage: number | null;
+  is_active: boolean;
   valid_from: string;
   valid_to: string;
 }
 
-type SortKey = "code" | "name" | "max_subsidy" | "subsidy_pct";
+type SortKey = "scheme_code" | "name" | "max_subsidy_amount" | "subsidy_percentage";
 
 export default function SchemesPage() {
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function SchemesPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [sortBy, setSortBy] = useState<SortKey>("code");
+  const [sortBy, setSortBy] = useState<SortKey>("scheme_code");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const { data, isLoading, isError } = useList<GovtScheme>({ resource: "schemes" });
@@ -69,7 +69,7 @@ export default function SchemesPage() {
     const result = schemes.filter(
       (s) =>
         s.name.toLowerCase().includes(search.toLowerCase()) ||
-        s.code.toLowerCase().includes(search.toLowerCase())
+        s.scheme_code.toLowerCase().includes(search.toLowerCase())
     );
     result.sort((a, b) => {
       const aVal = a[sortBy];
@@ -89,7 +89,7 @@ export default function SchemesPage() {
         Government Schemes
       </Typography>
       <Typography variant="body1" color="text.secondary" mb={3}>
-        {schemes.filter((s) => s.active).length} active schemes available for farmers
+        {schemes.filter((s) => s.is_active).length} active schemes available for farmers
       </Typography>
 
       <Paper>
@@ -115,9 +115,9 @@ export default function SchemesPage() {
               <TableRow>
                 <TableCell>
                   <TableSortLabel
-                    active={sortBy === "code"}
-                    direction={sortBy === "code" ? sortDir : "asc"}
-                    onClick={() => handleSort("code")}
+                    active={sortBy === "scheme_code"}
+                    direction={sortBy === "scheme_code" ? sortDir : "asc"}
+                    onClick={() => handleSort("scheme_code")}
                   >
                     Code
                   </TableSortLabel>
@@ -134,18 +134,18 @@ export default function SchemesPage() {
                 <TableCell>Ministry</TableCell>
                 <TableCell align="right">
                   <TableSortLabel
-                    active={sortBy === "max_subsidy"}
-                    direction={sortBy === "max_subsidy" ? sortDir : "asc"}
-                    onClick={() => handleSort("max_subsidy")}
+                    active={sortBy === "max_subsidy_amount"}
+                    direction={sortBy === "max_subsidy_amount" ? sortDir : "asc"}
+                    onClick={() => handleSort("max_subsidy_amount")}
                   >
                     Max Subsidy
                   </TableSortLabel>
                 </TableCell>
                 <TableCell align="center">
                   <TableSortLabel
-                    active={sortBy === "subsidy_pct"}
-                    direction={sortBy === "subsidy_pct" ? sortDir : "asc"}
-                    onClick={() => handleSort("subsidy_pct")}
+                    active={sortBy === "subsidy_percentage"}
+                    direction={sortBy === "subsidy_percentage" ? sortDir : "asc"}
+                    onClick={() => handleSort("subsidy_percentage")}
                   >
                     Subsidy %
                   </TableSortLabel>
@@ -169,7 +169,7 @@ export default function SchemesPage() {
                       <TableCell
                         sx={{ ...sxCodeCell, fontWeight: 600, color: colors.primary }}
                       >
-                        {scheme.code}
+                        {scheme.scheme_code}
                       </TableCell>
                       <TableCell sx={{ ...sxNameCell, maxWidth: 280 }}>
                         {scheme.name}
@@ -190,23 +190,23 @@ export default function SchemesPage() {
                         align="right"
                         sx={{ ...sxCodeCell, fontWeight: 600 }}
                       >
-                        {fmtCurrency(scheme.max_subsidy)}
+                        {scheme.max_subsidy_amount != null ? fmtCurrency(scheme.max_subsidy_amount) : "\u2014"}
                       </TableCell>
                       <TableCell
                         align="center"
                         sx={{ fontFamily: monoFont, fontSize: '12px' }}
                       >
-                        {scheme.subsidy_pct}%
+                        {scheme.subsidy_percentage != null ? `${scheme.subsidy_percentage}%` : "\u2014"}
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={scheme.active ? "Active" : "Expired"}
+                          label={scheme.is_active ? "Active" : "Expired"}
                           size="small"
                           sx={{
                             fontWeight: 600,
                             fontSize: '11.5px',
-                            bgcolor: scheme.active ? colors.successLight : '#f0f0f0',
-                            color: scheme.active ? colors.accentGreen : '#999',
+                            bgcolor: scheme.is_active ? colors.successLight : '#f0f0f0',
+                            color: scheme.is_active ? colors.accentGreen : '#999',
                             border: 'none',
                           }}
                         />

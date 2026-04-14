@@ -6,7 +6,7 @@ from sqlalchemy import String, Integer, Boolean, Date, DateTime, Numeric, Enum, 
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
 class SHGGrading(str, enum.Enum):
@@ -16,7 +16,7 @@ class SHGGrading(str, enum.Enum):
     ungraded = "ungraded"
 
 
-class SHGGroup(Base):
+class SHGGroup(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "shg_groups"
 
     id: Mapped[str] = mapped_column(

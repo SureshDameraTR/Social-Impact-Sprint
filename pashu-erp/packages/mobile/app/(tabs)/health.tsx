@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, Pressable, StatusBar, Linking } from 'react-native';
+import { router } from 'expo-router';
 import { Text, Button, Card, IconButton, Snackbar, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { TriageCard, type Severity } from '../../src/components/TriageCard';
@@ -67,7 +68,7 @@ export default function HealthScreen() {
     setLoading(true);
     setError(null);
     api.get<AnimalOption[]>('/animals')
-      .then(res => setAnimals(res))
+      .then(res => setAnimals(Array.isArray(res) ? res : (res as any).data ?? []))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -242,6 +243,20 @@ export default function HealthScreen() {
         </View>
       )}
 
+      {/* Send photo to vet */}
+      <Button
+        mode="contained"
+        icon="camera"
+        onPress={() => router.push('/vet-photo')}
+        style={styles.vetPhotoButton}
+        contentStyle={styles.vetPhotoContent}
+        labelStyle={styles.vetPhotoLabel}
+        buttonColor={colors.tertiary}
+        accessibilityLabel={t('vetPhoto.title')}
+      >
+        {t('vetPhoto.title')}
+      </Button>
+
       {/* Emergency vet call */}
       <Pressable
         onPress={() => Linking.openURL('tel:1962')}
@@ -395,6 +410,17 @@ const styles = StyleSheet.create({
   },
   resetButton: {
     marginTop: SPACING.sm,
+  },
+  vetPhotoButton: {
+    marginTop: SPACING.lg,
+    borderRadius: 16,
+  },
+  vetPhotoContent: {
+    height: 56,
+  },
+  vetPhotoLabel: {
+    fontSize: 18,
+    fontWeight: '700',
   },
   emergencyCard: {
     marginTop: SPACING.xl,

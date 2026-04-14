@@ -27,6 +27,8 @@ const QUICK_ACTIONS: QuickAction[] = [
   { key: 'feeding', icon: 'food-apple', color: '#E65100', route: '/feed-calculator', a11yLabel: 'Feeding schedule' },
   { key: 'weather', icon: 'weather-partly-cloudy', color: '#3B6470', route: '/weather', a11yLabel: 'Weather forecast' },
   { key: 'insurance', icon: 'shield-check', color: '#C62828', route: '/insurance', a11yLabel: 'Insurance' },
+  { key: 'vetHelp', icon: 'camera', color: '#3B6470', route: '/vet-photo', a11yLabel: 'Vet photo diagnosis' },
+  { key: 'myConsultations', icon: 'clipboard-list', color: '#1565C0', route: '/my-consultations', a11yLabel: 'My consultations' },
 ];
 
 export default function HomeScreen() {

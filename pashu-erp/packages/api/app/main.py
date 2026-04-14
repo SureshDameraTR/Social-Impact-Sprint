@@ -46,6 +46,7 @@ from app.routers import (
     users,
     reference,
     files,
+    vet,
 )
 
 
@@ -159,6 +160,7 @@ def create_app() -> FastAPI:
     app.include_router(users.router)
     app.include_router(reference.router)
     app.include_router(files.router)
+    app.include_router(vet.router)
 
     @app.exception_handler(ServiceNotConfiguredError)
     async def not_configured_handler(request, exc):

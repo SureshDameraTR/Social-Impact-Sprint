@@ -5,7 +5,7 @@ from sqlalchemy import String, Integer, Boolean, Date, DateTime, Enum, ForeignKe
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
 class Species(str, enum.Enum):
@@ -26,7 +26,7 @@ class AnimalSex(str, enum.Enum):
     female = "female"
 
 
-class Animal(Base):
+class Animal(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "animals"
 
     id: Mapped[str] = mapped_column(

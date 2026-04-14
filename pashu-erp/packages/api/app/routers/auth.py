@@ -229,6 +229,7 @@ async def verify_otp(body: OTPVerify, db: AsyncSession = Depends(get_db)):
             user_id=str(user.id),
             role=user.role,
             name=user.name,
+            location_district=user.location_district,
         )
 
     response = JSONResponse(
@@ -236,6 +237,7 @@ async def verify_otp(body: OTPVerify, db: AsyncSession = Depends(get_db)):
             user_id=str(user.id),
             role=user.role,
             name=user.name,
+            location_district=user.location_district,
         ).model_dump()
     )
     _set_auth_cookies(response, access_token, csrf_token, max_age_seconds)
@@ -248,6 +250,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
         user_id=str(current_user.id),
         role=current_user.role,
         name=current_user.name,
+        location_district=current_user.location_district,
     )
 
 

@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from "react";
+import api from "../api/client";
+import { useAuth } from "./useAuth";
 
 interface CentreContextValue {
   centreId: string | null;
@@ -13,6 +15,7 @@ const CentreContext = createContext<CentreContextValue>({
 });
 
 export function CentreProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [centreId, setCentreId] = useState<string | null>(
     localStorage.getItem("collection_centre_id")
   );
@@ -26,6 +29,14 @@ export function CentreProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("collection_centre_id", id);
     localStorage.setItem("collection_centre_name", name);
   }, []);
+
+  // Auto-fetch assigned centre when user logs in and no centre is cached
+  useEffect(() => {
+    if (!user || centreId) return;
+    api.get("/v1/milk-center/my-center").then(({ data }) => {
+      setCentre(data.id, data.name);
+    }).catch(() => {});
+  }, [user, centreId, setCentre]);
 
   const value = useMemo(
     () => ({ centreId, centreName, setCentre }),

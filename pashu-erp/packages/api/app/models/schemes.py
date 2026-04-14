@@ -5,10 +5,10 @@ from sqlalchemy import String, Boolean, Date, DateTime, Numeric, Text, text, fun
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
-class GovtScheme(Base):
+class GovtScheme(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "govt_schemes"
 
     id: Mapped[str] = mapped_column(

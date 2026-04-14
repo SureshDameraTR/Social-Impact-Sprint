@@ -14,6 +14,7 @@ from app.models.insurance import InsurancePolicy, InsuranceClaim
 from app.models.alerts import CommunityAlert
 from app.models.medicine import Medicine, MedicineAdministration
 from app.models.advisory import AdvisoryTip
+from app.models.vet import VetConsultation
 
 __all__ = [
     "Base",
@@ -37,4 +38,5 @@ __all__ = [
     "Medicine",
     "MedicineAdministration",
     "AdvisoryTip",
+    "VetConsultation",
 ]

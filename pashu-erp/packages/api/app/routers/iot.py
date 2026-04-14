@@ -38,16 +38,27 @@ async def list_devices(
 async def list_device_types(
     current_user: User = Depends(get_current_user),
 ):
-    """List supported IoT device types."""
-    return {
-        "device_types": [
-            {"type": "temperature_sensor", "label": "Temperature Sensor", "count": 0},
-            {"type": "humidity_sensor", "label": "Humidity Sensor", "count": 0},
-            {"type": "pedometer", "label": "Pedometer (Activity Tracker)", "count": 0},
-            {"type": "milk_meter", "label": "Milk Flow Meter", "count": 0},
-            {"type": "gps_collar", "label": "GPS Collar", "count": 0},
-        ]
-    }
+    """List IoT device types aggregated from the gateway."""
+    try:
+        devices_resp = await iot_service.list_devices()
+        devices = devices_resp.get("data", [])
+    except (httpx.HTTPStatusError, httpx.RequestError, Exception):
+        logger.warning("IoT gateway unavailable for device-types aggregation")
+        devices = []
+
+    # Aggregate by device type
+    type_map: dict[str, dict] = {}
+    for d in devices:
+        dt = d.get("type", "unknown")
+        if dt not in type_map:
+            type_map[dt] = {"name": dt, "total": 0, "online": 0, "offline": 0}
+        type_map[dt]["total"] += 1
+        if d.get("status") == "active":
+            type_map[dt]["online"] += 1
+        else:
+            type_map[dt]["offline"] += 1
+
+    return list(type_map.values())
 
 
 @router.get("/readings")
@@ -57,9 +68,25 @@ async def list_readings(
     offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
 ):
-    """Get IoT sensor readings."""
+    """Get IoT sensor readings from the gateway.
+
+    When no device_id is given, fetches the latest reading for each device.
+    """
     try:
-        return await iot_service.get_telemetry(device_id=device_id)
+        if device_id:
+            return await iot_service.get_telemetry(device_id=device_id)
+
+        # No device_id — aggregate latest from all devices
+        devices_resp = await iot_service.list_devices()
+        all_devices = devices_resp.get("data", [])
+        readings = []
+        for dev in all_devices[:limit]:
+            try:
+                latest = await iot_service.get_latest_telemetry(dev["device_id"])
+                readings.append(latest)
+            except Exception:
+                continue
+        return {"data": readings, "total": len(readings)}
     except httpx.HTTPStatusError as exc:
         raise HTTPException(status_code=exc.response.status_code, detail="IoT gateway error")
     except httpx.RequestError:

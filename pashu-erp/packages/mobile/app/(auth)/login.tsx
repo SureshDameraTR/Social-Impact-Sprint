@@ -3,7 +3,7 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform, StatusBar, TextInput 
 import { Text, TextInput, Button, HelperText } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from '../../src/config/storage';
 import { SPACING, CARD_BORDER_RADIUS, colors } from '../../src/config/theme';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -84,7 +84,7 @@ export default function LoginScreen() {
         return;
       }
       const data = await response.json();
-      await SecureStore.setItemAsync('auth_token', data.access_token);
+      await Storage.setItemAsync('auth_token', data.access_token);
       router.replace('/(tabs)');
     } catch {
       setError('Network error. Check your connection.');

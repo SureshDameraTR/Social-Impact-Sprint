@@ -33,6 +33,7 @@
     "thisMonth": "This month",
     "listen": "Listen",
     "english": "English",
+    "hindi": "हिन्दी",
     "kannada": "ಕನ್ನಡ"
   },
   "auth": {
@@ -57,7 +58,9 @@
     "feeding": "Feeding",
     "weather": "Weather",
     "insurance": "Insurance",
-    "milkToday": "Today's Milk"
+    "vetHelp": "Vet Help",
+    "milkToday": "Today's Milk",
+    "myConsultations": "My Consultations"
   },
   "animals": {
     "myAnimals": "My Animals",
@@ -335,6 +338,26 @@
     "gpsDescription": "Live map will show animal locations from GPS collars",
     "iotDevices": "IoT Devices"
   },
+  "vetPhoto": {
+    "title": "Send Photo to Vet",
+    "subtitle": "Take a photo of the affected area for veterinary diagnosis",
+    "takePhoto": "Take Photo",
+    "chooseFromGallery": "Choose from Gallery",
+    "changePhoto": "Change Photo",
+    "selectPhotoSource": "Select Photo Source",
+    "describeLabel": "Additional Details",
+    "describePlaceholder": "Describe the problem (optional)",
+    "sendForDiagnosis": "Send for Diagnosis",
+    "sentSuccess": "Photo sent successfully",
+    "vetWillReview": "A veterinarian will review your photo and respond shortly.",
+    "sendAnother": "Send Another Photo",
+    "photoRequired": "Please take or select a photo first",
+    "photoFailed": "Failed to capture photo",
+    "sendFailed": "Failed to send photo. Please try again.",
+    "cameraPermissionRequired": "Camera permission is required to take photos",
+    "galleryPermissionRequired": "Gallery permission is required to select photos",
+    "photoSection": "Animal Photo"
+  },
   "communityAlerts": {
     "title": "Community Disease Alerts",
     "reportedNearby": "Reported {{distance}}km away — {{days}} days ago",
@@ -348,5 +371,31 @@
     "autoDetected": "auto-detected",
     "notes": "Notes",
     "submitReport": "Submit Report"
+  },
+  "consultations": {
+    "title": "My Consultations",
+    "empty": "No consultations yet",
+    "emptySubtitle": "Send a photo to get veterinary help",
+    "sendPhoto": "Send Photo to Vet",
+    "viewAll": "View My Consultations",
+    "submitted": "Submitted",
+    "pending": "Pending",
+    "inReview": "In Review",
+    "diagnosed": "Diagnosed",
+    "closed": "Closed",
+    "pendingMessage": "A vet will review your case soon",
+    "diagnosis": "Diagnosis",
+    "prescription": "Prescription",
+    "followUp": "Follow-up Date",
+    "joinVideoCall": "Join Video Call",
+    "sentToVet": "Your request has been sent to a nearby vet",
+    "priority": "Priority",
+    "routine": "Routine",
+    "urgent": "Urgent",
+    "emergency": "Emergency",
+    "channel": "Channel",
+    "photo": "Photo",
+    "walkIn": "Walk-in",
+    "referral": "Referral"
   }
 }

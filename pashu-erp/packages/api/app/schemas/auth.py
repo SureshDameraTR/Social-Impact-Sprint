@@ -19,6 +19,7 @@ class AuthUserResponse(BaseModel):
     user_id: str
     role: str
     name: str | None = None
+    location_district: str | None = None
 
 
 class TokenResponse(AuthUserResponse):

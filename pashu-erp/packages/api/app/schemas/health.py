@@ -27,6 +27,7 @@ class HealthEventCreate(BaseModel):
     event_type: HealthEventType
     description: str | None = None
     symptoms: list[str] = Field(default_factory=list)
+    photo_urls: list[str] | None = None
     event_date: datetime | None = None
 
     @field_validator("description", mode="before")

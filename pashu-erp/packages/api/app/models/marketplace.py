@@ -6,7 +6,7 @@ from sqlalchemy import String, Numeric, DateTime, Enum, ForeignKey, text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
 class ProductType(str, enum.Enum):
@@ -19,7 +19,7 @@ class ProductType(str, enum.Enum):
     other = "other"
 
 
-class SellRecord(Base):
+class SellRecord(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "sell_records"
 
     id: Mapped[str] = mapped_column(

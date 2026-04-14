@@ -15,9 +15,11 @@ ALERT_WINDOW_DAYS: int = 7
 ACTIVE_SELLER_WINDOW_DAYS: int = 30
 from app.middleware.auth import require_admin
 from app.models.animal import Animal
+from app.models.finance import Transaction
 from app.models.health import HealthEvent
 from app.models.marketplace import SellRecord
 from app.models.milk import YieldLog
+from app.models.shg import SHGGroup
 from app.models.user import User
 
 router = APIRouter(prefix="/v1/admin", tags=["Admin"])
@@ -75,6 +77,50 @@ async def dashboard_stats(
     )
     active_sellers = sellers_result.scalar() or 0
 
+    # Women empowerment stats
+    # Women farmers count
+    women_farmers_result = await db.execute(
+        select(func.count()).select_from(User).where(
+            User.role == "farmer", User.gender == "female"
+        )
+    )
+    women_farmers = women_farmers_result.scalar() or 0
+
+    # Women's revenue: transactions (income) + sell records for female farmers
+    women_tx_result = await db.execute(
+        select(func.coalesce(func.sum(Transaction.amount), 0))
+        .where(Transaction.user_id.in_(
+            select(User.id).where(User.role == "farmer", User.gender == "female")
+        ))
+    )
+    women_tx_revenue = float(women_tx_result.scalar() or 0)
+
+    women_sell_result = await db.execute(
+        select(func.coalesce(func.sum(SellRecord.total_amount), 0))
+        .where(SellRecord.user_id.in_(
+            select(User.id).where(User.role == "farmer", User.gender == "female")
+        ))
+    )
+    women_sell_revenue = float(women_sell_result.scalar() or 0)
+
+    women_revenue = women_tx_revenue + women_sell_revenue
+
+    # Women's animals count
+    women_animals_result = await db.execute(
+        select(func.count()).select_from(Animal).where(
+            Animal.user_id.in_(
+                select(User.id).where(User.role == "farmer", User.gender == "female")
+            )
+        )
+    )
+    women_animals = women_animals_result.scalar() or 0
+
+    # SHG group count
+    shg_count_result = await db.execute(
+        select(func.count()).select_from(SHGGroup)
+    )
+    women_shg_count = shg_count_result.scalar() or 0
+
     return {
         "farmer_count": farmer_count,
         "animal_count": animal_count,
@@ -82,6 +128,10 @@ async def dashboard_stats(
         "active_alerts": active_alerts,
         "marketplace_revenue": round(marketplace_revenue, 2),
         "active_sellers": active_sellers,
+        "women_farmers": women_farmers,
+        "women_revenue": round(women_revenue, 2),
+        "women_animals": women_animals,
+        "women_shg_count": women_shg_count,
     }
 
 

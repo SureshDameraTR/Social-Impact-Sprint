@@ -39,6 +39,24 @@ class MilkReceiveRequest(BaseModel):
     shift: str = Field(..., pattern="^(morning|evening)$")
 
 
+@router.get("/my-center")
+async def get_my_center(
+    current_user: User = Depends(require_milk_center_staff),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return the collection centre assigned to the current user."""
+    result = await db.execute(
+        select(MilkCollectionCenter).where(
+            MilkCollectionCenter.manager_user_id == current_user.id,
+            MilkCollectionCenter.is_active.is_(True),
+        )
+    )
+    center = result.scalar_one_or_none()
+    if center is None:
+        raise HTTPException(status_code=404, detail="No centre assigned")
+    return {"id": str(center.id), "name": center.name, "code": center.code, "district": center.district}
+
+
 @router.post("/receive", status_code=status.HTTP_201_CREATED)
 async def receive_milk(
     body: MilkReceiveRequest,

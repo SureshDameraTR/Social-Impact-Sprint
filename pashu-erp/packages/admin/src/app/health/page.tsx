@@ -176,7 +176,9 @@ export default function HealthPage() {
                       </TableCell>
                       <TableCell sx={{ maxWidth: 180, fontSize: '12.5px', color: colors.textDim }}>
                         {Array.isArray(alert.probable_diseases)
-                          ? alert.probable_diseases.join(", ")
+                          ? alert.probable_diseases
+                              .map((d) => (typeof d === "object" && d !== null ? (d as Record<string, unknown>).name ?? (d as Record<string, unknown>).disease ?? JSON.stringify(d) : String(d)))
+                              .join(", ")
                           : typeof alert.probable_diseases === "object" && alert.probable_diseases
                             ? Object.keys(alert.probable_diseases).join(", ")
                             : String(alert.probable_diseases ?? "\u2014")}

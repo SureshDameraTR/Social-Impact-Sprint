@@ -5,7 +5,7 @@ from sqlalchemy import String, Text, DateTime, Enum, ForeignKey, Numeric, text, 
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
 class PolicyStatus(str, enum.Enum):
@@ -21,7 +21,7 @@ class ClaimStatus(str, enum.Enum):
     rejected = "rejected"
 
 
-class InsurancePolicy(Base):
+class InsurancePolicy(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "insurance_policies"
 
     id: Mapped[str] = mapped_column(
@@ -48,7 +48,7 @@ class InsurancePolicy(Base):
     claims = relationship("InsuranceClaim", back_populates="policy", foreign_keys="InsuranceClaim.policy_id", lazy="selectin")
 
 
-class InsuranceClaim(Base):
+class InsuranceClaim(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "insurance_claims"
 
     id: Mapped[str] = mapped_column(
