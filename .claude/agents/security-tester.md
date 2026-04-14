@@ -281,6 +281,16 @@ cd packages/collection && npm audit
 cd packages/mobile && npm audit
 ```
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/security-tester.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-security-tester.md` — archived copy
+
+Read baseline from reports/baselines/security.json and compare metrics.
+Compare current findings against previous run at `reports/latest/security-tester.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Report Format
 
 | Finding | Severity | OWASP | Impact | Remediation |

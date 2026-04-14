@@ -225,6 +225,15 @@ async def test_readiness_endpoint(base_url):
     assert "database" in data
 ```
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/api-tester.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-api-tester.md` — archived copy
+
+Compare current findings against previous run at `reports/latest/api-tester.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Test Execution
 ```bash
 # All API tests

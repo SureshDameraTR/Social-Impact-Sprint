@@ -289,6 +289,15 @@ After each chaos experiment:
 - [ ] User-facing error messages are friendly, not stack traces
 - [ ] System returns to full performance within 60 seconds
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/chaos-tester.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-chaos-tester.md` — archived copy
+
+Compare current findings against previous run at `reports/latest/chaos-tester.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Chaos Test Report Format
 
 | Experiment | Failure Injected | Expected Behavior | Actual Behavior | Verdict |

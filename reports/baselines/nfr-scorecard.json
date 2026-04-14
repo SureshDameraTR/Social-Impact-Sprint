@@ -1,0 +1,18 @@
+{
+  "snapshot_date": "2026-04-14",
+  "categories": {
+    "reliability": { "score": null, "max": 100, "notes": "Error boundaries present, no chaos testing yet" },
+    "availability": { "score": null, "max": 100, "notes": "Docker health checks configured, no HA setup" },
+    "scalability": { "score": null, "max": 100, "notes": "Connection pooling configured, pagination on all endpoints" },
+    "performance": { "score": null, "max": 100, "notes": "No load testing done yet" },
+    "security": { "score": null, "max": 100, "notes": "32 security fixes applied, OWASP partial coverage" },
+    "maintainability": { "score": null, "max": 100, "notes": "Ruff linting, strict TypeScript, 34 SDLC agents" },
+    "operability": { "score": null, "max": 100, "notes": "Docker Compose orchestration, structured logging" },
+    "observability": { "score": null, "max": 100, "notes": "Request IDs, structured logs, no metrics/tracing" },
+    "compliance": { "score": null, "max": 100, "notes": "DPDP Act analysis done, not fully implemented" },
+    "usability": { "score": null, "max": 100, "notes": "Rural UX reviewer added, no baseline assessment" }
+  },
+  "overall_score": null,
+  "verdict": "NOT_ASSESSED",
+  "notes": "Initial baseline — scores to be populated after first NFR assessment run"
+}

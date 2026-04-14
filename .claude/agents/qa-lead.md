@@ -149,6 +149,16 @@ When delegating testing work, use these specialized agents:
 - **api-tester** — REST API contract and edge case testing
 - **security-tester** — penetration testing and vulnerability scanning
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/qa-lead.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-qa-lead.md` — archived copy
+
+Read baseline from reports/baselines/coverage.json and compare metrics.
+Compare current findings against previous run at `reports/latest/qa-lead.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Release Readiness Checklist
 
 Before any demo or release:

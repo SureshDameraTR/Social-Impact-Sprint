@@ -196,6 +196,16 @@ docker compose logs api 2>&1 | grep -iE "\b\d{12}\b|\b\d{10}\b|aadhaar|password"
 | Backup/restore | pg_dump/pg_restore works | Backup and restore test | High |
 | Log rotation | Logs don't fill disk | Docker logging driver check | Medium |
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/nfr-validator.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-nfr-validator.md` — archived copy
+
+Read baseline from reports/baselines/nfr-scorecard.json and compare metrics.
+Compare current findings against previous run at `reports/latest/nfr-validator.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## NFR Scorecard Template
 
 ```

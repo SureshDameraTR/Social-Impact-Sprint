@@ -342,6 +342,15 @@ e2e-tests:
         path: e2e/playwright-report/
 ```
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/browser-ui-tester.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-browser-ui-tester.md` — archived copy
+
+Compare current findings against previous run at `reports/latest/browser-ui-tester.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Debugging Failed Tests
 
 ```bash

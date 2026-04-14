@@ -424,6 +424,15 @@ docker-compose.yml            ○    ○    ·    ·    ·    ·    ·    ·    
 
 ---
 
+## Artifact Storage
+
+After each pipeline run, write:
+1. `reports/latest/scorecard.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-scorecard.md` — archived copy
+
+Read ALL baselines from `reports/baselines/*.json` to populate the scorecard comparison columns.
+Read previous scorecard from `reports/latest/scorecard.md` to show delta (improved/degraded/unchanged).
+
 ## CONFLICT RESOLUTION
 
 When multiple agents report conflicting findings:

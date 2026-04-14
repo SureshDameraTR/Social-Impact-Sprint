@@ -1,0 +1,30 @@
+{
+  "snapshot_date": "2026-04-14",
+  "frameworks": {
+    "dpdp_act_2023": {
+      "status": "partial",
+      "data_minimization": true,
+      "consent_mechanism": false,
+      "right_to_erasure": true,
+      "data_portability": false,
+      "breach_notification": false,
+      "dpo_appointed": false,
+      "notes": "Soft delete supports erasure. Consent flow and breach notification not yet implemented."
+    },
+    "aadhaar_act": {
+      "status": "partial",
+      "aadhaar_storage": "not_stored",
+      "aadhaar_validation": false,
+      "notes": "System does not store Aadhaar numbers directly. National registry lookup via mock backend."
+    },
+    "it_act_2000": {
+      "status": "partial",
+      "audit_trail": true,
+      "data_encryption_transit": true,
+      "data_encryption_rest": false,
+      "notes": "Audit trail via created_at/updated_at. HTTPS in production. DB encryption at rest pending."
+    }
+  },
+  "last_audit_date": "2026-04-09",
+  "notes": "Reference: docs/compliance.md, docs/audits/PRODUCTION-READINESS-REVIEW.md"
+}

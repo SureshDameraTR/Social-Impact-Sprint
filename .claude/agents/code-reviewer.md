@@ -99,6 +99,15 @@ When reviewing code, check each item:
 - [ ] Tests cover happy path and key error paths
 - [ ] No test pollution (tests clean up after themselves)
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/code-reviewer.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-code-reviewer.md` — archived copy
+
+Compare current findings against previous run at `reports/latest/code-reviewer.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Output Format
 
 Structure reviews as:

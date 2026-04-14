@@ -203,6 +203,16 @@ grep -rn "httpx\|requests\|fetch\|axios" pashu-erp/packages/api/app/services/ --
 - [ ] Storage Service: Are file contents inspected?
 - [ ] Sarvam AI (OTP/TTS): Is voice data retained by provider?
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/compliance-auditor.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-compliance-auditor.md` — archived copy
+
+Read baseline from reports/baselines/compliance.json and compare metrics.
+Compare current findings against previous run at `reports/latest/compliance-auditor.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Compliance Report Format
 
 ```

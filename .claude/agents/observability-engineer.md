@@ -260,6 +260,15 @@ class ErrorBoundary extends React.Component {
 }
 ```
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/observability-engineer.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-observability-engineer.md` — archived copy
+
+Compare current findings against previous run at `reports/latest/observability-engineer.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Alerting Rules
 
 | Alert | Condition | Severity | Action |

@@ -201,6 +201,15 @@ docker compose exec api alembic downgrade -1
 curl http://localhost:8000/health
 ```
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/release-manager.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-release-manager.md` — archived copy
+
+Compare current findings against previous run at `reports/latest/release-manager.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Communication Template
 
 ```markdown

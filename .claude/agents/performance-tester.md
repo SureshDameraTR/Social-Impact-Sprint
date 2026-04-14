@@ -183,6 +183,16 @@ from sqlalchemy.orm import selectinload
 stmt = select(Animal).options(selectinload(Animal.owner)).limit(50)
 ```
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/performance-tester.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-performance-tester.md` — archived copy
+
+Read baseline from reports/baselines/performance.json and compare metrics.
+Compare current findings against previous run at `reports/latest/performance-tester.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Performance Report Format
 
 When reporting findings:

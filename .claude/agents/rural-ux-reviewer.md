@@ -119,6 +119,15 @@ Before starting work, read `pashu-erp/WORKSPACE.md` for the complete file regist
 - Map: location markers distinguishable by case status
 - Offline: case notes saveable without network
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/rural-ux-reviewer.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-rural-ux-reviewer.md` — archived copy
+
+Compare current findings against previous run at `reports/latest/rural-ux-reviewer.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Output Format
 
 ```

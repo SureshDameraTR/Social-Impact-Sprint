@@ -187,6 +187,16 @@ grep -rn "onClick" packages/admin/src/ | grep -v "role="
 />
 ```
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/accessibility-tester.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-accessibility-tester.md` — archived copy
+
+Read baseline from reports/baselines/accessibility.json and compare metrics.
+Compare current findings against previous run at `reports/latest/accessibility-tester.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Report Format
 
 Structure findings as:

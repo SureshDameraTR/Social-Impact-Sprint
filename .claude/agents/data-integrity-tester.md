@@ -283,6 +283,15 @@ async def test_concurrent_milk_recording():
         # (no double-writes or lost writes)
 ```
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/data-integrity-tester.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-data-integrity-tester.md` — archived copy
+
+Compare current findings against previous run at `reports/latest/data-integrity-tester.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Running All Integrity Checks
 
 ```bash

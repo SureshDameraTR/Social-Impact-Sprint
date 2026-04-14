@@ -125,6 +125,15 @@ Acceptance Criteria:
 | ... | ... | ... | ... | P0-P4 | S/M/L |
 ```
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/business-analyst.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-business-analyst.md` — archived copy
+
+Compare current findings against previous run at `reports/latest/business-analyst.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ### Impact Assessment
 When evaluating a proposed change:
 1. **Users affected**: Which roles? How many?

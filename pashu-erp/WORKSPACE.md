@@ -249,6 +249,9 @@ All documentation lives in `docs/` at the project root (not in `pashu-erp/`).
 | `docs/audits/` | Testing, performance, a11y, UI audit reports |
 | `docs/research/` | Early-phase research (dairy tech, i18n, compliance) |
 | `pashu-erp/demo/` | Demo script, deployment, warmup |
+| `reports/baselines/` | Frozen metric baselines (JSON) for agent comparison |
+| `reports/latest/` | Most recent agent run results (overwritten each run) |
+| `reports/history/` | Timestamped archive of all agent reports |
 
 ## Auth & Roles
 

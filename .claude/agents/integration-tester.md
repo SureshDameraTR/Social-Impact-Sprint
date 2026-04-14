@@ -181,6 +181,15 @@ async def test_soft_delete_hides_from_list(base_url, farmer_token):
 | Weather Forecast → Voice TTS | weather | Medium |
 | IoT Device → Readings → Alerts | iot → alerts | Medium |
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/integration-tester.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-integration-tester.md` — archived copy
+
+Compare current findings against previous run at `reports/latest/integration-tester.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Integration Test Principles
 
 1. **Hit real services** — PostgreSQL, mock backends (not mocked)

@@ -264,6 +264,16 @@ docker compose logs -f api 2>&1 | grep -E "ERROR|500|timeout|pool"
 docker compose logs -f api 2>&1 | grep "duration_ms" | awk -F'duration_ms=' '{print $2}' | cut -d' ' -f1
 ```
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/load-tester.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-load-tester.md` — archived copy
+
+Read baseline from reports/baselines/load.json and compare metrics.
+Compare current findings against previous run at `reports/latest/load-tester.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Load Test Report Format
 
 | Metric | Baseline (10 VU) | Normal (50 VU) | Stress (200 VU) | Breaking Point |

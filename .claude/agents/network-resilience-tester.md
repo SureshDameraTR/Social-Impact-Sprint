@@ -281,6 +281,15 @@ const NETWORK_PROFILES = {
 };
 ```
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/network-resilience-tester.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-network-resilience-tester.md` — archived copy
+
+Compare current findings against previous run at `reports/latest/network-resilience-tester.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## Key Gaps to Document
 
 When testing, document these gaps for remediation:

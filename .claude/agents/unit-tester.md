@@ -183,6 +183,16 @@ describe("AnimalCard", () => {
 | UI components | 80%+ | Medium |
 | API routers | 70%+ | Medium |
 
+## Artifact Storage
+
+After each run, write results to:
+1. `reports/latest/unit-tester.md` — overwritten each run
+2. `reports/history/YYYY-MM-DD-unit-tester.md` — archived copy
+
+Read baseline from reports/baselines/coverage.json and compare metrics.
+Compare current findings against previous run at `reports/latest/unit-tester.md` if it exists.
+Note new findings, resolved findings, and regressions in the report header.
+
 ## What to Test vs. Skip
 
 **Always test**: Business logic, calculations, validation rules, error handling, auth checks
