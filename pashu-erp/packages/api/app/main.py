@@ -2,11 +2,9 @@ import logging
 from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
-import httpx
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy import text
 
 from app.config import settings
@@ -15,55 +13,73 @@ from app.logging_config import setup_logging
 from app.middleware.csrf import CSRFMiddleware
 from app.middleware.request_logging import RequestLoggingMiddleware
 from app.services.errors import ServiceNotConfiguredError, ServiceUnavailableError
+from app.services.http_client import close_http_client
 
 logger = logging.getLogger(__name__)
 
 from app.routers import (
-    auth,
-    animals,
-    health,
-    milk,
-    finance,
-    shg,
-    schemes,
-    marketplace,
-    income,
     admin,
-    weather,
-    feed,
-    ethno_vet,
-    bharat_pashudhan,
-    vaccination,
-    insurance,
-    alerts,
-    medicine,
-    medicine_log,
-    milk_center,
     advisory,
-    onboarding,
+    alerts,
+    animals,
+    auth,
+    bharat_pashudhan,
+    ethno_vet,
+    feed,
+    files,
+    finance,
+    health,
+    income,
+    insurance,
     iot,
     map_points,
-    users,
+    marketplace,
+    medicine,
+    medicine_log,
+    milk,
+    milk_center,
+    onboarding,
     reference,
-    files,
+    schemes,
+    shg,
+    users,
+    vaccination,
     vet,
+    weather,
 )
 
 
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Add security headers to all responses."""
+class SecurityHeadersMiddleware:
+    """Add security headers to all responses (pure ASGI middleware)."""
 
-    async def dispatch(self, request: Request, call_next) -> Response:
-        response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        if settings.environment != "development":
-            response.headers["Strict-Transport-Security"] = (
-                "max-age=31536000; includeSubDomains"
-            )
-        return response
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with_headers(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                headers.extend([
+                    (b"x-content-type-options", b"nosniff"),
+                    (b"x-frame-options", b"DENY"),
+                    (b"referrer-policy", b"strict-origin-when-cross-origin"),
+                    (b"permissions-policy",
+                     b"camera=(), microphone=(), geolocation=(self), payment=()"),
+                    (b"cross-origin-opener-policy", b"same-origin"),
+                ])
+                if settings.environment != "development":
+                    headers.append(
+                        (b"strict-transport-security",
+                         b"max-age=31536000; includeSubDomains")
+                    )
+                message = {**message, "headers": headers}
+            await send(message)
+
+        await self.app(scope, receive, send_with_headers)
 
 
 def _validate_settings():
@@ -79,8 +95,12 @@ def _validate_settings():
         )
     if settings.environment != "development" and not settings.sarvam_api_key:
         raise RuntimeError("SARVAM_API_KEY is required in non-development environments")
-    if settings.environment != "development" and not settings.cors_origins:
-        raise RuntimeError("CORS_ORIGINS is required in non-development environments")
+    if not settings.cors_origins:
+        if settings.environment == "development":
+            settings.cors_origins = "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:8081"
+            logger.info("CORS_ORIGINS not set — using development defaults")
+        else:
+            raise RuntimeError("CORS_ORIGINS is required in non-development environments")
 
     service_urls = [
         ("WEATHER_API_URL", settings.weather_api_url),
@@ -102,6 +122,7 @@ def _validate_settings():
 async def lifespan(app: FastAPI):
     _validate_settings()
     yield
+    await close_http_client()
     await engine.dispose()
 
 
@@ -204,6 +225,8 @@ def create_app() -> FastAPI:
             checks["database"] = "disconnected"
 
         # Check external services (just connectivity, not full requests)
+        from app.services.http_client import get_http_client
+
         for name, url in [
             ("weather", settings.weather_api_url),
             ("iot", settings.iot_gateway_url),
@@ -212,11 +235,11 @@ def create_app() -> FastAPI:
                 try:
                     parsed = urlparse(url)
                     health_url = f"{parsed.scheme}://{parsed.netloc}/health"
-                    async with httpx.AsyncClient(timeout=3) as client:
-                        resp = await client.get(health_url)
-                        checks[name] = (
-                            "connected" if resp.status_code == 200 else "error"
-                        )
+                    client = await get_http_client()
+                    resp = await client.get(health_url, timeout=3.0)
+                    checks[name] = (
+                        "connected" if resp.status_code == 200 else "error"
+                    )
                 except Exception:
                     checks[name] = "unreachable"
             else:

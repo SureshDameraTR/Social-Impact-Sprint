@@ -6,7 +6,10 @@
   "scripts": {
     "start": "expo start --dev-client",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "build": "CI=true npx expo export --platform web"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
@@ -32,7 +35,10 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
+    "@testing-library/react-native": "^12.5.0",
     "@types/react": "~18.3.12",
+    "jest": "^29.7.0",
+    "jest-expo": "~52.0.0",
     "typescript": "^5.4.0"
   }
 }

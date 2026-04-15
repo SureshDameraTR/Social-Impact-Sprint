@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
 from uuid import UUID
 
@@ -18,7 +19,7 @@ class TransactionStatus(str, Enum):
 
 class TransactionCreate(BaseModel):
     type: TransactionType
-    amount: float = Field(..., gt=0)
+    amount: Decimal = Field(..., gt=0, max_digits=10, decimal_places=2)
     category: str = Field(..., max_length=50)
     reference_id: UUID | None = None
     description: str | None = Field(None, max_length=500)
@@ -28,7 +29,7 @@ class TransactionRead(BaseModel):
     id: UUID
     user_id: UUID
     type: TransactionType
-    amount: float
+    amount: Decimal = Field(..., max_digits=10, decimal_places=2)
     category: str
     reference_id: UUID | None = None
     description: str | None = None
@@ -39,8 +40,8 @@ class TransactionRead(BaseModel):
 
 
 class FinanceSummary(BaseModel):
-    total_income: float
-    total_expense: float
-    net: float
+    total_income: Decimal = Field(..., max_digits=10, decimal_places=2)
+    total_expense: Decimal = Field(..., max_digits=10, decimal_places=2)
+    net: Decimal = Field(..., max_digits=10, decimal_places=2)
     period: str
-    by_category: dict[str, float]
+    by_category: dict[str, Decimal]

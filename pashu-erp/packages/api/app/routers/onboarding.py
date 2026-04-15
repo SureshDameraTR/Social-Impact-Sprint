@@ -1,27 +1,17 @@
 """User onboarding endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.user import User
+from app.schemas.onboarding import OnboardingCompleteRequest, OnboardingCompleteResponse
 
 router = APIRouter(prefix="/v1/onboarding", tags=["Onboarding"])
 
 
-class OnboardingCompleteRequest(BaseModel):
-    preferred_language: str = Field(default="kn", description="ISO 639-1 language code")
-    district: str = Field(..., max_length=100)
-    village_code: str | None = Field(None, max_length=20)
-    primary_species: list[str] = Field(default_factory=list, description="Primary livestock species")
-    herd_size: int = Field(default=0, ge=0)
-    has_milk_center_access: bool = False
-    shg_member: bool = False
-
-
-@router.post("/complete")
+@router.post("/complete", response_model=OnboardingCompleteResponse)
 async def complete_onboarding(
     body: OnboardingCompleteRequest,
     current_user: User = Depends(get_current_user),

@@ -81,6 +81,12 @@ export default function WeatherScreen() {
     }
   }, [showError, t]);
 
+  useEffect(() => {
+    return () => {
+      soundRef.current?.unloadAsync();
+    };
+  }, []);
+
   const fetchWeather = useCallback(() => {
     setLoading(true);
     setError(null);

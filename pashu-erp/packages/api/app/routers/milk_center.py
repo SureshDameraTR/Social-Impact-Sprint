@@ -6,7 +6,6 @@ from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +13,16 @@ from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.milk import MilkCollectionCenter, MilkCollectionRecord
 from app.models.user import User
+from app.schemas.milk_center import (
+    DailyReportResponse,
+    FarmerSearchResult,
+    FarmerSettlementsResponse,
+    MilkReceiveRequest,
+    MilkReceiveResponse,
+    MyCenterResponse,
+    QuickEnrollRequest,
+    QuickEnrollResponse,
+)
 from app.services.milk_pricing import calculate_rate
 
 router = APIRouter(prefix="/v1/milk-center", tags=["Milk Center"])
@@ -30,16 +39,7 @@ async def require_milk_center_staff(
     return current_user
 
 
-class MilkReceiveRequest(BaseModel):
-    center_id: UUID
-    farmer_user_id: UUID
-    quantity_liters: float = Field(..., gt=0, le=100)
-    fat_pct: float = Field(..., ge=1.0, le=12.0)
-    snf_pct: float = Field(..., ge=6.0, le=12.0)
-    shift: str = Field(..., pattern="^(morning|evening)$")
-
-
-@router.get("/my-center")
+@router.get("/my-center", response_model=MyCenterResponse)
 async def get_my_center(
     current_user: User = Depends(require_milk_center_staff),
     db: AsyncSession = Depends(get_db),
@@ -49,6 +49,7 @@ async def get_my_center(
         select(MilkCollectionCenter).where(
             MilkCollectionCenter.manager_user_id == current_user.id,
             MilkCollectionCenter.is_active.is_(True),
+            MilkCollectionCenter.deleted_at.is_(None),
         )
     )
     center = result.scalar_one_or_none()
@@ -57,7 +58,7 @@ async def get_my_center(
     return {"id": str(center.id), "name": center.name, "code": center.code, "district": center.district}
 
 
-@router.post("/receive", status_code=status.HTTP_201_CREATED)
+@router.post("/receive", status_code=status.HTTP_201_CREATED, response_model=MilkReceiveResponse)
 async def receive_milk(
     body: MilkReceiveRequest,
     current_user: User = Depends(require_milk_center_staff),
@@ -66,7 +67,7 @@ async def receive_milk(
     """Record milk receipt with quality parameters and auto-calculated rate."""
     # Verify center exists
     center_result = await db.execute(
-        select(MilkCollectionCenter).where(MilkCollectionCenter.id == body.center_id)
+        select(MilkCollectionCenter).where(MilkCollectionCenter.id == body.center_id, MilkCollectionCenter.deleted_at.is_(None))
     )
     center = center_result.scalar_one_or_none()
     if center is None:
@@ -105,7 +106,7 @@ async def receive_milk(
     }
 
 
-@router.get("/{center_id}/daily-report")
+@router.get("/{center_id}/daily-report", response_model=DailyReportResponse)
 async def get_daily_report(
     center_id: UUID,
     current_user: User = Depends(require_milk_center_staff),
@@ -115,49 +116,93 @@ async def get_daily_report(
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     today_end = today_start + timedelta(days=1)
 
-    result = await db.execute(
-        select(MilkCollectionRecord)
+    # SQL aggregation by shift — avoids loading all records into Python
+    shift_result = await db.execute(
+        select(
+            MilkCollectionRecord.shift,
+            func.count().label("count"),
+            func.sum(MilkCollectionRecord.quantity_liters).label("total_liters"),
+            func.avg(MilkCollectionRecord.fat_pct).label("avg_fat"),
+            func.avg(MilkCollectionRecord.snf_pct).label("avg_snf"),
+            func.coalesce(func.sum(MilkCollectionRecord.total_amount), 0).label("total_paid"),
+            func.count(func.distinct(MilkCollectionRecord.farmer_user_id)).label("farmer_count"),
+        )
         .where(
             MilkCollectionRecord.center_id == center_id,
             MilkCollectionRecord.collected_at >= today_start,
             MilkCollectionRecord.collected_at < today_end,
+            MilkCollectionRecord.deleted_at.is_(None),
         )
-        .order_by(MilkCollectionRecord.collected_at)
+        .group_by(MilkCollectionRecord.shift)
     )
-    records = result.scalars().all()
+    rows = shift_result.all()
 
-    morning = [r for r in records if r.shift == "morning"]
-    evening = [r for r in records if r.shift == "evening"]
+    # Build per-shift and overall totals from aggregated rows
+    overall_liters = Decimal("0")
+    overall_amount = Decimal("0")
+    overall_count = 0
+    overall_fat_sum = Decimal("0")
+    overall_snf_sum = Decimal("0")
+    morning_data = {"liters": 0.0, "farmers": 0}
+    evening_data = {"liters": 0.0, "farmers": 0}
 
-    total_liters = sum((Decimal(str(r.quantity_liters)) for r in records), Decimal("0"))
-    total_amount = sum((Decimal(str(r.total_amount or 0)) for r in records), Decimal("0"))
-    farmer_ids = {str(r.farmer_user_id) for r in records}
-    avg_fat = sum((Decimal(str(r.fat_pct or 0)) for r in records), Decimal("0")) / len(records) if records else Decimal("0")
-    avg_snf = sum((Decimal(str(r.snf_pct or 0)) for r in records), Decimal("0")) / len(records) if records else Decimal("0")
+    for r in rows:
+        liters = Decimal(str(r.total_liters or 0))
+        paid = Decimal(str(r.total_paid or 0))
+        cnt = r.count or 0
+        overall_liters += liters
+        overall_amount += paid
+        overall_count += cnt
+        overall_fat_sum += Decimal(str(r.avg_fat or 0)) * cnt
+        overall_snf_sum += Decimal(str(r.avg_snf or 0)) * cnt
+
+        shift_info = {
+            "liters": float(liters.quantize(Decimal("0.01"))),
+            "farmers": r.farmer_count or 0,
+        }
+        if r.shift == "morning":
+            morning_data = shift_info
+        else:
+            evening_data = shift_info
+
+    avg_fat = (
+        (overall_fat_sum / overall_count).quantize(Decimal("0.01"))
+        if overall_count else Decimal("0")
+    )
+    avg_snf = (
+        (overall_snf_sum / overall_count).quantize(Decimal("0.01"))
+        if overall_count else Decimal("0")
+    )
+
+    # Total distinct farmers across shifts
+    farmer_count_result = await db.execute(
+        select(func.count(func.distinct(MilkCollectionRecord.farmer_user_id)))
+        .where(
+            MilkCollectionRecord.center_id == center_id,
+            MilkCollectionRecord.collected_at >= today_start,
+            MilkCollectionRecord.collected_at < today_end,
+            MilkCollectionRecord.deleted_at.is_(None),
+        )
+    )
+    total_farmers = farmer_count_result.scalar() or 0
 
     return {
         "center_id": str(center_id),
         "date": today_start.date().isoformat(),
         "summary": {
-            "total_liters": float(total_liters.quantize(Decimal("0.01"))),
-            "total_amount_inr": float(total_amount.quantize(Decimal("0.01"))),
-            "farmer_count": len(farmer_ids),
-            "record_count": len(records),
-            "avg_fat_pct": float(avg_fat.quantize(Decimal("0.01"))),
-            "avg_snf_pct": float(avg_snf.quantize(Decimal("0.01"))),
+            "total_liters": float(overall_liters.quantize(Decimal("0.01"))),
+            "total_amount_inr": float(overall_amount.quantize(Decimal("0.01"))),
+            "farmer_count": total_farmers,
+            "record_count": overall_count,
+            "avg_fat_pct": float(avg_fat),
+            "avg_snf_pct": float(avg_snf),
         },
-        "morning": {
-            "liters": float(sum((Decimal(str(r.quantity_liters)) for r in morning), Decimal("0")).quantize(Decimal("0.01"))),
-            "farmers": len({str(r.farmer_user_id) for r in morning}),
-        },
-        "evening": {
-            "liters": float(sum((Decimal(str(r.quantity_liters)) for r in evening), Decimal("0")).quantize(Decimal("0.01"))),
-            "farmers": len({str(r.farmer_user_id) for r in evening}),
-        },
+        "morning": morning_data,
+        "evening": evening_data,
     }
 
 
-@router.get("/{center_id}/farmer-settlements")
+@router.get("/{center_id}/farmer-settlements", response_model=FarmerSettlementsResponse)
 async def get_farmer_settlements(
     center_id: UUID,
     days: int = Query(15, ge=1, le=90),
@@ -182,6 +227,7 @@ async def get_farmer_settlements(
         .where(
             MilkCollectionRecord.center_id == center_id,
             MilkCollectionRecord.collected_at >= since,
+            MilkCollectionRecord.deleted_at.is_(None),
         )
         .group_by(MilkCollectionRecord.farmer_user_id)
         .order_by(func.sum(MilkCollectionRecord.total_amount).desc())
@@ -213,7 +259,7 @@ async def get_farmer_settlements(
     }
 
 
-@router.get("/farmers/search")
+@router.get("/farmers/search", response_model=list[FarmerSearchResult])
 async def search_farmers(
     phone: str | None = Query(None, min_length=3, max_length=15),
     aadhaar_last4: str | None = Query(None, min_length=4, max_length=4),
@@ -237,7 +283,7 @@ async def search_farmers(
 
     result = await db.execute(
         select(User)
-        .where(User.role == "farmer", or_(*filters))
+        .where(User.role == "farmer", User.deleted_at.is_(None), or_(*filters))
         .limit(10)
     )
     farmers = result.scalars().all()
@@ -255,14 +301,7 @@ async def search_farmers(
     ]
 
 
-class QuickEnrollRequest(BaseModel):
-    name: str = Field(..., min_length=2, max_length=100)
-    phone: str = Field(..., pattern=r"^\+91[6-9]\d{9}$")
-    aadhaar: str = Field(..., pattern=r"^\d{12}$")
-    village_code: str | None = Field(None, max_length=20)
-
-
-@router.post("/farmers/enroll", status_code=status.HTTP_201_CREATED)
+@router.post("/farmers/enroll", status_code=status.HTTP_201_CREATED, response_model=QuickEnrollResponse)
 async def quick_enroll_farmer(
     body: QuickEnrollRequest,
     current_user: User = Depends(require_milk_center_staff),
@@ -272,7 +311,7 @@ async def quick_enroll_farmer(
     aadhaar_hash = hashlib.sha256(body.aadhaar.encode()).hexdigest()
 
     dup_result = await db.execute(
-        select(User).where(or_(User.phone == body.phone, User.aadhaar_hash == aadhaar_hash))
+        select(User).where(User.deleted_at.is_(None), or_(User.phone == body.phone, User.aadhaar_hash == aadhaar_hash))
     )
     dup = dup_result.scalar_one_or_none()
     if dup:

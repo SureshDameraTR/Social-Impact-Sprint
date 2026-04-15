@@ -12,7 +12,7 @@ from app.middleware.auth import get_current_user
 from app.models.animal import Animal
 from app.models.milk import MilkCollectionRecord, YieldLog
 from app.models.user import User
-from app.schemas.milk import MilkHistoryResponse, YieldLogCreate, YieldLogRead
+from app.schemas.milk import YieldLogCreate, YieldLogRead
 
 router = APIRouter(prefix="/v1/milk", tags=["Milk"])
 
@@ -29,7 +29,7 @@ async def list_milk_records(
     db: AsyncSession = Depends(get_db),
 ):
     """List milk yield records (admin: all, farmer: own only)."""
-    base = select(YieldLog)
+    base = select(YieldLog).where(YieldLog.deleted_at.is_(None))
     if current_user.role != "admin":
         base = base.where(YieldLog.user_id == current_user.id)
 
@@ -55,7 +55,7 @@ async def get_today_total(
             func.coalesce(func.sum(YieldLog.quantity_liters), 0).label("total"),
             func.count().label("entries"),
         )
-        .where(YieldLog.user_id == current_user.id, YieldLog.recorded_at >= today_start)
+        .where(YieldLog.user_id == current_user.id, YieldLog.recorded_at >= today_start, YieldLog.deleted_at.is_(None))
     )
     row = result.one()
     return {
@@ -76,7 +76,7 @@ async def get_my_milk_history(
 ):
     """Get milk yield history for the authenticated user."""
     since = datetime.now(timezone.utc) - timedelta(days=days)
-    base = select(YieldLog).where(YieldLog.user_id == current_user.id, YieldLog.recorded_at >= since)
+    base = select(YieldLog).where(YieldLog.user_id == current_user.id, YieldLog.recorded_at >= since, YieldLog.deleted_at.is_(None))
 
     count_result = await db.execute(select(func.count()).select_from(base.subquery()))
     total = count_result.scalar() or 0
@@ -95,13 +95,13 @@ async def get_daily_summary(
     current_user: User = Depends(get_current_user),
 ):
     """Daily aggregated milk data for charting (admin dashboard)."""
-    from sqlalchemy import cast, Date
+    from sqlalchemy import Date, cast
     now = datetime.now(timezone.utc)
     start_date = (now - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-    base_filter = YieldLog.recorded_at >= start_date
+    base_filter = (YieldLog.recorded_at >= start_date) & (YieldLog.deleted_at.is_(None))
     if current_user.role != "admin":
-        base_filter = (YieldLog.recorded_at >= start_date) & (YieldLog.user_id == current_user.id)
+        base_filter = (YieldLog.recorded_at >= start_date) & (YieldLog.user_id == current_user.id) & (YieldLog.deleted_at.is_(None))
 
     result = await db.execute(
         select(
@@ -131,7 +131,7 @@ async def record_yield(
 ):
     """Record a milk yield entry for an animal."""
     # Verify animal ownership
-    result = await db.execute(select(Animal).where(Animal.id == body.animal_id))
+    result = await db.execute(select(Animal).where(Animal.id == body.animal_id, Animal.deleted_at.is_(None)))
     animal = result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
@@ -165,7 +165,7 @@ async def get_milk_history(
         raise HTTPException(status_code=403, detail="Access denied")
 
     since = datetime.now(timezone.utc) - timedelta(days=days)
-    base = select(YieldLog).where(YieldLog.user_id == user_id, YieldLog.recorded_at >= since)
+    base = select(YieldLog).where(YieldLog.user_id == user_id, YieldLog.recorded_at >= since, YieldLog.deleted_at.is_(None))
 
     # Count
     count_result = await db.execute(
@@ -204,6 +204,7 @@ async def get_daily_collection(
             MilkCollectionRecord.center_id == center_id,
             MilkCollectionRecord.collected_at >= today_start,
             MilkCollectionRecord.collected_at < today_end,
+            MilkCollectionRecord.deleted_at.is_(None),
         )
     )
     row = agg_result.one()

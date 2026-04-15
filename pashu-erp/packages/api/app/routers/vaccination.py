@@ -16,6 +16,14 @@ from app.models.animal import Animal
 from app.models.health import Vaccination
 from app.models.user import User
 from app.schemas.health import VaccinationCreate, VaccinationRead
+from app.schemas.vaccination import (
+    DueVaccinationsResponse,
+    ScheduleListResponse,
+    SingleVillageCoverage,
+    SpeciesBreakdownResponse,
+    SpeciesScheduleResponse,
+    VillageCoverageResponse,
+)
 from app.services.vaccination_scheduler import get_due_vaccinations, get_vaccination_schedule
 
 router = APIRouter(prefix="/v1/vaccinations", tags=["Vaccinations"])
@@ -32,7 +40,7 @@ async def record_vaccination(
     db: AsyncSession = Depends(get_db),
 ):
     """Record a vaccination for an animal."""
-    result = await db.execute(select(Animal).where(Animal.id == body.animal_id))
+    result = await db.execute(select(Animal).where(Animal.id == body.animal_id, Animal.deleted_at.is_(None)))
     animal = result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
@@ -62,7 +70,7 @@ async def get_due_vaccinations_for_user(
     """Get upcoming vaccinations for all of the current user's animals."""
     today = date.today()
     animal_result = await db.execute(
-        select(Animal.id).where(Animal.user_id == current_user.id)
+        select(Animal.id).where(Animal.user_id == current_user.id, Animal.deleted_at.is_(None))
     )
     animal_ids = [row[0] for row in animal_result.all()]
 
@@ -73,6 +81,7 @@ async def get_due_vaccinations_for_user(
         select(Vaccination)
         .where(
             Vaccination.animal_id.in_(animal_ids),
+            Vaccination.deleted_at.is_(None),
             Vaccination.next_due != None,  # noqa: E711
             Vaccination.next_due >= today,
         )
@@ -81,7 +90,7 @@ async def get_due_vaccinations_for_user(
     return result.scalars().all()
 
 
-@router.get("/species-breakdown")
+@router.get("/species-breakdown", response_model=SpeciesBreakdownResponse)
 async def get_species_breakdown(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -94,6 +103,7 @@ async def get_species_breakdown(
             func.count(func.distinct(Animal.id)).label("animal_count"),
         )
         .join(Vaccination, Vaccination.animal_id == Animal.id)
+        .where(Animal.deleted_at.is_(None), Vaccination.deleted_at.is_(None))
         .group_by(Animal.species)
     )
     breakdown = []
@@ -106,7 +116,7 @@ async def get_species_breakdown(
     return {"breakdown": breakdown}
 
 
-@router.get("/village-coverage")
+@router.get("/village-coverage", response_model=VillageCoverageResponse)
 async def get_village_coverage_admin(
     village_code: str | None = Query(None, description="Village code to check coverage for (omit for all villages)"),
     current_user: User = Depends(get_current_user),
@@ -118,7 +128,7 @@ async def get_village_coverage_admin(
             select(func.count())
             .select_from(Animal)
             .join(User, Animal.user_id == User.id)
-            .where(User.village_code == village_code)
+            .where(User.village_code == village_code, Animal.deleted_at.is_(None))
         )
         total_animals = total_result.scalar() or 0
         if total_animals == 0:
@@ -130,7 +140,7 @@ async def get_village_coverage_admin(
             )
             .join(Animal, Vaccination.animal_id == Animal.id)
             .join(User, Animal.user_id == User.id)
-            .where(User.village_code == village_code)
+            .where(User.village_code == village_code, Vaccination.deleted_at.is_(None))
             .group_by(Vaccination.vaccine_name)
         )
         vaccine_rows = vaccine_counts_result.all()
@@ -151,7 +161,7 @@ async def get_village_coverage_admin(
         .select_from(User)
         .join(Animal, Animal.user_id == User.id)
         .outerjoin(Vaccination, Vaccination.animal_id == Animal.id)
-        .where(User.village_code.isnot(None))
+        .where(User.village_code.isnot(None), Animal.deleted_at.is_(None))
         .group_by(User.village_code)
     )
     data = []
@@ -165,8 +175,8 @@ async def get_village_coverage_admin(
     return {"data": data, "total": len(data)}
 
 
-@router.get("/schedule")
-async def get_all_schedules():
+@router.get("/schedule", response_model=ScheduleListResponse)
+async def get_all_schedules(current_user: User = Depends(get_current_user)):
     """Get ICAR vaccination schedules for all species."""
     all_schedules = []
     for species in ["cattle", "goat", "sheep", "poultry"]:
@@ -184,7 +194,7 @@ async def get_vaccinations(
     db: AsyncSession = Depends(get_db),
 ):
     """Get vaccination records for an animal."""
-    animal_result = await db.execute(select(Animal).where(Animal.id == animal_id))
+    animal_result = await db.execute(select(Animal).where(Animal.id == animal_id, Animal.deleted_at.is_(None)))
     animal = animal_result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
@@ -193,7 +203,7 @@ async def get_vaccinations(
 
     result = await db.execute(
         select(Vaccination)
-        .where(Vaccination.animal_id == animal_id)
+        .where(Vaccination.animal_id == animal_id, Vaccination.deleted_at.is_(None))
         .order_by(Vaccination.administered_on.desc())
     )
     return result.scalars().all()
@@ -203,8 +213,8 @@ async def get_vaccinations(
 # Scheduling & Coverage
 # ---------------------------------------------------------------------------
 
-@router.get("/schedule/{species}")
-async def get_species_schedule(species: str):
+@router.get("/schedule/{species}", response_model=SpeciesScheduleResponse)
+async def get_species_schedule(species: str, current_user: User = Depends(get_current_user)):
     """Get ICAR vaccination schedule for a species."""
     schedule = get_vaccination_schedule(species)
     if not schedule:
@@ -212,7 +222,7 @@ async def get_species_schedule(species: str):
     return {"species": species.title(), "schedule": schedule}
 
 
-@router.get("/due/{user_id}")
+@router.get("/due/{user_id}", response_model=DueVaccinationsResponse)
 async def get_upcoming_vaccinations(
     user_id: UUID,
     current_user: User = Depends(get_current_user),
@@ -221,7 +231,7 @@ async def get_upcoming_vaccinations(
     """Get upcoming vaccinations for all animals owned by a user."""
     # Get all animals for this user in one query
     result = await db.execute(
-        select(Animal).where(Animal.user_id == user_id)
+        select(Animal).where(Animal.user_id == user_id, Animal.deleted_at.is_(None))
     )
     animals = result.scalars().all()
 
@@ -232,7 +242,7 @@ async def get_upcoming_vaccinations(
     animal_ids = [animal.id for animal in animals]
     vax_result = await db.execute(
         select(Vaccination)
-        .where(Vaccination.animal_id.in_(animal_ids))
+        .where(Vaccination.animal_id.in_(animal_ids), Vaccination.deleted_at.is_(None))
         .order_by(Vaccination.administered_on.desc())
     )
     all_vaccinations = vax_result.scalars().all()
@@ -270,7 +280,7 @@ async def get_upcoming_vaccinations(
     }
 
 
-@router.get("/coverage/{village_code}")
+@router.get("/coverage/{village_code}", response_model=SingleVillageCoverage)
 async def get_village_coverage(
     village_code: str,
     current_user: User = Depends(get_current_user),
@@ -286,7 +296,7 @@ async def get_village_coverage(
         select(func.count())
         .select_from(Animal)
         .join(User, Animal.user_id == User.id)
-        .where(User.village_code == village_code)
+        .where(User.village_code == village_code, Animal.deleted_at.is_(None))
     )
     total_animals = total_result.scalar() or 0
 
@@ -306,7 +316,7 @@ async def get_village_coverage(
         )
         .join(Animal, Vaccination.animal_id == Animal.id)
         .join(User, Animal.user_id == User.id)
-        .where(User.village_code == village_code)
+        .where(User.village_code == village_code, Vaccination.deleted_at.is_(None))
         .group_by(Vaccination.vaccine_name)
     )
     vaccine_rows = vaccine_counts_result.all()
@@ -325,7 +335,7 @@ async def get_village_coverage(
     }
 
 
-@router.patch("/{vaccination_id}")
+@router.patch("/{vaccination_id}", response_model=VaccinationRead)
 async def update_vaccination(
     vaccination_id: str,
     current_user: User = Depends(get_current_user),
@@ -333,7 +343,7 @@ async def update_vaccination(
 ):
     """Mark a vaccination as administered (update administered_on to today)."""
     result = await db.execute(
-        select(Vaccination).where(Vaccination.id == vaccination_id)
+        select(Vaccination).where(Vaccination.id == vaccination_id, Vaccination.deleted_at.is_(None))
     )
     vaccination = result.scalar_one_or_none()
     if vaccination is None:
@@ -341,7 +351,7 @@ async def update_vaccination(
 
     # Verify animal ownership
     animal_result = await db.execute(
-        select(Animal).where(Animal.id == vaccination.animal_id)
+        select(Animal).where(Animal.id == vaccination.animal_id, Animal.deleted_at.is_(None))
     )
     animal = animal_result.scalar_one_or_none()
     if animal is None:

@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import String, Numeric, DateTime, Enum, ForeignKey, text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -44,4 +44,7 @@ class SellRecord(AuditMixin, SoftDeleteMixin, Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    user = relationship("User", back_populates="sell_records", foreign_keys=[user_id], lazy="selectin")
+    user = relationship(
+        "User", back_populates="sell_records",
+        foreign_keys=[user_id], lazy="noload",
+    )

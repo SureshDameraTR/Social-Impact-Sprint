@@ -40,11 +40,12 @@ interface DailySummary {
   total: number;
 }
 
+const {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Legend,
+} = require("recharts") as typeof import("recharts");
+
 function MilkChart({ data }: { data: DailySummary[] }) {
-  const {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-    ResponsiveContainer, Legend,
-  } = require("recharts");
 
   return (
     <ResponsiveContainer width="100%" height={220}>

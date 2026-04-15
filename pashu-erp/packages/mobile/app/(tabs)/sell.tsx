@@ -9,14 +9,14 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { SPACING, CARD_BORDER_RADIUS, colors } from '../../src/config/theme';
 import { api } from '../../src/config/api';
 
-type ProductType = 'milk' | 'eggs' | 'goat_products' | 'manure';
+type ProductType = 'milk' | 'eggs' | 'goatProducts' | 'manure';
 
-// UI configuration: product types available for sale (matches API ProductType enum)
-const PRODUCTS: { key: ProductType; icon: string; price: string; unit: string }[] = [
-  { key: 'milk', icon: '\uD83E\uDD5B', price: '\u20B945/L', unit: 'liters' },
-  { key: 'eggs', icon: '\uD83E\uDD5A', price: '\u20B97/pc', unit: 'pieces' },
-  { key: 'goat_products', icon: '\uD83D\uDC10', price: '\u20B9600/kg', unit: 'kg' },
-  { key: 'manure', icon: '\uD83C\uDF3E', price: '\u20B96/kg', unit: 'kg' },
+// UI configuration: product types available for sale
+const PRODUCTS: { key: ProductType; icon: string; price: string; unit: string; apiKey: string }[] = [
+  { key: 'milk', icon: '\uD83E\uDD5B', price: '\u20B945/L', unit: 'liters', apiKey: 'milk' },
+  { key: 'eggs', icon: '\uD83E\uDD5A', price: '\u20B97/pc', unit: 'pieces', apiKey: 'eggs' },
+  { key: 'goatProducts', icon: '\uD83D\uDC10', price: '\u20B9600/kg', unit: 'kg', apiKey: 'goat_products' },
+  { key: 'manure', icon: '\uD83C\uDF3E', price: '\u20B96/kg', unit: 'kg', apiKey: 'manure' },
 ];
 
 interface SaleRecord {
@@ -38,6 +38,7 @@ function validateNumericField(value: string, min: number, max: number, fieldName
   if (isNaN(num) || num < 0) return `Enter a valid ${fieldName}`;
   if (num < min) return `Minimum ${min}`;
   if (num > max) return `Maximum ${max}`;
+
   return null;
 }
 
@@ -104,7 +105,7 @@ export default function SellScreen() {
     try {
       const selectedConfig = PRODUCTS.find(p => p.key === selectedProduct);
       await api.post('/marketplace/sell', {
-        product_type: selectedProduct,
+        product_type: selectedConfig?.apiKey ?? selectedProduct,
         quantity: parseFloat(quantity),
         unit: selectedConfig?.unit ?? 'kg',
         price_per_unit: parseFloat(price),
@@ -118,8 +119,8 @@ export default function SellScreen() {
       // Refresh recent sales
       fetchSales();
     } catch (e) {
-      console.error('Listing creation failed:', e);
-      showError('Failed to create listing. Please try again.');
+      if (__DEV__) console.error('Listing creation failed:', e);
+      showError(t('sell.createFailed') ?? 'Failed to create listing. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

@@ -103,7 +103,7 @@ export default function SmartFarmScreen() {
       )}
 
       {devices.map((device) => (
-        <Card key={device.id} style={styles.deviceCard}>
+        <Card key={device.id} style={styles.deviceCard} accessibilityLabel={`${device.name}, ${device.animal}, status ${device.status}, battery ${device.battery}`}>
           <Card.Content style={styles.deviceContent}>
             <View style={styles.deviceInfo}>
               <Text variant="titleSmall">{device.name}</Text>

@@ -4,6 +4,8 @@ Mimics real external services (weather, registry, IoT, storage) so the main
 PashuRaksha API can make real HTTP calls during development and testing.
 """
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,8 +17,6 @@ app = FastAPI(
     version="0.1.0",
 )
 
-import os
-
 ALLOWED_ORIGINS = os.getenv(
     "CORS_ORIGINS", "http://localhost:3000,http://localhost:8081"
 ).split(",")
@@ -25,7 +25,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 

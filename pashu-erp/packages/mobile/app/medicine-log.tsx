@@ -77,8 +77,8 @@ export default function MedicineLogScreen() {
       setSelectedMedicine(null);
       setSelectedAnimal(null);
     } catch (e) {
-      console.error('Medicine log save failed:', e);
-      showError('Failed to save medicine log. Please try again.');
+      if (__DEV__) console.error('Medicine log save failed:', e);
+      showError(t('medicinelog.saveFailed') ?? 'Failed to save medicine log. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

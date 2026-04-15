@@ -4,11 +4,10 @@ Requires WEATHER_API_URL setting to be configured.
 Raises ServiceNotConfiguredError when the URL is empty.
 """
 
-import httpx
-
 from app.config import settings
 from app.schemas.weather import WeatherForecast
 from app.services.errors import ServiceNotConfiguredError
+from app.services.http_client import get_http_client, retry_on_network
 
 KARNATAKA_DISTRICTS = {
     "dharwad": {"lat": 15.46, "lon": 75.01},
@@ -24,8 +23,6 @@ KARNATAKA_DISTRICTS = {
     "bagalkot": {"lat": 16.18, "lon": 75.70},
     "bidar": {"lat": 17.91, "lon": 77.52},
 }
-
-_TIMEOUT = 10.0
 
 
 def _require_weather_url() -> str:
@@ -45,37 +42,40 @@ def _calculate_heat_stress_index(temp_max: float, humidity: float) -> float:
     return round(thi, 1)
 
 
+@retry_on_network
 async def get_forecast(district: str, days: int = 5) -> list[WeatherForecast]:
     """Return weather forecast for a Karnataka district."""
     base_url = _require_weather_url()
-    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-        resp = await client.get(
-            f"{base_url}/forecast",
-            params={"district": district, "days": days},
-        )
-        resp.raise_for_status()
-        return [WeatherForecast(**item) for item in resp.json()]
+    client = await get_http_client()
+    resp = await client.get(
+        f"{base_url}/forecast",
+        params={"district": district, "days": days},
+    )
+    resp.raise_for_status()
+    return [WeatherForecast(**item) for item in resp.json()]
 
 
+@retry_on_network
 async def get_alerts(district: str) -> list[dict]:
     """Return active weather alerts for a district."""
     base_url = _require_weather_url()
-    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-        resp = await client.get(
-            f"{base_url}/alerts",
-            params={"district": district},
-        )
-        resp.raise_for_status()
-        return resp.json()
+    client = await get_http_client()
+    resp = await client.get(
+        f"{base_url}/alerts",
+        params={"district": district},
+    )
+    resp.raise_for_status()
+    return resp.json()
 
 
+@retry_on_network
 async def get_tts(district: str, language_code: str = "kn") -> dict:
     """Request text-to-speech weather summary for a district."""
     base_url = _require_weather_url()
-    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-        resp = await client.post(
-            f"{base_url}/tts",
-            json={"district": district, "language_code": language_code},
-        )
-        resp.raise_for_status()
-        return resp.json()
+    client = await get_http_client()
+    resp = await client.post(
+        f"{base_url}/tts",
+        json={"district": district, "language_code": language_code},
+    )
+    resp.raise_for_status()
+    return resp.json()

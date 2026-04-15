@@ -2,27 +2,28 @@
 
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-
-# Admin dashboard configuration (previously in constants.py)
-RISK_SCORE_THRESHOLD: float = 0.5
-ALERT_WINDOW_DAYS: int = 7
 from app.middleware.auth import get_current_user
 from app.models.alerts import CommunityAlert
 from app.models.animal import Animal
 from app.models.health import HealthEvent
 from app.models.milk import MilkCollectionCenter
 from app.models.user import User
+from app.schemas.map_points import MapPointsResponse
+
+# Admin dashboard configuration
+RISK_SCORE_THRESHOLD: float = 0.5
+ALERT_WINDOW_DAYS: int = 7
 
 router = APIRouter(prefix="/v1/map", tags=["Map"])
 
 
-@router.get("/points")
+@router.get("/points", response_model=MapPointsResponse)
 async def get_map_points(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -38,6 +39,7 @@ async def get_map_points(
         .where(
             HealthEvent.event_date >= week_ago,
             HealthEvent.ai_risk_score > RISK_SCORE_THRESHOLD,
+            HealthEvent.deleted_at.is_(None),
         )
         .options(
             selectinload(HealthEvent.animal).selectinload(Animal.owner),
@@ -63,7 +65,7 @@ async def get_map_points(
 
     # 2. Milk collection centers
     center_result = await db.execute(
-        select(MilkCollectionCenter).where(MilkCollectionCenter.is_active == True)  # noqa: E712
+        select(MilkCollectionCenter).where(MilkCollectionCenter.is_active == True, MilkCollectionCenter.deleted_at.is_(None))  # noqa: E712
     )
     for center in center_result.scalars().all():
         points.append({
@@ -76,7 +78,7 @@ async def get_map_points(
 
     # 3. Active community alerts (with lat/lon)
     alert_result = await db.execute(
-        select(CommunityAlert).where(CommunityAlert.expires_at > func.now())
+        select(CommunityAlert).where(CommunityAlert.expires_at > func.now(), CommunityAlert.deleted_at.is_(None))
     )
     for alert in alert_result.scalars().all():
         points.append({
@@ -97,7 +99,7 @@ async def get_map_points(
             User.location_district,
             func.count().label("farmer_count"),
         )
-        .where(User.role == "farmer", User.village_code.isnot(None))
+        .where(User.role == "farmer", User.village_code.isnot(None), User.deleted_at.is_(None))
         .group_by(User.village_code, User.location_district)
     )
     for row in farmer_result.all():

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Button, Text, TextInput, Chip } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
+import { api } from '../../src/config/api';
 import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../../src/config/theme';
 
 const SPECIES_OPTIONS = [
@@ -17,6 +18,7 @@ export default function FirstAnimalScreen() {
   const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
   const [selectedBreed, setSelectedBreed] = useState<string | null>(null);
   const [animalName, setAnimalName] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const speciesData = SPECIES_OPTIONS.find((s) => s.key === selectedSpecies);
 
@@ -97,11 +99,22 @@ export default function FirstAnimalScreen() {
 
       <Button
         mode="contained"
-        onPress={() => router.push('/onboarding/tutorial')}
+        onPress={async () => {
+          setSaving(true);
+          try {
+            await api.post('/animals', { species: selectedSpecies, breed: selectedBreed, name: animalName });
+            router.push('/onboarding/tutorial');
+          } catch (e) {
+            Alert.alert(t('common.error'), t('onboarding.saveFailed') ?? 'Failed to save animal. Please try again.');
+          } finally {
+            setSaving(false);
+          }
+        }}
         style={styles.addButton}
         contentStyle={styles.addButtonContent}
         labelStyle={styles.addButtonLabel}
-        disabled={!selectedSpecies || !animalName}
+        disabled={!selectedSpecies || !animalName || saving}
+        loading={saving}
         icon="plus"
       >
         {t('onboarding.addFirstAnimal')}

@@ -3,7 +3,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -15,7 +15,7 @@ from app.schemas.advisory import AdvisoryTipRead
 router = APIRouter(prefix="/v1/advisory", tags=["Advisory"])
 
 
-@router.get("/tips", response_model=list[AdvisoryTipRead])
+@router.get("/tips")
 async def list_tips(
     species: str | None = Query(None, description="Filter by species"),
     category: str | None = Query(None, description="Filter by category"),
@@ -25,27 +25,37 @@ async def list_tips(
     db: AsyncSession = Depends(get_db),
 ):
     """List advisory tips with optional species and category filters."""
-    query = select(AdvisoryTip).where(
-        AdvisoryTip.is_active == True  # noqa: E712
-    ).order_by(AdvisoryTip.priority.desc(), AdvisoryTip.published_at.desc())
+    base_filters = [
+        AdvisoryTip.is_active == True,  # noqa: E712
+        AdvisoryTip.deleted_at.is_(None),
+    ]
+    count_query = select(func.count()).select_from(AdvisoryTip).where(*base_filters)
+    query = select(AdvisoryTip).where(*base_filters).order_by(
+        AdvisoryTip.priority.desc(), AdvisoryTip.published_at.desc()
+    )
 
     if species:
-        query = query.where(
-            AdvisoryTip.species_applicable.contains([species.lower()])
-        )
+        species_filter = AdvisoryTip.species_applicable.contains([species.lower()])
+        count_query = count_query.where(species_filter)
+        query = query.where(species_filter)
 
     if category:
-        query = query.where(AdvisoryTip.category == category.lower())
+        cat_filter = AdvisoryTip.category == category.lower()
+        count_query = count_query.where(cat_filter)
+        query = query.where(cat_filter)
+
+    count_result = await db.execute(count_query)
+    total = count_result.scalar() or 0
 
     result = await db.execute(query.offset(skip).limit(limit))
-    return result.scalars().all()
+    return {"data": result.scalars().all(), "total": total}
 
 
 @router.get("/tips/{tip_id}", response_model=AdvisoryTipRead)
 async def get_tip(tip_id: UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Get a specific advisory tip by ID."""
     result = await db.execute(
-        select(AdvisoryTip).where(AdvisoryTip.id == tip_id)
+        select(AdvisoryTip).where(AdvisoryTip.id == tip_id, AdvisoryTip.deleted_at.is_(None))
     )
     tip = result.scalar_one_or_none()
     if tip is None:

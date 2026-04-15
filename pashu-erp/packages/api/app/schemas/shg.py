@@ -1,10 +1,10 @@
 import re
 from datetime import date, datetime
+from decimal import Decimal
 from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
-
 
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 
@@ -30,7 +30,7 @@ class SHGGroupCreate(BaseModel):
     member_count: int = Field(default=0, ge=0)
     women_only: bool = True
     formation_date: date | None = None
-    total_savings: float = 0
+    total_savings: Decimal = Field(default=Decimal("0"), max_digits=10, decimal_places=2)
     grading: SHGGrading = SHGGrading.ungraded
     panchsutra_compliance: dict | None = None
 
@@ -50,7 +50,7 @@ class SHGGroupRead(BaseModel):
     member_count: int
     women_only: bool
     formation_date: date | None = None
-    total_savings: float
+    total_savings: Decimal = Field(..., max_digits=10, decimal_places=2)
     grading: SHGGrading
     panchsutra_compliance: dict | None = None
     created_at: datetime

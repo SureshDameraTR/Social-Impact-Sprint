@@ -212,6 +212,8 @@ export default function CommunityAlertsScreen() {
                 onPress={() => setDiseaseMenuVisible(true)}
                 style={styles.dropdown}
                 contentStyle={{ minHeight: TOUCH_TARGET_MIN, justifyContent: 'flex-start' }}
+                accessibilityLabel="Select disease to report"
+                accessibilityRole="button"
               >
                 {reportDisease || t('communityAlerts.selectDisease')}
               </Button>
@@ -245,6 +247,7 @@ export default function CommunityAlertsScreen() {
             style={styles.notesInput}
             outlineColor="#BDBDBD"
             activeOutlineColor={colors.primary}
+            accessibilityLabel="Additional notes for disease report"
           />
 
           <Button

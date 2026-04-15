@@ -1,43 +1,35 @@
 """Veterinary consultation endpoints."""
 
-from datetime import date, datetime, timedelta, timezone
-from typing import Optional
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.database import get_db
-
-# Dashboard configuration
-RISK_SCORE_THRESHOLD: float = 0.5
-ALERT_WINDOW_DAYS: int = 7
-
 from app.middleware.auth import get_current_user, require_vet_or_admin
 from app.models.alerts import CommunityAlert
 from app.models.animal import Animal
 from app.models.health import HealthEvent
 from app.models.user import User
-from app.models.vet import VetConsultation, ConsultationStatus, ConsultationPriority
+from app.models.vet import ConsultationPriority, ConsultationStatus, VetConsultation
+from app.schemas.vet import (
+    AnimalBrief,
+    DiagnoseBody,
+    FarmerBrief,
+    OwnerBrief,
+    VetCaseListResponse,
+    VetCaseRead,
+    VetDashboardAlertsResponse,
+    VetDashboardStats,
+    VetMyCasesResponse,
+    VideoLinkBody,
+)
 
 router = APIRouter(prefix="/v1/vet", tags=["vet"])
-
-
-# ---------------------------------------------------------------------------
-# Request bodies (Pydantic)
-# ---------------------------------------------------------------------------
-
-class DiagnoseBody(BaseModel):
-    diagnosis: str
-    prescription: Optional[str] = None
-    follow_up_date: Optional[date] = None
-
-
-class VideoLinkBody(BaseModel):
-    video_call_url: str
 
 
 # ---------------------------------------------------------------------------
@@ -51,52 +43,61 @@ def _district_for_user(user: User) -> str | None:
     return user.location_district
 
 
-def _serialize_case(c: "VetConsultation") -> dict:
-    """Convert a VetConsultation ORM object to a JSON-safe dict."""
+def _serialize_case(c: VetConsultation) -> VetCaseRead:
+    """Convert a VetConsultation ORM object to a VetCaseRead schema."""
     animal = None
     if c.animal:
         owner = None
         if c.animal.owner:
             o = c.animal.owner
-            owner = {"id": str(o.id), "name": o.name, "phone": o.phone, "village_code": o.village_code, "location_district": o.location_district}
-        animal = {"id": str(c.animal.id), "species": c.animal.species, "name": c.animal.name, "breed": c.animal.breed, "owner": owner}
-    return {
-        "id": str(c.id),
-        "animal_id": str(c.animal_id),
-        "farmer_id": str(c.farmer_id),
-        "vet_id": str(c.vet_id) if c.vet_id else None,
-        "status": c.status,
-        "priority": c.priority,
-        "channel": c.channel,
-        "farmer_notes": c.farmer_notes,
-        "photo_urls": c.photo_urls,
-        "diagnosis": c.diagnosis,
-        "prescription": c.prescription,
-        "follow_up_date": str(c.follow_up_date) if c.follow_up_date else None,
-        "video_call_url": c.video_call_url,
-        "district": c.district,
-        "created_at": c.created_at.isoformat() if c.created_at else None,
-        "updated_at": c.updated_at.isoformat() if c.updated_at else None,
-        "animal": animal,
-        "farmer": {"id": str(c.farmer_id), "name": c.animal.owner.name if c.animal and c.animal.owner else None},
-    }
+            owner = OwnerBrief(
+                id=str(o.id), name=o.name, phone=o.phone,
+                village_code=o.village_code, location_district=o.location_district,
+            )
+        animal = AnimalBrief(
+            id=str(c.animal.id), species=c.animal.species,
+            name=c.animal.name, breed=c.animal.breed, owner=owner,
+        )
+    return VetCaseRead(
+        id=str(c.id),
+        animal_id=str(c.animal_id),
+        farmer_id=str(c.farmer_id),
+        vet_id=str(c.vet_id) if c.vet_id else None,
+        status=c.status,
+        priority=c.priority,
+        channel=c.channel,
+        farmer_notes=c.farmer_notes,
+        photo_urls=c.photo_urls,
+        diagnosis=c.diagnosis,
+        prescription=c.prescription,
+        follow_up_date=str(c.follow_up_date) if c.follow_up_date else None,
+        video_call_url=c.video_call_url,
+        district=c.district,
+        created_at=c.created_at.isoformat() if c.created_at else None,
+        updated_at=c.updated_at.isoformat() if c.updated_at else None,
+        animal=animal,
+        farmer=FarmerBrief(
+            id=str(c.farmer_id),
+            name=c.animal.owner.name if c.animal and c.animal.owner else None,
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
 # Case list & detail
 # ---------------------------------------------------------------------------
 
-@router.get("/cases")
+@router.get("/cases", response_model=VetCaseListResponse)
 async def list_cases(
-    status_filter: Optional[str] = Query(None, alias="status"),
-    priority: Optional[str] = Query(None),
+    status_filter: str | None = Query(None, alias="status"),
+    priority: str | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, le=200),
     current_user: User = Depends(require_vet_or_admin),
     db: AsyncSession = Depends(get_db),
 ):
     """List vet consultation cases in the vet's district."""
-    base = select(VetConsultation)
+    base = select(VetConsultation).where(VetConsultation.deleted_at.is_(None))
 
     # District scoping for non-admin users
     district = _district_for_user(current_user)
@@ -129,7 +130,7 @@ async def list_cases(
     return {"data": [_serialize_case(c) for c in cases], "skip": skip, "limit": limit}
 
 
-@router.get("/cases/{case_id}")
+@router.get("/cases/{case_id}", response_model=VetCaseRead)
 async def get_case(
     case_id: UUID,
     current_user: User = Depends(require_vet_or_admin),
@@ -138,7 +139,7 @@ async def get_case(
     """Get full case detail with animal health events and vaccinations."""
     result = await db.execute(
         select(VetConsultation)
-        .where(VetConsultation.id == case_id)
+        .where(VetConsultation.id == case_id, VetConsultation.deleted_at.is_(None))
         .options(
             selectinload(VetConsultation.animal)
             .selectinload(Animal.owner),
@@ -164,7 +165,7 @@ async def get_case(
 # Case actions
 # ---------------------------------------------------------------------------
 
-@router.patch("/cases/{case_id}/claim")
+@router.patch("/cases/{case_id}/claim", response_model=VetCaseRead)
 async def claim_case(
     case_id: UUID,
     current_user: User = Depends(require_vet_or_admin),
@@ -172,7 +173,7 @@ async def claim_case(
 ):
     """Claim an unassigned case."""
     result = await db.execute(
-        select(VetConsultation).where(VetConsultation.id == case_id)
+        select(VetConsultation).where(VetConsultation.id == case_id, VetConsultation.deleted_at.is_(None))
     )
     case = result.scalar_one_or_none()
     if case is None:
@@ -193,7 +194,7 @@ async def claim_case(
     return _serialize_case(case)
 
 
-@router.patch("/cases/{case_id}/diagnose")
+@router.patch("/cases/{case_id}/diagnose", response_model=VetCaseRead)
 async def diagnose_case(
     case_id: UUID,
     body: DiagnoseBody,
@@ -202,7 +203,7 @@ async def diagnose_case(
 ):
     """Add diagnosis to a claimed case."""
     result = await db.execute(
-        select(VetConsultation).where(VetConsultation.id == case_id)
+        select(VetConsultation).where(VetConsultation.id == case_id, VetConsultation.deleted_at.is_(None))
     )
     case = result.scalar_one_or_none()
     if case is None:
@@ -223,7 +224,7 @@ async def diagnose_case(
     return _serialize_case(case)
 
 
-@router.patch("/cases/{case_id}/video-link")
+@router.patch("/cases/{case_id}/video-link", response_model=VetCaseRead)
 async def set_video_link(
     case_id: UUID,
     body: VideoLinkBody,
@@ -232,7 +233,7 @@ async def set_video_link(
 ):
     """Set the video call URL for a claimed case."""
     result = await db.execute(
-        select(VetConsultation).where(VetConsultation.id == case_id)
+        select(VetConsultation).where(VetConsultation.id == case_id, VetConsultation.deleted_at.is_(None))
     )
     case = result.scalar_one_or_none()
     if case is None:
@@ -249,7 +250,7 @@ async def set_video_link(
     return _serialize_case(case)
 
 
-@router.patch("/cases/{case_id}/close")
+@router.patch("/cases/{case_id}/close", response_model=VetCaseRead)
 async def close_case(
     case_id: UUID,
     current_user: User = Depends(require_vet_or_admin),
@@ -257,7 +258,7 @@ async def close_case(
 ):
     """Close a case."""
     result = await db.execute(
-        select(VetConsultation).where(VetConsultation.id == case_id)
+        select(VetConsultation).where(VetConsultation.id == case_id, VetConsultation.deleted_at.is_(None))
     )
     case = result.scalar_one_or_none()
     if case is None:
@@ -278,7 +279,7 @@ async def close_case(
 # Dashboard
 # ---------------------------------------------------------------------------
 
-@router.get("/dashboard/stats")
+@router.get("/dashboard/stats", response_model=VetDashboardStats)
 async def vet_dashboard_stats(
     current_user: User = Depends(require_vet_or_admin),
     db: AsyncSession = Depends(get_db),
@@ -290,7 +291,7 @@ async def vet_dashboard_stats(
     pending_q = (
         select(func.count())
         .select_from(VetConsultation)
-        .where(VetConsultation.status == ConsultationStatus.pending.value)
+        .where(VetConsultation.status == ConsultationStatus.pending.value, VetConsultation.deleted_at.is_(None))
     )
     if district is not None:
         pending_q = pending_q.where(VetConsultation.district == district)
@@ -305,6 +306,7 @@ async def vet_dashboard_stats(
         .where(
             VetConsultation.status == ConsultationStatus.diagnosed.value,
             VetConsultation.updated_at >= today_start,
+            VetConsultation.deleted_at.is_(None),
         )
     )
     if district is not None:
@@ -313,7 +315,7 @@ async def vet_dashboard_stats(
     diagnosed_today = diagnosed_result.scalar() or 0
 
     # District animals — join Animal -> User to scope by district
-    animals_q = select(func.count()).select_from(Animal)
+    animals_q = select(func.count()).select_from(Animal).where(Animal.deleted_at.is_(None))
     if district is not None:
         animals_q = animals_q.join(User, Animal.user_id == User.id).where(
             User.location_district == district
@@ -322,11 +324,11 @@ async def vet_dashboard_stats(
     district_animals = animals_result.scalar() or 0
 
     # Active alerts — community alerts in district within the last week
-    week_ago = datetime.now(timezone.utc) - timedelta(days=ALERT_WINDOW_DAYS)
+    week_ago = datetime.now(timezone.utc) - timedelta(days=settings.alert_window_days)
     alerts_q = (
         select(func.count())
         .select_from(CommunityAlert)
-        .where(CommunityAlert.created_at >= week_ago)
+        .where(CommunityAlert.created_at >= week_ago, CommunityAlert.deleted_at.is_(None))
     )
     if district is not None:
         # Join through reporter to get district
@@ -344,14 +346,14 @@ async def vet_dashboard_stats(
     }
 
 
-@router.get("/dashboard/alerts")
+@router.get("/dashboard/alerts", response_model=VetDashboardAlertsResponse)
 async def vet_dashboard_alerts(
     current_user: User = Depends(require_vet_or_admin),
     db: AsyncSession = Depends(get_db),
 ):
     """District health alerts: community alerts + high-risk health events."""
     district = _district_for_user(current_user)
-    week_ago = datetime.now(timezone.utc) - timedelta(days=ALERT_WINDOW_DAYS)
+    week_ago = datetime.now(timezone.utc) - timedelta(days=settings.alert_window_days)
 
     # Community alerts in district
     alerts_q = (
@@ -359,6 +361,7 @@ async def vet_dashboard_alerts(
         .where(
             CommunityAlert.created_at >= week_ago,
             CommunityAlert.expires_at > func.now(),
+            CommunityAlert.deleted_at.is_(None),
         )
     )
     if district is not None:
@@ -374,7 +377,8 @@ async def vet_dashboard_alerts(
         select(HealthEvent)
         .where(
             HealthEvent.event_date >= week_ago,
-            HealthEvent.ai_risk_score > RISK_SCORE_THRESHOLD,
+            HealthEvent.ai_risk_score > settings.risk_score_threshold,
+            HealthEvent.deleted_at.is_(None),
         )
         .options(
             selectinload(HealthEvent.animal).selectinload(Animal.owner),
@@ -398,7 +402,7 @@ async def vet_dashboard_alerts(
 # Farmer-facing
 # ---------------------------------------------------------------------------
 
-@router.get("/my-cases")
+@router.get("/my-cases", response_model=VetMyCasesResponse)
 async def my_cases(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -406,7 +410,7 @@ async def my_cases(
     """Farmer's own consultation cases."""
     result = await db.execute(
         select(VetConsultation)
-        .where(VetConsultation.farmer_id == str(current_user.id))
+        .where(VetConsultation.farmer_id == str(current_user.id), VetConsultation.deleted_at.is_(None))
         .order_by(VetConsultation.created_at.desc())
     )
     cases = result.scalars().all()

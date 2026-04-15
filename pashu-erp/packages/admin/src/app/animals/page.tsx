@@ -56,9 +56,16 @@ export default function AnimalsPage() {
   const [sortBy, setSortBy] = useState<SortKey | "">("");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  const { data, isLoading, isError } = useList<Animal>({ resource: "animals" });
+  const { data, isLoading, isError } = useList<Animal>({
+    resource: "animals",
+    pagination: {
+      current: page + 1,
+      pageSize: rowsPerPage,
+    },
+  });
 
   const animals = data?.data ?? [];
+  const serverTotal = data?.total ?? 0;
 
   const handleSort = useCallback((key: SortKey) => {
     setSortBy((prev) => {
@@ -93,7 +100,7 @@ export default function AnimalsPage() {
     return sorted;
   }, [filtered, sortBy, sortDir]);
 
-  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress /></Box>;
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }} role="status" aria-label="Loading"><CircularProgress /></Box>;
   if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
 
   return (
@@ -113,6 +120,7 @@ export default function AnimalsPage() {
               placeholder="Search by name or Pashu Aadhaar..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search animals"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -142,7 +150,7 @@ export default function AnimalsPage() {
           </Stack>
         </Box>
         <TableContainer>
-          <Table>
+          <Table aria-label="Animals table">
             <TableHead>
               <TableRow>
                 <TableCell>
@@ -201,7 +209,7 @@ export default function AnimalsPage() {
         </TableContainer>
         <TablePagination
           component="div"
-          count={sortedRows.length}
+          count={search || speciesFilter !== "All" ? sortedRows.length : serverTotal}
           page={page}
           onPageChange={(_, p) => setPage(p)}
           rowsPerPage={rowsPerPage}

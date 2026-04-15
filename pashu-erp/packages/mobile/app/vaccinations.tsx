@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
+import { View, FlatList, StyleSheet, Alert } from 'react-native';
 import { Button, Card, Text, ProgressBar, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '../src/components/EmptyState';
@@ -51,9 +51,9 @@ export default function VaccinationsScreen() {
         prev.map((r) => (r.id === id ? { ...r, status: 'done' as VaccStatus, daysUntil: 0 } : r))
       );
     } catch {
-      // Optimistic update fallback
-      setRecords((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status: 'done' as VaccStatus, daysUntil: 0 } : r))
+      Alert.alert(
+        t('common.error'),
+        t('vaccinations.markDoneFailed') ?? 'Failed to mark vaccination as done. Please try again.'
       );
     }
   }, []);

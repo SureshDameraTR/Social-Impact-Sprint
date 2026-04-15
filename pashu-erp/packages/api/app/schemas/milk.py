@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
 from uuid import UUID
 
@@ -12,7 +13,7 @@ class MilkSession(str, Enum):
 
 class YieldLogCreate(BaseModel):
     animal_id: UUID
-    quantity_liters: float = Field(..., gt=0, le=100)
+    quantity_liters: Decimal = Field(..., gt=0, le=100, max_digits=10, decimal_places=2)
     session: MilkSession
     notes: str | None = Field(None, max_length=500)
 
@@ -21,7 +22,7 @@ class YieldLogRead(BaseModel):
     id: UUID
     animal_id: UUID
     user_id: UUID
-    quantity_liters: float
+    quantity_liters: Decimal = Field(..., max_digits=10, decimal_places=2)
     session: MilkSession
     notes: str | None = None
     recorded_at: datetime
@@ -31,17 +32,17 @@ class YieldLogRead(BaseModel):
 
 class MilkHistoryResponse(BaseModel):
     logs: list[YieldLogRead]
-    total_liters: float
-    average_daily: float
+    total_liters: Decimal = Field(..., max_digits=10, decimal_places=2)
+    average_daily: Decimal = Field(..., max_digits=10, decimal_places=2)
     period_days: int
 
 
 class CollectionRecordCreate(BaseModel):
     center_id: UUID
     farmer_user_id: UUID
-    quantity_liters: float = Field(..., gt=0, le=100)
-    fat_pct: float | None = None
-    snf_pct: float | None = None
+    quantity_liters: Decimal = Field(..., gt=0, le=100, max_digits=10, decimal_places=2)
+    fat_pct: Decimal | None = Field(None, max_digits=5, decimal_places=2)
+    snf_pct: Decimal | None = Field(None, max_digits=5, decimal_places=2)
     shift: MilkSession
 
 
@@ -49,11 +50,11 @@ class CollectionRecordRead(BaseModel):
     id: UUID
     center_id: UUID
     farmer_user_id: UUID
-    quantity_liters: float
-    fat_pct: float | None = None
-    snf_pct: float | None = None
-    rate_per_liter: float | None = None
-    total_amount: float | None = None
+    quantity_liters: Decimal = Field(..., max_digits=10, decimal_places=2)
+    fat_pct: Decimal | None = Field(None, max_digits=5, decimal_places=2)
+    snf_pct: Decimal | None = Field(None, max_digits=5, decimal_places=2)
+    rate_per_liter: Decimal | None = Field(None, max_digits=10, decimal_places=2)
+    total_amount: Decimal | None = Field(None, max_digits=10, decimal_places=2)
     shift: MilkSession
     collected_at: datetime
 

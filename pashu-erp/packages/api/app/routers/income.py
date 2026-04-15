@@ -5,7 +5,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import cast, Date, extract, func, select
+from sqlalchemy import extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -44,7 +44,7 @@ async def income_summary(
             Transaction.type,
             func.coalesce(func.sum(Transaction.amount), 0).label("total"),
         )
-        .where(Transaction.user_id == user_id, Transaction.created_at >= since)
+        .where(Transaction.user_id == user_id, Transaction.created_at >= since, Transaction.deleted_at.is_(None))
         .group_by(Transaction.type)
     )
     txn_totals = {row.type: Decimal(str(row.total)) for row in txn_result.all()}
@@ -54,7 +54,7 @@ async def income_summary(
     # Sell record total via SQL aggregation
     sell_result = await db.execute(
         select(func.coalesce(func.sum(SellRecord.total_amount), 0))
-        .where(SellRecord.user_id == user_id, SellRecord.sold_at >= since)
+        .where(SellRecord.user_id == user_id, SellRecord.sold_at >= since, SellRecord.deleted_at.is_(None))
     )
     sell_income = Decimal(str(sell_result.scalar() or 0))
 
@@ -94,6 +94,7 @@ async def income_breakdown(
             Transaction.user_id == user_id,
             Transaction.type == "income",
             Transaction.created_at >= since,
+            Transaction.deleted_at.is_(None),
         )
         .group_by(Transaction.category)
     )
@@ -110,6 +111,7 @@ async def income_breakdown(
         .where(
             SellRecord.user_id == user_id,
             SellRecord.sold_at >= since,
+            SellRecord.deleted_at.is_(None),
         )
         .group_by(SellRecord.product_type)
     )
@@ -140,14 +142,14 @@ async def income_history(
 
     txn_result = await db.execute(
         select(Transaction)
-        .where(Transaction.user_id == user_id, Transaction.created_at >= since)
+        .where(Transaction.user_id == user_id, Transaction.created_at >= since, Transaction.deleted_at.is_(None))
         .order_by(Transaction.created_at.desc())
     )
     txns = txn_result.scalars().all()
 
     sell_result = await db.execute(
         select(SellRecord)
-        .where(SellRecord.user_id == user_id, SellRecord.sold_at >= since)
+        .where(SellRecord.user_id == user_id, SellRecord.sold_at >= since, SellRecord.deleted_at.is_(None))
         .order_by(SellRecord.sold_at.desc())
     )
     sells = sell_result.scalars().all()
@@ -205,7 +207,7 @@ async def my_income_summary(
             Transaction.type,
             func.coalesce(func.sum(Transaction.amount), 0).label("total"),
         )
-        .where(Transaction.user_id == current_user.id, Transaction.created_at >= since)
+        .where(Transaction.user_id == current_user.id, Transaction.created_at >= since, Transaction.deleted_at.is_(None))
         .group_by(Transaction.type)
     )
     txn_totals = {row.type: Decimal(str(row.total)) for row in txn_result.all()}
@@ -214,7 +216,7 @@ async def my_income_summary(
 
     sell_result = await db.execute(
         select(func.coalesce(func.sum(SellRecord.total_amount), 0))
-        .where(SellRecord.user_id == current_user.id, SellRecord.sold_at >= since)
+        .where(SellRecord.user_id == current_user.id, SellRecord.sold_at >= since, SellRecord.deleted_at.is_(None))
     )
     sell_income = Decimal(str(sell_result.scalar() or 0))
 
@@ -243,7 +245,7 @@ async def my_income_transactions(
     since = datetime.now(timezone.utc) - _period_delta(period)
 
     base = select(Transaction).where(
-        Transaction.user_id == current_user.id, Transaction.created_at >= since
+        Transaction.user_id == current_user.id, Transaction.created_at >= since, Transaction.deleted_at.is_(None)
     )
     count_result = await db.execute(select(func.count()).select_from(base.subquery()))
     total = count_result.scalar() or 0
@@ -275,7 +277,7 @@ async def income_by_category(
             Transaction.category,
             func.sum(Transaction.amount).label("total"),
         )
-        .where(Transaction.type == "income", Transaction.created_at >= since)
+        .where(Transaction.type == "income", Transaction.created_at >= since, Transaction.deleted_at.is_(None))
     )
     if current_user.role != "admin":
         txn_query = txn_query.where(Transaction.user_id == current_user.id)
@@ -292,7 +294,7 @@ async def income_by_category(
             SellRecord.product_type,
             func.sum(SellRecord.total_amount).label("total"),
         )
-        .where(SellRecord.sold_at >= since)
+        .where(SellRecord.sold_at >= since, SellRecord.deleted_at.is_(None))
     )
     if current_user.role != "admin":
         sell_query = sell_query.where(SellRecord.user_id == current_user.id)
@@ -323,7 +325,7 @@ async def income_monthly_trend(
             Transaction.type,
             func.sum(Transaction.amount).label("total"),
         )
-        .where(Transaction.created_at >= since)
+        .where(Transaction.created_at >= since, Transaction.deleted_at.is_(None))
     )
     if current_user.role != "admin":
         txn_query = txn_query.where(Transaction.user_id == current_user.id)
@@ -345,7 +347,7 @@ async def income_monthly_trend(
             extract("month", SellRecord.sold_at).label("mo"),
             func.sum(SellRecord.total_amount).label("total"),
         )
-        .where(SellRecord.sold_at >= since)
+        .where(SellRecord.sold_at >= since, SellRecord.deleted_at.is_(None))
     )
     if current_user.role != "admin":
         sell_query = sell_query.where(SellRecord.user_id == current_user.id)

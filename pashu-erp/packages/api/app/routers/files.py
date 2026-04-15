@@ -8,14 +8,18 @@ from fastapi.responses import Response
 
 from app.middleware.auth import get_current_user
 from app.models.user import User
+from app.schemas.files import FileListResponse, FileUploadResponse
 from app.services import storage_service
 
 logger = logging.getLogger(__name__)
 
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
+
 router = APIRouter(prefix="/v1/files", tags=["Files"])
 
 
-@router.post("")
+@router.post("", response_model=FileUploadResponse)
 async def upload_file(
     file: UploadFile = File(...),
     category: str = Form(...),
@@ -24,8 +28,20 @@ async def upload_file(
     current_user: User = Depends(get_current_user),
 ):
     """Upload a file to the storage backend."""
+    if file.content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type '{file.content_type}' not allowed. "
+                   f"Accepted: {', '.join(sorted(ALLOWED_CONTENT_TYPES))}",
+        )
     try:
         file_bytes = await file.read()
+        if len(file_bytes) > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large ({len(file_bytes)} bytes). "
+                       f"Maximum size: {MAX_FILE_SIZE} bytes (10MB)",
+            )
         return await storage_service.upload_file(
             file_bytes=file_bytes,
             filename=file.filename or "upload",
@@ -57,7 +73,7 @@ async def get_file(
         raise HTTPException(status_code=502, detail="Storage service unavailable")
 
 
-@router.get("")
+@router.get("", response_model=FileListResponse)
 async def list_files(
     entity_type: str = Query(None, description="Filter by entity type"),
     entity_id: str = Query(None, description="Filter by entity ID"),

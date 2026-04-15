@@ -1,9 +1,10 @@
 """Bharat Pashudhan (INAPH) registry mock router."""
 
+import calendar
 import hashlib
 import json
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from random import Random
 
@@ -112,6 +113,7 @@ def _generate_animal(pashu_id: str) -> dict:
     policy_num = rng.randint(10000, 99999)
     valid_year = rng.choice([2026, 2027])
     valid_month = rng.randint(1, 12)
+    last_day = calendar.monthrange(valid_year, valid_month)[1]
 
     return {
         "pashu_aadhaar_id": pashu_id,
@@ -136,10 +138,10 @@ def _generate_animal(pashu_id: str) -> dict:
         "insurance": {
             "policy_number": f"{scheme}-KA-{valid_year}-{policy_num}",
             "scheme": scheme,
-            "valid_until": f"{valid_year}-{valid_month:02d}-30",
+            "valid_until": f"{valid_year}-{valid_month:02d}-{last_day:02d}",
         },
         "source": "Bharat Pashudhan National Database",
-        "lookup_timestamp": datetime.utcnow().isoformat() + "Z",
+        "lookup_timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 
 
@@ -167,7 +169,7 @@ async def get_animal(pashu_aadhaar_id: str):
     """Look up an animal by Pashu Aadhaar ID from the Bharat Pashudhan registry."""
     if not _PASHU_AADHAAR_RE.match(pashu_aadhaar_id):
         raise HTTPException(
-            status_code=404,
+            status_code=400,
             detail=f"Invalid Pashu Aadhaar format: must be 12 characters starting with 'IN'. Got: {pashu_aadhaar_id}",
         )
     return _generate_animal(pashu_aadhaar_id)
@@ -179,6 +181,6 @@ async def sync_animal(body: SyncRequest):
     return SyncResponse(
         status="synced",
         animal_id=body.animal_id,
-        last_sync=datetime.utcnow().isoformat() + "Z",
+        last_sync=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         registry_version="2.1",
     )

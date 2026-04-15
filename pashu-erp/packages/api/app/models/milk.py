@@ -1,7 +1,17 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import String, Boolean, DateTime, Enum, ForeignKey, Numeric, text, func
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+    String,
+    UniqueConstraint,
+    func,
+    text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,6 +25,12 @@ class MilkSession(str, enum.Enum):
 
 class YieldLog(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "yield_logs"
+    __table_args__ = (
+        UniqueConstraint(
+            "animal_id", "session", "recorded_at",
+            name="uq_yield_animal_session_date",
+        ),
+    )
 
     id: Mapped[str] = mapped_column(
         UUID(as_uuid=True),
@@ -29,12 +45,20 @@ class YieldLog(AuditMixin, SoftDeleteMixin, Base):
     )
     quantity_liters: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     session: Mapped[str] = mapped_column(Enum(MilkSession, name="milk_session"), nullable=False)
-    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    recorded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(),
+    )
     notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
-    # Relationships
-    animal = relationship("Animal", back_populates="yield_logs", foreign_keys=[animal_id], lazy="selectin")
-    user = relationship("User", back_populates="yield_logs", foreign_keys=[user_id], lazy="selectin")
+    # Relationships — lazy="noload" to prevent automatic eager loading
+    animal = relationship(
+        "Animal", back_populates="yield_logs",
+        foreign_keys=[animal_id], lazy="noload",
+    )
+    user = relationship(
+        "User", back_populates="yield_logs",
+        foreign_keys=[user_id], lazy="noload",
+    )
 
 
 class MilkCollectionCenter(AuditMixin, SoftDeleteMixin, Base):
@@ -58,7 +82,8 @@ class MilkCollectionCenter(AuditMixin, SoftDeleteMixin, Base):
     # Relationships
     manager = relationship("User", foreign_keys=[manager_user_id], lazy="noload")
     collection_records = relationship(
-        "MilkCollectionRecord", back_populates="center", foreign_keys="MilkCollectionRecord.center_id", lazy="noload"
+        "MilkCollectionRecord", back_populates="center",
+        foreign_keys="MilkCollectionRecord.center_id", lazy="noload",
     )
 
 
@@ -81,9 +106,17 @@ class MilkCollectionRecord(AuditMixin, SoftDeleteMixin, Base):
     snf_pct: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
     rate_per_liter: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     total_amount: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
-    shift: Mapped[str] = mapped_column(Enum(MilkSession, name="milk_session", create_type=False), nullable=False)
-    collected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    shift: Mapped[str] = mapped_column(
+        Enum(MilkSession, name="milk_session", create_type=False),
+        nullable=False,
+    )
+    collected_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(),
+    )
 
-    # Relationships
-    center = relationship("MilkCollectionCenter", back_populates="collection_records", foreign_keys=[center_id], lazy="selectin")
-    farmer = relationship("User", foreign_keys=[farmer_user_id], lazy="selectin")
+    # Relationships — lazy="noload" to prevent automatic eager loading
+    center = relationship(
+        "MilkCollectionCenter", back_populates="collection_records",
+        foreign_keys=[center_id], lazy="noload",
+    )
+    farmer = relationship("User", foreign_keys=[farmer_user_id], lazy="noload")

@@ -12,7 +12,7 @@ import math
 import struct
 import uuid
 import wave
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Query
@@ -206,7 +206,7 @@ async def get_alerts(
     today = date.today()
     season = _get_season(today.month)
     district_key = district.lower().strip()
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     alerts = []
 
     if season == "summer":

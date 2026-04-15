@@ -80,7 +80,7 @@ export default function SchemesPage() {
     return result;
   }, [schemes, search, sortBy, sortDir]);
 
-  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress /></Box>;
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }} role="status" aria-label="Loading"><CircularProgress /></Box>;
   if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
 
   return (
@@ -99,6 +99,7 @@ export default function SchemesPage() {
             placeholder="Search by name or code..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search schemes"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -110,7 +111,7 @@ export default function SchemesPage() {
           />
         </Box>
         <TableContainer>
-          <Table>
+          <Table aria-label="Schemes table">
             <TableHead>
               <TableRow>
                 <TableCell>

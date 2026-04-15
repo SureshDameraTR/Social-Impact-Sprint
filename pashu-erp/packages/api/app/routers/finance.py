@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
-from app.models.finance import Transaction, TransactionType
+from app.models.finance import Transaction
 from app.models.user import User
 
 router = APIRouter(prefix="/v1/finance", tags=["Finance"])
@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 class TransactionCreate(BaseModel):
     type: str = Field(..., description="income or expense")
-    amount: float = Field(..., gt=0, le=99_999_999.99)
+    amount: Decimal = Field(..., gt=0, le=99_999_999.99, max_digits=10, decimal_places=2)
     category: str = Field(..., max_length=50)
     description: str | None = Field(None, max_length=500)
     reference_id: UUID | None = None
@@ -34,7 +34,7 @@ class TransactionRead(BaseModel):
     id: UUID
     user_id: UUID
     type: str
-    amount: float
+    amount: Decimal = Field(..., max_digits=10, decimal_places=2)
     category: str
     description: str | None = None
     reference_id: UUID | None = None
@@ -58,7 +58,7 @@ async def record_transaction(
     txn = Transaction(
         user_id=current_user.id,
         type=body.type,
-        amount=Decimal(str(body.amount)),
+        amount=body.amount,
         category=body.category,
         description=body.description,
         reference_id=str(body.reference_id) if body.reference_id else None,
@@ -84,28 +84,45 @@ async def financial_summary(
     else:
         since = now - timedelta(days=30)
 
+    # SQL aggregation — avoid loading all rows into Python
     result = await db.execute(
-        select(Transaction)
-        .where(Transaction.user_id == current_user.id, Transaction.created_at >= since)
+        select(
+            Transaction.type,
+            Transaction.category,
+            func.sum(Transaction.amount).label("total"),
+            func.count().label("cnt"),
+        )
+        .where(
+            Transaction.user_id == current_user.id,
+            Transaction.created_at >= since,
+            Transaction.deleted_at.is_(None),
+        )
+        .group_by(Transaction.type, Transaction.category)
     )
-    txns = result.scalars().all()
+    rows = result.all()
 
-    total_income = sum((Decimal(str(t.amount)) for t in txns if t.type == "income"), Decimal("0"))
-    total_expense = sum((Decimal(str(t.amount)) for t in txns if t.type == "expense"), Decimal("0"))
-
-    # Category breakdown using Decimal
+    total_income = Decimal("0")
+    total_expense = Decimal("0")
     income_by_category: dict[str, float] = {}
     expense_by_category: dict[str, float] = {}
-    for t in txns:
-        bucket = income_by_category if t.type == "income" else expense_by_category
-        bucket[t.category] = bucket.get(t.category, 0) + float(Decimal(str(t.amount)))
+    transaction_count = 0
+
+    for r in rows:
+        amt = Decimal(str(r.total))
+        transaction_count += r.cnt
+        if r.type == "income":
+            total_income += amt
+            income_by_category[r.category] = float(amt.quantize(Decimal("0.01")))
+        else:
+            total_expense += amt
+            expense_by_category[r.category] = float(amt.quantize(Decimal("0.01")))
 
     return {
         "period": period,
         "total_income": float(total_income.quantize(Decimal("0.01"))),
         "total_expense": float(total_expense.quantize(Decimal("0.01"))),
         "net": float((total_income - total_expense).quantize(Decimal("0.01"))),
-        "transaction_count": len(txns),
+        "transaction_count": transaction_count,
         "income_by_category": income_by_category,
         "expense_by_category": expense_by_category,
     }

@@ -1,22 +1,21 @@
 """Feed ingredient and ration calculation endpoints."""
 
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.feed import FeedIngredient
 from app.models.user import User
-from app.schemas.feed import FeedIngredientRead, RationRequest, RationResult
+from app.schemas.feed import RationRequest, RationResult
 from app.services.feed_calculator import calculate_ration
 
 router = APIRouter(prefix="/v1/feed", tags=["Feed & Nutrition"])
 
 
-@router.get("/ingredients", response_model=list[FeedIngredientRead])
+@router.get("/ingredients")
 async def list_ingredients(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
@@ -24,13 +23,19 @@ async def list_ingredients(
     db: AsyncSession = Depends(get_db),
 ):
     """List all feed ingredients."""
+    count_result = await db.execute(
+        select(func.count()).select_from(FeedIngredient).where(FeedIngredient.deleted_at.is_(None))
+    )
+    total = count_result.scalar() or 0
+
     result = await db.execute(
         select(FeedIngredient)
+        .where(FeedIngredient.deleted_at.is_(None))
         .order_by(FeedIngredient.category, FeedIngredient.name_en)
         .offset(skip)
         .limit(limit)
     )
-    return result.scalars().all()
+    return {"data": result.scalars().all(), "total": total}
 
 
 @router.post("/calculate-ration", response_model=RationResult)

@@ -1,7 +1,18 @@
 import enum
 from datetime import date, datetime
 
-from sqlalchemy import String, Integer, Boolean, Date, DateTime, Enum, ForeignKey, Numeric, text, func
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    func,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -51,8 +62,20 @@ class Animal(AuditMixin, SoftDeleteMixin, Base):
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationships
-    owner = relationship("User", back_populates="animals", foreign_keys=[user_id], lazy="selectin")
-    health_events = relationship("HealthEvent", back_populates="animal", foreign_keys="HealthEvent.animal_id", lazy="selectin")
-    vaccinations = relationship("Vaccination", back_populates="animal", foreign_keys="Vaccination.animal_id", lazy="selectin")
-    yield_logs = relationship("YieldLog", back_populates="animal", foreign_keys="YieldLog.animal_id", lazy="selectin")
+    # Relationships — lazy="noload" to prevent automatic eager loading;
+    # use selectinload() explicitly in queries that need related data.
+    owner = relationship(
+        "User", back_populates="animals", foreign_keys=[user_id], lazy="noload",
+    )
+    health_events = relationship(
+        "HealthEvent", back_populates="animal",
+        foreign_keys="HealthEvent.animal_id", lazy="noload",
+    )
+    vaccinations = relationship(
+        "Vaccination", back_populates="animal",
+        foreign_keys="Vaccination.animal_id", lazy="noload",
+    )
+    yield_logs = relationship(
+        "YieldLog", back_populates="animal",
+        foreign_keys="YieldLog.animal_id", lazy="noload",
+    )

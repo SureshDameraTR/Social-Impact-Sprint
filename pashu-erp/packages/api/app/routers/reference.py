@@ -3,43 +3,25 @@
 import time
 from uuid import UUID
 
-from decimal import Decimal
-
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
-from sqlalchemy import select, update
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.middleware.auth import get_current_user, require_admin
 from app.models.reference import InsurancePremium, MarketRate, MedicineCatalog
 from app.models.user import User
+from app.schemas.reference import (
+    InsurancePremiumListResponse,
+    InsurancePremiumRead,
+    InsurancePremiumUpdate,
+    MarketRateListResponse,
+    MarketRateRead,
+    MarketRateUpdate,
+    MedicineCatalogListResponse,
+)
 
 router = APIRouter(prefix="/v1/reference", tags=["Reference Data"])
-
-
-# ---------------------------------------------------------------------------
-# Pydantic schemas for PUT endpoints
-# ---------------------------------------------------------------------------
-
-
-class MarketRateUpdate(BaseModel):
-    product: str | None = Field(None, max_length=100)
-    unit: str | None = Field(None, max_length=20)
-    min_price: Decimal | None = Field(None, ge=0)
-    max_price: Decimal | None = Field(None, ge=0)
-    avg_price: Decimal | None = Field(None, ge=0)
-    district: str | None = Field(None, max_length=100)
-    label: str | None = Field(None, max_length=200)
-    source: str | None = Field(None, max_length=200)
-
-
-class InsurancePremiumUpdate(BaseModel):
-    species: str | None = Field(None, max_length=50)
-    breed_type: str | None = Field(None, max_length=50)
-    premium_pct: Decimal | None = Field(None, ge=0, le=100)
-    animal_value_inr: int | None = Field(None, ge=0)
-    scheme_name: str | None = Field(None, max_length=200)
 
 
 # ---------------------------------------------------------------------------
@@ -73,7 +55,7 @@ def _invalidate_prefix(prefix: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-@router.get("/market-rates")
+@router.get("/market-rates", response_model=MarketRateListResponse)
 async def list_market_rates(
     district: str | None = Query(None, description="Filter by district"),
     product: str | None = Query(None, description="Filter by product key"),
@@ -102,7 +84,7 @@ async def list_market_rates(
     return {"data": data}
 
 
-@router.put("/market-rates/{rate_id}")
+@router.put("/market-rates/{rate_id}", response_model=MarketRateRead)
 async def update_market_rate(
     rate_id: UUID,
     body: MarketRateUpdate,
@@ -134,7 +116,7 @@ async def update_market_rate(
 # ---------------------------------------------------------------------------
 
 
-@router.get("/insurance-premiums")
+@router.get("/insurance-premiums", response_model=InsurancePremiumListResponse)
 async def list_insurance_premiums(
     species: str | None = Query(None, description="Filter by species"),
     breed_type: str | None = Query(None, description="Filter by breed type"),
@@ -163,7 +145,7 @@ async def list_insurance_premiums(
     return {"data": data}
 
 
-@router.put("/insurance-premiums/{premium_id}")
+@router.put("/insurance-premiums/{premium_id}", response_model=InsurancePremiumRead)
 async def update_insurance_premium(
     premium_id: UUID,
     body: InsurancePremiumUpdate,
@@ -195,7 +177,7 @@ async def update_insurance_premium(
 # ---------------------------------------------------------------------------
 
 
-@router.get("/medicines")
+@router.get("/medicines", response_model=MedicineCatalogListResponse)
 async def list_medicines(
     species: str | None = Query(None, description="Filter by applicable species"),
     category: str | None = Query(None, description="Filter by category"),

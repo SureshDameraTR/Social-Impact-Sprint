@@ -1,10 +1,10 @@
 import re
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
-
 
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 
@@ -33,8 +33,8 @@ class InsurancePolicyRead(BaseModel):
     animal_id: UUID
     provider: str
     policy_number: str
-    premium_amount: float
-    coverage_amount: float
+    premium_amount: Decimal = Field(..., max_digits=10, decimal_places=2)
+    coverage_amount: Decimal = Field(..., max_digits=10, decimal_places=2)
     valid_from: datetime
     valid_to: datetime
     status: PolicyStatus
@@ -71,7 +71,7 @@ class PremiumEstimate(BaseModel):
     animal_id: UUID
     species: str
     breed: str
-    estimated_premium: float
-    coverage_amount: float
+    estimated_premium: Decimal = Field(..., max_digits=10, decimal_places=2)
+    coverage_amount: Decimal = Field(..., max_digits=10, decimal_places=2)
     provider: str
     notes: str

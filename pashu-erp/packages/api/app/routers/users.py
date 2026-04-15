@@ -8,11 +8,12 @@ from app.database import get_db
 from app.middleware.auth import get_current_user, require_admin
 from app.models.animal import Animal
 from app.models.user import User
+from app.schemas.users import FarmerListResponse, UserProfile
 
 router = APIRouter(prefix="/v1", tags=["Users"])
 
 
-@router.get("/farmers")
+@router.get("/farmers", response_model=FarmerListResponse)
 async def list_farmers(
     limit: int = Query(50, le=200),
     offset: int = Query(0, ge=0),
@@ -20,7 +21,7 @@ async def list_farmers(
     db: AsyncSession = Depends(get_db),
 ):
     """List all farmers with animal counts (for admin dashboard)."""
-    base = select(User).where(User.role == "farmer")
+    base = select(User).where(User.role == "farmer", User.deleted_at.is_(None))
     count_result = await db.execute(select(func.count()).select_from(base.subquery()))
     total = count_result.scalar() or 0
 
@@ -32,6 +33,7 @@ async def list_farmers(
     # Get animal counts in one query
     animal_counts_result = await db.execute(
         select(Animal.user_id, func.count().label("count"))
+        .where(Animal.deleted_at.is_(None))
         .group_by(Animal.user_id)
     )
     animal_counts = {str(row.user_id): row.count for row in animal_counts_result.all()}
@@ -52,14 +54,14 @@ async def list_farmers(
     return {"data": data, "total": total, "limit": limit, "offset": offset}
 
 
-@router.get("/users/profile")
+@router.get("/users/profile", response_model=UserProfile)
 async def get_profile(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get the authenticated user's profile with summary stats."""
     animal_count_result = await db.execute(
-        select(func.count()).select_from(Animal).where(Animal.user_id == current_user.id)
+        select(func.count()).select_from(Animal).where(Animal.user_id == current_user.id, Animal.deleted_at.is_(None))
     )
     animal_count = animal_count_result.scalar() or 0
 

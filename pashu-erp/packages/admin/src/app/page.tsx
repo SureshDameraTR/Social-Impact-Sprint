@@ -24,18 +24,19 @@ interface MilkChartPoint {
   farmers: number;
 }
 
+const {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} = require("recharts") as typeof import("recharts");
+
 /* Lazy-loaded chart component to reduce initial bundle */
 function DashboardChart({ data }: { data: MilkChartPoint[] }) {
-  const {
-    AreaChart,
-    Area,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    Legend,
-  } = require("recharts");
 
   return (
     <ResponsiveContainer width="100%" height={320}>

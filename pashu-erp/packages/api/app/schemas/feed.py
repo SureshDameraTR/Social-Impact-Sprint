@@ -1,3 +1,4 @@
+from decimal import Decimal
 from enum import Enum
 from uuid import UUID
 
@@ -23,9 +24,9 @@ class FeedIngredientRead(BaseModel):
     name_en: str
     name_kn: str | None = None
     category: FeedCategory
-    protein_pct: float
+    protein_pct: Decimal = Field(..., max_digits=5, decimal_places=2)
     energy_kcal: float
-    cost_per_kg: float
+    cost_per_kg: Decimal = Field(..., max_digits=10, decimal_places=2)
     availability_season: str | None = None
     locally_available: bool
 
@@ -34,19 +35,19 @@ class FeedIngredientRead(BaseModel):
 
 class RationIngredient(BaseModel):
     name: str
-    daily_qty_kg: float
+    daily_qty_kg: Decimal = Field(..., max_digits=10, decimal_places=2)
 
 
 class RationRequest(BaseModel):
     species: str
     breed: str | None = None
-    weight_kg: float = Field(..., gt=0)
+    weight_kg: Decimal = Field(..., gt=0, max_digits=10, decimal_places=2)
     lactation_stage: LactationStage | None = None
     available_ingredients: list[UUID] = Field(default_factory=list)
 
 
 class RationResult(BaseModel):
     ingredients: list[RationIngredient]
-    total_cost_per_day: float
+    total_cost_per_day: Decimal = Field(..., max_digits=10, decimal_places=2)
     protein_balance: str
     energy_balance: str

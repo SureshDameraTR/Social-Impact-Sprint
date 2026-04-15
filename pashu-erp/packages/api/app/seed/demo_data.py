@@ -15,7 +15,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import settings
 from app.models import (
@@ -51,7 +51,12 @@ from app.models.insurance import ClaimStatus, PolicyStatus
 from app.models.marketplace import ProductType
 from app.models.milk import MilkSession
 from app.models.shg import SHGGrading
-from app.models.vet import ConsultationChannel, ConsultationPriority, ConsultationStatus, VetConsultation
+from app.models.vet import (
+    ConsultationChannel,
+    ConsultationPriority,
+    ConsultationStatus,
+    VetConsultation,
+)
 from app.models.weather import AlertSeverity as WeatherAlertSeverity
 
 # Fixed seed for reproducibility across runs

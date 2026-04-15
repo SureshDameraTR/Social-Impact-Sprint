@@ -54,11 +54,10 @@ async def get_nearby_alerts(
     lat: float = Query(..., ge=-90, le=90),
     lon: float = Query(..., ge=-180, le=180),
     radius: float = Query(10.0, gt=0, le=100, description="Search radius in km"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get disease alerts near a location."""
-    now = datetime.now(timezone.utc)
-
     # Bounding-box pre-filter in SQL (1 degree ~ 111 km) to avoid full table scan
     delta = radius / 111.0
     result = await db.execute(
@@ -66,6 +65,7 @@ async def get_nearby_alerts(
             CommunityAlert.expires_at > func.now(),
             CommunityAlert.lat.between(lat - delta, lat + delta),
             CommunityAlert.lon.between(lon - delta, lon + delta),
+            CommunityAlert.deleted_at.is_(None),
         )
     )
     candidates = result.scalars().all()
@@ -93,7 +93,7 @@ async def verify_alert(
         raise HTTPException(status_code=403, detail="Only admins and vets can verify alerts")
 
     result = await db.execute(
-        select(CommunityAlert).where(CommunityAlert.id == alert_id)
+        select(CommunityAlert).where(CommunityAlert.id == alert_id, CommunityAlert.deleted_at.is_(None))
     )
     alert = result.scalar_one_or_none()
     if alert is None:

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Text, Card, Button, Divider, ActivityIndicator } from 'react-native-paper';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -150,12 +150,26 @@ export default function AnimalDetailScreen() {
         <Button
           mode="outlined"
           icon="delete"
-          onPress={async () => {
-            try {
-              await api.delete(`/animals/${id}`);
-            } catch (e) {
-              setError(e instanceof Error ? e.message : 'An error occurred');
-            }
+          onPress={() => {
+            Alert.alert(
+              t('animal.deleteTitle') ?? 'Delete Animal',
+              t('animal.deleteConfirm') ?? 'Are you sure? This cannot be undone.',
+              [
+                { text: t('common.cancel') ?? 'Cancel', style: 'cancel' },
+                {
+                  text: t('common.delete') ?? 'Delete',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await api.delete(`/animals/${id}`);
+                      router.back();
+                    } catch (e) {
+                      setError(e instanceof Error ? e.message : 'An error occurred');
+                    }
+                  },
+                },
+              ]
+            );
           }}
           style={styles.actionButton}
           textColor={statusColors.urgent}

@@ -1,6 +1,6 @@
 """Karnataka Milk Federation FAT/SNF slab-based rate calculator."""
 
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 # KMF pricing slabs (approximate rates as of 2025-26)
 # Rate = Base rate + FAT premium + SNF premium

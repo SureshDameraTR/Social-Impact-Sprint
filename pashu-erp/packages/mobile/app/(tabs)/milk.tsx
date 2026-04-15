@@ -23,8 +23,8 @@ const MAX_QUANTITY = 999;
 function validateQuantity(value: string): string | null {
   const num = parseFloat(value);
   if (isNaN(num) || num < 0) return 'Enter a valid quantity';
-  if (num < MIN_QUANTITY) return `Minimum ${MIN_QUANTITY}L`;
-  if (num > MAX_QUANTITY) return `Maximum ${MAX_QUANTITY}L`;
+  if (num < MIN_QUANTITY) return `Minimum ${MIN_QUANTITY} L`;
+  if (num > MAX_QUANTITY) return `Maximum ${MAX_QUANTITY} L`;
   return null;
 }
 
@@ -89,8 +89,8 @@ export default function MilkScreen() {
       // Refresh today total
       api.get<{ total_liters: number }>('/milk/today').then(res => setTodayTotal(res.total_liters)).catch(() => {});
     } catch (e) {
-      console.error('Milk entry failed:', e);
-      showError('Failed to record milk entry. Please try again.');
+      if (__DEV__) console.error('Milk entry failed:', e);
+      showError(t('milk.recordFailed') ?? 'Failed to record milk entry. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

@@ -1,3 +1,5 @@
 packages:
   - "packages/admin"
   - "packages/mobile"
+  - "packages/collection"
+  - "packages/vet"

@@ -160,7 +160,7 @@ export default function AdvisoryScreen() {
                   </Text>
                 </TouchableOpacity>
                 {advisory.isScheme && (
-                  <Button mode="contained" compact style={styles.applyButton}>
+                  <Button mode="contained" compact style={styles.applyButton} accessibilityLabel={`Apply now for ${lang === 'kn' ? advisory.titleKn : advisory.titleEn}`}>
                     {t('advisory.applyNow')}
                   </Button>
                 )}

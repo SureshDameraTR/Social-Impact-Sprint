@@ -1,0 +1,19 @@
+{
+  "name": "@pashuraksha/monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "pnpm -r test",
+    "test:api": "cd packages/api && uv run pytest tests/ -v",
+    "test:admin": "cd packages/admin && npx jest",
+    "test:e2e": "cd e2e && npx playwright test",
+    "test:load": "k6 run e2e/load/baseline.js",
+    "lint": "cd packages/api && uv run ruff check app/",
+    "build": "pnpm -r build",
+    "seed": "cd packages/api && uv run python -m app.seed.demo_data",
+    "validate:agents": "python3 scripts/validate_agents.py --json"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
+  }
+}

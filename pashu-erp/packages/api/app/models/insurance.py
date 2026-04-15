@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import String, Text, DateTime, Enum, ForeignKey, Numeric, text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -43,9 +43,12 @@ class InsurancePolicy(AuditMixin, SoftDeleteMixin, Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationships
-    animal = relationship("Animal", foreign_keys=[animal_id], lazy="selectin")
-    claims = relationship("InsuranceClaim", back_populates="policy", foreign_keys="InsuranceClaim.policy_id", lazy="selectin")
+    # Relationships — lazy="noload" to prevent automatic eager loading
+    animal = relationship("Animal", foreign_keys=[animal_id], lazy="noload")
+    claims = relationship(
+        "InsuranceClaim", back_populates="policy",
+        foreign_keys="InsuranceClaim.policy_id", lazy="noload",
+    )
 
 
 class InsuranceClaim(AuditMixin, SoftDeleteMixin, Base):
@@ -68,4 +71,7 @@ class InsuranceClaim(AuditMixin, SoftDeleteMixin, Base):
     filed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    policy = relationship("InsurancePolicy", back_populates="claims", foreign_keys=[policy_id], lazy="selectin")
+    policy = relationship(
+        "InsurancePolicy", back_populates="claims",
+        foreign_keys=[policy_id], lazy="noload",
+    )

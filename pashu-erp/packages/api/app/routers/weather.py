@@ -1,8 +1,10 @@
 """Weather forecast and alert endpoints."""
 
 import httpx
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.middleware.auth import get_current_user
+from app.models.user import User
 from app.services.weather_service import (
     get_alerts,
     get_forecast,
@@ -16,6 +18,7 @@ router = APIRouter(prefix="/v1/weather", tags=["Weather"])
 async def get_weather_forecast(
     district: str,
     days: int = Query(5, ge=1, le=14, description="Number of forecast days"),
+    current_user: User = Depends(get_current_user),
 ):
     """Get weather forecast for a district."""
     try:
@@ -34,7 +37,7 @@ async def get_weather_forecast(
 
 
 @router.get("/alerts/{district}")
-async def get_weather_alerts(district: str):
+async def get_weather_alerts(district: str, current_user: User = Depends(get_current_user)):
     """Get active weather alerts for a district."""
     try:
         alerts = await get_alerts(district)
@@ -51,7 +54,7 @@ async def get_weather_alerts(district: str):
 
 
 @router.get("/tts/{district}")
-async def get_weather_tts(district: str, lang: str = Query("kn")):
+async def get_weather_tts(district: str, lang: str = Query("kn"), current_user: User = Depends(get_current_user)):
     """Get text-to-speech weather summary for a district."""
     try:
         result = await get_tts(district, lang)

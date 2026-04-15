@@ -107,7 +107,7 @@ export default function FarmersPage() {
     return sorted;
   }, [filtered, sortBy, sortDir]);
 
-  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress /></Box>;
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }} role="status" aria-label="Loading"><CircularProgress /></Box>;
   if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
 
   return (
@@ -126,6 +126,7 @@ export default function FarmersPage() {
             placeholder="Search by name or phone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search farmers"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -137,7 +138,7 @@ export default function FarmersPage() {
           />
         </Box>
         <TableContainer>
-          <Table>
+          <Table aria-label="Farmers table">
             <TableHead>
               <TableRow>
                 <TableCell>

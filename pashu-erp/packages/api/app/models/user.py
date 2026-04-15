@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import String, DateTime, Enum, text, func
+from sqlalchemy import DateTime, Enum, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -46,7 +46,19 @@ class User(AuditMixin, SoftDeleteMixin, Base):
     )
 
     # Relationships
-    animals = relationship("Animal", back_populates="owner", foreign_keys="Animal.user_id", lazy="selectin")
-    yield_logs = relationship("YieldLog", back_populates="user", foreign_keys="YieldLog.user_id", lazy="noload")
-    transactions = relationship("Transaction", back_populates="user", foreign_keys="Transaction.user_id", lazy="noload")
-    sell_records = relationship("SellRecord", back_populates="user", foreign_keys="SellRecord.user_id", lazy="noload")
+    animals = relationship(
+        "Animal", back_populates="owner",
+        foreign_keys="Animal.user_id", lazy="noload",
+    )
+    yield_logs = relationship(
+        "YieldLog", back_populates="user",
+        foreign_keys="YieldLog.user_id", lazy="noload",
+    )
+    transactions = relationship(
+        "Transaction", back_populates="user",
+        foreign_keys="Transaction.user_id", lazy="noload",
+    )
+    sell_records = relationship(
+        "SellRecord", back_populates="user",
+        foreign_keys="SellRecord.user_id", lazy="noload",
+    )

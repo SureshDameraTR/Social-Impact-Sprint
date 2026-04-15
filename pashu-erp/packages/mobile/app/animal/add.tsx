@@ -46,7 +46,7 @@ export default function AddAnimalScreen() {
       setSnackVisible(true);
       setTimeout(() => router.back(), 1500);
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : 'Failed to save');
+      setSaveError(e instanceof Error ? e.message : (t('animal.saveFailed') ?? 'Failed to save'));
     } finally {
       setIsSubmitting(false);
     }
@@ -72,6 +72,9 @@ export default function AddAnimalScreen() {
               style={styles.speciesButton}
               contentStyle={styles.speciesButtonContent}
               labelStyle={styles.speciesButtonLabel}
+              accessibilityLabel={`${t(`animals.${opt.value}`)} species`}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: species === opt.value }}
             >
               {opt.emoji} {t(`animals.${opt.value}`)}
             </Button>

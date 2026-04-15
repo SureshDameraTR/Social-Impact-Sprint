@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Button, Text, TextInput, Menu } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import * as Storage from '../../src/config/storage';
+import { api } from '../../src/config/api';
 import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../../src/config/theme';
 
 const KARNATAKA_DISTRICTS = [
@@ -20,6 +21,7 @@ export default function ProfileScreen() {
   const [village, setVillage] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
   const [phone, setPhone] = useState('');
+  const [saving, setSaving] = useState(false);
 
   React.useEffect(() => {
     Storage.getItemAsync('user_phone').then((val) => {
@@ -99,11 +101,22 @@ export default function ProfileScreen() {
 
       <Button
         mode="contained"
-        onPress={() => router.push('/onboarding/first-animal')}
+        onPress={async () => {
+          setSaving(true);
+          try {
+            await api.post('/onboarding/profile', { name, district, village });
+            router.push('/onboarding/first-animal');
+          } catch (e) {
+            Alert.alert(t('common.error'), t('onboarding.saveFailed') ?? 'Failed to save profile. Please try again.');
+          } finally {
+            setSaving(false);
+          }
+        }}
         style={styles.saveButton}
         contentStyle={styles.saveContent}
         labelStyle={styles.saveLabel}
-        disabled={!name || !district}
+        disabled={!name || !district || saving}
+        loading={saving}
       >
         {t('onboarding.saveAndContinue')}
       </Button>

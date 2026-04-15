@@ -1,7 +1,7 @@
 import enum
 from datetime import date, datetime
 
-from sqlalchemy import String, Date, DateTime, Enum, ForeignKey, Numeric, Text, text, func
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Numeric, String, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -41,8 +41,11 @@ class HealthEvent(AuditMixin, SoftDeleteMixin, Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
-    # Relationships
-    animal = relationship("Animal", back_populates="health_events", foreign_keys=[animal_id], lazy="selectin")
+    # Relationships — lazy="noload" to prevent automatic eager loading
+    animal = relationship(
+        "Animal", back_populates="health_events",
+        foreign_keys=[animal_id], lazy="noload",
+    )
     recorder = relationship("User", foreign_keys=[recorded_by], lazy="noload")
 
 
@@ -64,8 +67,13 @@ class Vaccination(AuditMixin, SoftDeleteMixin, Base):
     recorded_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(),
+    )
 
-    # Relationships
-    animal = relationship("Animal", back_populates="vaccinations", foreign_keys=[animal_id], lazy="selectin")
+    # Relationships — lazy="noload" to prevent automatic eager loading
+    animal = relationship(
+        "Animal", back_populates="vaccinations",
+        foreign_keys=[animal_id], lazy="noload",
+    )
     recorder = relationship("User", foreign_keys=[recorded_by], lazy="noload")

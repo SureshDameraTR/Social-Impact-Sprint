@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -57,7 +57,7 @@ class SchemeRead(BaseModel):
 # Routes
 # ---------------------------------------------------------------------------
 
-@router.get("", response_model=list[SchemeRead])
+@router.get("")
 async def list_schemes(
     ministry: str | None = Query(None, description="Filter by ministry name"),
     skip: int = Query(0, ge=0),
@@ -66,12 +66,19 @@ async def list_schemes(
     db: AsyncSession = Depends(get_db),
 ):
     """List all government schemes."""
-    stmt = select(GovtScheme)
+    count_stmt = select(func.count()).select_from(GovtScheme).where(GovtScheme.deleted_at.is_(None))
+    stmt = select(GovtScheme).where(GovtScheme.deleted_at.is_(None))
     if ministry:
-        stmt = stmt.where(GovtScheme.ministry.ilike(f"%{ministry}%"))
+        ministry_filter = GovtScheme.ministry.ilike(f"%{ministry}%")
+        count_stmt = count_stmt.where(ministry_filter)
+        stmt = stmt.where(ministry_filter)
     stmt = stmt.order_by(GovtScheme.name).offset(skip).limit(limit)
+
+    count_result = await db.execute(count_stmt)
+    total = count_result.scalar() or 0
+
     result = await db.execute(stmt)
-    return result.scalars().all()
+    return {"data": result.scalars().all(), "total": total}
 
 
 @router.get("/{scheme_id}", response_model=SchemeRead)
@@ -81,7 +88,7 @@ async def get_scheme(
     db: AsyncSession = Depends(get_db),
 ):
     """Get scheme details by ID."""
-    result = await db.execute(select(GovtScheme).where(GovtScheme.id == scheme_id))
+    result = await db.execute(select(GovtScheme).where(GovtScheme.id == scheme_id, GovtScheme.deleted_at.is_(None)))
     scheme = result.scalar_one_or_none()
     if scheme is None:
         raise HTTPException(status_code=404, detail="Scheme not found")

@@ -43,7 +43,7 @@ async def log_health_event(
 ):
     """Log a health event for an animal and run the disease triage engine."""
     # Verify animal exists and belongs to user
-    result = await db.execute(select(Animal).where(Animal.id == body.animal_id))
+    result = await db.execute(select(Animal).where(Animal.id == body.animal_id, Animal.deleted_at.is_(None)))
     animal = result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
@@ -114,7 +114,7 @@ async def get_health_history(
 ):
     """Get health event history for an animal with pagination."""
     # Verify ownership
-    animal_result = await db.execute(select(Animal).where(Animal.id == animal_id))
+    animal_result = await db.execute(select(Animal).where(Animal.id == animal_id, Animal.deleted_at.is_(None)))
     animal = animal_result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
@@ -123,13 +123,13 @@ async def get_health_history(
 
     # Count
     count_result = await db.execute(
-        select(func.count()).select_from(HealthEvent).where(HealthEvent.animal_id == animal_id)
+        select(func.count()).select_from(HealthEvent).where(HealthEvent.animal_id == animal_id, HealthEvent.deleted_at.is_(None))
     )
     total = count_result.scalar() or 0
 
     result = await db.execute(
         select(HealthEvent)
-        .where(HealthEvent.animal_id == animal_id)
+        .where(HealthEvent.animal_id == animal_id, HealthEvent.deleted_at.is_(None))
         .order_by(HealthEvent.event_date.desc())
         .offset(offset)
         .limit(limit)
@@ -148,7 +148,7 @@ async def list_health_events(
 ):
     """List recent health events (admin: all, farmer: own animals only)."""
     week_ago = datetime.now(timezone.utc) - timedelta(days=ALERT_WINDOW_DAYS)
-    base = select(HealthEvent).where(HealthEvent.event_date >= week_ago)
+    base = select(HealthEvent).where(HealthEvent.event_date >= week_ago, HealthEvent.deleted_at.is_(None))
     if current_user.role == "admin":
         pass  # no filter — admin sees all
     elif current_user.role == "vet":
@@ -158,7 +158,7 @@ async def list_health_events(
         ).where(User.location_district == current_user.location_district)
     else:
         # Farmer: own animals only
-        animal_ids_q = select(Animal.id).where(Animal.user_id == current_user.id)
+        animal_ids_q = select(Animal.id).where(Animal.user_id == current_user.id, Animal.deleted_at.is_(None))
         base = base.where(HealthEvent.animal_id.in_(animal_ids_q))
 
     count_result = await db.execute(select(func.count()).select_from(base.subquery()))
@@ -184,6 +184,7 @@ async def get_health_alerts_map(
         .where(
             HealthEvent.event_date >= week_ago,
             HealthEvent.ai_risk_score > RISK_SCORE_THRESHOLD,
+            HealthEvent.deleted_at.is_(None),
         )
         .options(
             selectinload(HealthEvent.animal).selectinload(Animal.owner),

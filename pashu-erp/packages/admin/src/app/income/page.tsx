@@ -31,11 +31,12 @@ interface MonthlyIncome {
 
 const COLORS = [colors.primary, colors.accentGreen, colors.accentAmber, colors.secondary, colors.accentRed, colors.accentBlue];
 
+const {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell, Legend,
+} = require("recharts") as typeof import("recharts");
+
 function IncomeCharts({ incomeByCategory, monthlyIncome }: { incomeByCategory: IncomeCategory[]; monthlyIncome: MonthlyIncome[] }) {
-  const {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-    ResponsiveContainer, PieChart, Pie, Cell, Legend,
-  } = require("recharts");
 
   return (
     <Grid container spacing={2.5}>

@@ -1,0 +1,30 @@
+"""Pydantic schema registry — re-exports for convenience."""
+
+from app.schemas.admin import *  # noqa: F401, F403
+from app.schemas.advisory import *  # noqa: F401, F403
+from app.schemas.alerts import *  # noqa: F401, F403
+from app.schemas.animals import *  # noqa: F401, F403
+from app.schemas.auth import *  # noqa: F401, F403
+from app.schemas.bharat_pashudhan import *  # noqa: F401, F403
+from app.schemas.ethno_vet import *  # noqa: F401, F403
+from app.schemas.feed import *  # noqa: F401, F403
+from app.schemas.files import *  # noqa: F401, F403
+from app.schemas.finance import *  # noqa: F401, F403
+from app.schemas.health import *  # noqa: F401, F403
+from app.schemas.income import *  # noqa: F401, F403
+from app.schemas.insurance import *  # noqa: F401, F403
+from app.schemas.iot import *  # noqa: F401, F403
+from app.schemas.map_points import *  # noqa: F401, F403
+from app.schemas.marketplace import *  # noqa: F401, F403
+from app.schemas.medicine import *  # noqa: F401, F403
+from app.schemas.medicine_log import *  # noqa: F401, F403
+from app.schemas.milk import *  # noqa: F401, F403
+from app.schemas.milk_center import *  # noqa: F401, F403
+from app.schemas.onboarding import *  # noqa: F401, F403
+from app.schemas.reference import *  # noqa: F401, F403
+from app.schemas.schemes import *  # noqa: F401, F403
+from app.schemas.shg import *  # noqa: F401, F403
+from app.schemas.users import *  # noqa: F401, F403
+from app.schemas.vaccination import *  # noqa: F401, F403
+from app.schemas.vet import *  # noqa: F401, F403
+from app.schemas.weather import *  # noqa: F401, F403

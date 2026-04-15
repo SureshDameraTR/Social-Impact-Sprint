@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, FlatList, StyleSheet, StatusBar, Linking, Platform } from 'react-native';
+import { View, FlatList, StyleSheet, StatusBar, Linking, Platform, Alert } from 'react-native';
 import { Text, Button, Card, Divider, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { EarningsHero } from '../../src/components/EarningsHero';
@@ -191,7 +191,7 @@ export default function IncomeScreen() {
             <Button
               mode="outlined"
               icon="download"
-              onPress={() => { if (Platform.OS === 'web') { window.alert('Download feature coming soon'); } else { require('react-native').Alert.alert(t('income.downloadRecord'), 'Download feature coming soon'); } }}
+              onPress={() => { if (Platform.OS === 'web') { window.alert(t('income.downloadComingSoon') ?? 'Download feature coming soon'); } else { Alert.alert(t('income.downloadRecord'), t('income.downloadComingSoon') ?? 'Download feature coming soon'); } }}
               style={styles.actionButton}
               contentStyle={styles.actionButtonContent}
               textColor={colors.primary}

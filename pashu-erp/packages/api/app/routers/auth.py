@@ -1,10 +1,10 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.responses import JSONResponse
-import jwt
 import bcrypt
+import jwt
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,9 +31,9 @@ STAFF_ROLES = {"admin", "vet", "milk_center"}
 DEFAULT_EXPIRY = timedelta(hours=8)
 REMEMBER_EXPIRY = timedelta(days=7)
 
-MAX_OTP_REQUESTS_PER_HOUR = 5
-MAX_OTP_ATTEMPTS = 3
-OTP_EXPIRY_MINUTES = 5
+MAX_OTP_REQUESTS_PER_HOUR = settings.max_otp_requests_per_hour
+MAX_OTP_ATTEMPTS = settings.max_otp_attempts
+OTP_EXPIRY_MINUTES = settings.otp_expiry_minutes
 
 
 def _get_provider():
@@ -191,7 +191,7 @@ async def verify_otp(body: OTPVerify, db: AsyncSession = Depends(get_db)):
         delete(OTPRequestModel).where(OTPRequestModel.phone == body.phone)
     )
 
-    user_result = await db.execute(select(User).where(User.phone == body.phone))
+    user_result = await db.execute(select(User).where(User.phone == body.phone, User.deleted_at.is_(None)))
     user = user_result.scalar_one_or_none()
 
     if not user:

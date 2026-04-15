@@ -22,11 +22,12 @@ router = APIRouter(prefix="/v1/medicines", tags=["Medicines"])
 async def list_medicines(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List all medicines with withdrawal period information."""
     result = await db.execute(
-        select(Medicine).order_by(Medicine.name_en).offset(skip).limit(limit)
+        select(Medicine).where(Medicine.deleted_at.is_(None)).order_by(Medicine.name_en).offset(skip).limit(limit)
     )
     return result.scalars().all()
 
@@ -39,7 +40,7 @@ async def administer_medicine(
 ):
     """Administer a medicine and auto-calculate withdrawal dates."""
     # Verify animal ownership
-    animal_result = await db.execute(select(Animal).where(Animal.id == body.animal_id))
+    animal_result = await db.execute(select(Animal).where(Animal.id == body.animal_id, Animal.deleted_at.is_(None)))
     animal = animal_result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
@@ -47,7 +48,7 @@ async def administer_medicine(
         raise HTTPException(status_code=403, detail="Not your animal")
 
     # Get medicine details
-    med_result = await db.execute(select(Medicine).where(Medicine.id == body.medicine_id))
+    med_result = await db.execute(select(Medicine).where(Medicine.id == body.medicine_id, Medicine.deleted_at.is_(None)))
     medicine = med_result.scalar_one_or_none()
     if medicine is None:
         raise HTTPException(status_code=404, detail="Medicine not found")
@@ -89,6 +90,7 @@ async def administer_medicine(
 @router.get("/withdrawal-status/{animal_id}", response_model=WithdrawalStatus)
 async def get_withdrawal_status(
     animal_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get current withdrawal status for an animal."""
@@ -96,7 +98,7 @@ async def get_withdrawal_status(
 
     result = await db.execute(
         select(MedicineAdministration)
-        .where(MedicineAdministration.animal_id == animal_id)
+        .where(MedicineAdministration.animal_id == animal_id, MedicineAdministration.deleted_at.is_(None))
         .options(selectinload(MedicineAdministration.medicine))
         .order_by(MedicineAdministration.administered_at.desc())
     )

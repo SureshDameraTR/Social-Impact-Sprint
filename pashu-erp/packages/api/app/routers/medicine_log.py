@@ -5,10 +5,9 @@ live under /v1/medicines/... in medicine.py. This router provides the
 alternative URL prefix.
 """
 
-from datetime import date, datetime, timezone
-from uuid import UUID
+from datetime import date
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -18,11 +17,12 @@ from app.middleware.auth import get_current_user
 from app.models.animal import Animal
 from app.models.medicine import MedicineAdministration
 from app.models.user import User
+from app.schemas.medicine_log import WithdrawalListResponse
 
 router = APIRouter(prefix="/v1/medicine-log", tags=["Medicine Log"])
 
 
-@router.get("/withdrawals")
+@router.get("/withdrawals", response_model=WithdrawalListResponse)
 async def get_active_withdrawals(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -31,7 +31,7 @@ async def get_active_withdrawals(
     # Get user's animal IDs
     animal_result = await db.execute(
         select(Animal.id, Animal.name, Animal.species)
-        .where(Animal.user_id == current_user.id)
+        .where(Animal.user_id == current_user.id, Animal.deleted_at.is_(None))
     )
     animals = animal_result.all()
     if not animals:
@@ -44,7 +44,7 @@ async def get_active_withdrawals(
 
     result = await db.execute(
         select(MedicineAdministration)
-        .where(MedicineAdministration.animal_id.in_(animal_ids))
+        .where(MedicineAdministration.animal_id.in_(animal_ids), MedicineAdministration.deleted_at.is_(None))
         .options(selectinload(MedicineAdministration.medicine))
         .order_by(MedicineAdministration.administered_at.desc())
     )

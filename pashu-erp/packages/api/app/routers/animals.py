@@ -1,13 +1,15 @@
 """Animal CRUD endpoints."""
 
 import secrets
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select, delete
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.animal import Animal
@@ -15,8 +17,6 @@ from app.models.user import User
 from app.schemas.animals import AnimalCreate, AnimalRead, AnimalUpdate
 
 router = APIRouter(prefix="/v1/animals", tags=["Animals"])
-
-_MAX_ID_RETRIES = 3
 
 
 @router.post("", response_model=AnimalRead, status_code=status.HTTP_201_CREATED)
@@ -26,7 +26,7 @@ async def create_animal(
     db: AsyncSession = Depends(get_db),
 ):
     """Register a new animal for the authenticated farmer."""
-    for attempt in range(_MAX_ID_RETRIES):
+    for attempt in range(settings.max_id_retries):
         # Auto-generate pashu_aadhaar_id if not provided
         pashu_id = body.pashu_aadhaar_id
         if not pashu_id:
@@ -61,7 +61,7 @@ async def create_animal(
                     detail="pashu_aadhaar_id already exists",
                 )
             # Auto-generated ID collided — retry with a new random value
-            if attempt == _MAX_ID_RETRIES - 1:
+            if attempt == settings.max_id_retries - 1:
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="Could not generate a unique Pashu Aadhaar ID; please retry",
@@ -77,7 +77,7 @@ async def list_animals(
     db: AsyncSession = Depends(get_db),
 ):
     """List all animals owned by the authenticated user with pagination."""
-    base = select(Animal)
+    base = select(Animal).where(Animal.deleted_at.is_(None))
     if current_user.role == "admin":
         pass  # no filter — admin sees all
     elif current_user.role == "vet":
@@ -113,7 +113,7 @@ async def get_animal(
 ):
     """Get a single animal by ID (owner check)."""
     result = await db.execute(
-        select(Animal).where(Animal.id == animal_id)
+        select(Animal).where(Animal.id == animal_id, Animal.deleted_at.is_(None))
     )
     animal = result.scalar_one_or_none()
     if animal is None:
@@ -132,7 +132,7 @@ async def update_animal(
 ):
     """Update an animal's details."""
     result = await db.execute(
-        select(Animal).where(Animal.id == animal_id)
+        select(Animal).where(Animal.id == animal_id, Animal.deleted_at.is_(None))
     )
     animal = result.scalar_one_or_none()
     if animal is None:
@@ -163,7 +163,7 @@ async def delete_animal(
 ):
     """Delete an animal record."""
     result = await db.execute(
-        select(Animal).where(Animal.id == animal_id)
+        select(Animal).where(Animal.id == animal_id, Animal.deleted_at.is_(None))
     )
     animal = result.scalar_one_or_none()
     if animal is None:
@@ -171,5 +171,5 @@ async def delete_animal(
     if str(animal.user_id) != str(current_user.id):
         raise HTTPException(status_code=403, detail="Not your animal")
 
-    await db.delete(animal)
+    animal.deleted_at = datetime.now(timezone.utc)
     await db.commit()

@@ -4,14 +4,15 @@ Requires BHARAT_PASHUDHAN_API_URL to be configured in settings.
 Raises ServiceNotConfiguredError when the URL is not set.
 """
 
-import httpx
 from datetime import datetime, timezone
 from uuid import UUID
 
 from app.config import settings
 from app.services.errors import ServiceNotConfiguredError
+from app.services.http_client import get_http_client, retry_on_network
 
 
+@retry_on_network
 async def lookup_animal(pashu_aadhaar_id: str) -> dict | None:
     """Look up an animal in the national Bharat Pashudhan registry.
 
@@ -25,19 +26,20 @@ async def lookup_animal(pashu_aadhaar_id: str) -> dict | None:
     if not settings.bharat_pashudhan_api_url:
         raise ServiceNotConfiguredError("BHARAT_PASHUDHAN_API_URL")
 
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(
-            f"{settings.bharat_pashudhan_api_url}/animals/{pashu_aadhaar_id}"
-        )
-        if resp.status_code == 404:
-            return None
-        resp.raise_for_status()
-        record = resp.json()
-        record["lookup_timestamp"] = datetime.now(timezone.utc).isoformat()
-        record["source"] = "Bharat Pashudhan National Database"
-        return record
+    client = await get_http_client()
+    resp = await client.get(
+        f"{settings.bharat_pashudhan_api_url}/animals/{pashu_aadhaar_id}"
+    )
+    if resp.status_code == 404:
+        return None
+    resp.raise_for_status()
+    record = resp.json()
+    record["lookup_timestamp"] = datetime.now(timezone.utc).isoformat()
+    record["source"] = "Bharat Pashudhan National Database"
+    return record
 
 
+@retry_on_network
 async def sync_animal(animal_id: UUID) -> dict:
     """Sync a local animal record with the national registry.
 
@@ -48,10 +50,10 @@ async def sync_animal(animal_id: UUID) -> dict:
     if not settings.bharat_pashudhan_api_url:
         raise ServiceNotConfiguredError("BHARAT_PASHUDHAN_API_URL")
 
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(
-            f"{settings.bharat_pashudhan_api_url}/sync",
-            json={"animal_id": str(animal_id)},
-        )
-        resp.raise_for_status()
-        return resp.json()
+    client = await get_http_client()
+    resp = await client.post(
+        f"{settings.bharat_pashudhan_api_url}/sync",
+        json={"animal_id": str(animal_id)},
+    )
+    resp.raise_for_status()
+    return resp.json()

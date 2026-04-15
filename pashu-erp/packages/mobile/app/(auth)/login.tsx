@@ -30,7 +30,7 @@ export default function LoginScreen() {
 
   const validatePhone = (value: string): boolean => {
     if (!PHONE_REGEX.test(value)) {
-      setPhoneError('Enter a valid 10-digit Indian mobile number');
+      setPhoneError(t('login.invalidPhone') ?? 'Enter a valid 10-digit Indian mobile number');
       return false;
     }
     setPhoneError('');
@@ -49,13 +49,13 @@ export default function LoginScreen() {
       });
       if (!response.ok) {
         const err = await response.json();
-        setError(err.detail || 'Failed to send OTP');
+        setError(err.detail || (t('login.otpFailed') ?? 'Failed to send OTP'));
         return;
       }
       setOtpSent(true);
       setResendCooldown(60);
     } catch {
-      setError('Network error. Check your connection.');
+      setError(t('common.networkError') ?? 'Network error. Check your connection.');
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,7 @@ export default function LoginScreen() {
       });
       if (!response.ok) {
         const err = await response.json();
-        setError(err.detail || 'Verification failed');
+        setError(err.detail || (t('login.verificationFailed') ?? 'Verification failed'));
         if (err.code === 'OTP_MAX_ATTEMPTS' || err.code === 'OTP_EXPIRED') {
           setOtpSent(false);
           setOtp(['', '', '', '', '', '']);
@@ -87,7 +87,7 @@ export default function LoginScreen() {
       await Storage.setItemAsync('auth_token', data.access_token);
       router.replace('/(tabs)');
     } catch {
-      setError('Network error. Check your connection.');
+      setError(t('common.networkError') ?? 'Network error. Check your connection.');
     } finally {
       setLoading(false);
     }
@@ -228,7 +228,7 @@ export default function LoginScreen() {
             <View style={{ alignItems: 'center', marginTop: 12 }}>
               {resendCooldown > 0 ? (
                 <Text variant="bodySmall" style={{ color: '#414941' }}>
-                  Resend OTP in {resendCooldown}s
+                  {t('login.resendOtpIn', { seconds: resendCooldown }) ?? `Resend OTP in ${resendCooldown}s`}
                 </Text>
               ) : (
                 <Button
@@ -240,7 +240,7 @@ export default function LoginScreen() {
                   }}
                   textColor={colors.primary}
                 >
-                  Resend OTP
+                  {t('login.resendOtp') ?? 'Resend OTP'}
                 </Button>
               )}
             </View>

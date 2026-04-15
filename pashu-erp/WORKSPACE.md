@@ -231,9 +231,13 @@ Config: `docker-compose.yml`, `.env`, `.env.example`
 |-------|------|----------|-------|
 | Unit (Python) | pytest | `packages/api/tests/` | Models, services, routers |
 | Unit (JS) | Jest | `packages/admin/src/__tests__/` | Components, utils |
+| Unit (Mobile) | Jest + jest-expo | `packages/mobile/__tests__/` | Screens, components |
 | Integration | pytest | `packages/api/tests/test_integration_e2e.py` | API workflows |
 | E2E | Playwright | `e2e/admin-smoke.spec.ts` | Admin UI flows |
+| Visual regression | Playwright | `e2e/visual/visual-baseline.spec.ts` | Admin, Collection, Vet screenshots |
+| Load | k6 | `e2e/load/baseline.js` | API throughput + latency |
 | Demo scenarios | pytest | `packages/api/tests/test_demo_scenarios.py` | 9 demo flows |
+| Agent validation | Python | `scripts/validate_agents.py` | 34 agent structure checks |
 
 ## Documentation
 

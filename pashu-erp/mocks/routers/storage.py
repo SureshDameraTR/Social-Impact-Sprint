@@ -38,7 +38,10 @@ async def upload_file(
     stored_name = f"{file_id}{extension}"
     stored_path = UPLOAD_DIR / stored_name
 
-    contents = await file.read()
+    MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10MB
+    contents = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(contents) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File exceeds 10MB limit")
     stored_path.write_bytes(contents)
 
     metadata = {
@@ -81,7 +84,9 @@ async def get_file(file_id: str):
     if metadata is None:
         raise HTTPException(status_code=404, detail="File not found")
 
-    stored_path = Path(metadata["_stored_path"])
+    stored_path = Path(metadata["_stored_path"]).resolve()
+    if not stored_path.is_relative_to(UPLOAD_DIR.resolve()):
+        raise HTTPException(status_code=403, detail="Access denied")
     if not stored_path.exists():
         raise HTTPException(status_code=404, detail="File not found on disk")
 

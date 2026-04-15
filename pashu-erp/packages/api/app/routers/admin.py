@@ -1,9 +1,10 @@
 """Admin dashboard endpoints (admin-only)."""
 
+import asyncio
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select, cast, Date
+from sqlalchemy import Date, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -30,95 +31,88 @@ async def dashboard_stats(
     admin_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Dashboard stats: farmer count, animal count, today's milk, active alerts, marketplace revenue, active sellers."""
-    # Farmer count
-    farmer_count_result = await db.execute(
-        select(func.count()).select_from(User).where(User.role == "farmer")
-    )
-    farmer_count = farmer_count_result.scalar() or 0
-
-    # Animal count
-    animal_count_result = await db.execute(
-        select(func.count()).select_from(Animal)
-    )
-    animal_count = animal_count_result.scalar() or 0
-
-    # Today's milk
+    """Dashboard stats: counts, milk, alerts, revenue, sellers."""
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    milk_result = await db.execute(
-        select(func.coalesce(func.sum(YieldLog.quantity_liters), 0.0))
-        .where(YieldLog.recorded_at >= today_start)
-    )
-    todays_milk = float(milk_result.scalar() or 0)
-
-    # Active health alerts (events in configured window with risk above threshold)
     week_ago = datetime.now(timezone.utc) - timedelta(days=ALERT_WINDOW_DAYS)
-    alert_result = await db.execute(
-        select(func.count())
-        .select_from(HealthEvent)
-        .where(
-            HealthEvent.event_date >= week_ago,
-            HealthEvent.ai_risk_score > RISK_SCORE_THRESHOLD,
-        )
-    )
-    active_alerts = alert_result.scalar() or 0
-
-    # Marketplace revenue (all time)
-    revenue_result = await db.execute(
-        select(func.coalesce(func.sum(SellRecord.total_amount), 0))
-    )
-    marketplace_revenue = float(revenue_result.scalar() or 0)
-
-    # Active sellers (users with at least one sell record in configured window)
     month_ago = datetime.now(timezone.utc) - timedelta(days=ACTIVE_SELLER_WINDOW_DAYS)
-    sellers_result = await db.execute(
-        select(func.count(func.distinct(SellRecord.user_id)))
-        .where(SellRecord.sold_at >= month_ago)
+    women_farmer_subq = select(User.id).where(
+        User.role == "farmer", User.gender == "female", User.deleted_at.is_(None)
     )
-    active_sellers = sellers_result.scalar() or 0
 
-    # Women empowerment stats
-    # Women farmers count
-    women_farmers_result = await db.execute(
-        select(func.count()).select_from(User).where(
-            User.role == "farmer", User.gender == "female"
-        )
-    )
-    women_farmers = women_farmers_result.scalar() or 0
-
-    # Women's revenue: transactions (income) + sell records for female farmers
-    women_tx_result = await db.execute(
-        select(func.coalesce(func.sum(Transaction.amount), 0))
-        .where(Transaction.user_id.in_(
-            select(User.id).where(User.role == "farmer", User.gender == "female")
-        ))
-    )
-    women_tx_revenue = float(women_tx_result.scalar() or 0)
-
-    women_sell_result = await db.execute(
-        select(func.coalesce(func.sum(SellRecord.total_amount), 0))
-        .where(SellRecord.user_id.in_(
-            select(User.id).where(User.role == "farmer", User.gender == "female")
-        ))
-    )
-    women_sell_revenue = float(women_sell_result.scalar() or 0)
-
-    women_revenue = women_tx_revenue + women_sell_revenue
-
-    # Women's animals count
-    women_animals_result = await db.execute(
-        select(func.count()).select_from(Animal).where(
-            Animal.user_id.in_(
-                select(User.id).where(User.role == "farmer", User.gender == "female")
+    # Fire all 10 queries in parallel using asyncio.gather
+    (
+        farmer_count_result,
+        animal_count_result,
+        milk_result,
+        alert_result,
+        revenue_result,
+        sellers_result,
+        women_farmers_result,
+        women_tx_result,
+        women_sell_result,
+        women_animals_result,
+        shg_count_result,
+    ) = await asyncio.gather(
+        db.execute(
+            select(func.count()).select_from(User)
+            .where(User.role == "farmer", User.deleted_at.is_(None))
+        ),
+        db.execute(
+            select(func.count()).select_from(Animal).where(Animal.deleted_at.is_(None))
+        ),
+        db.execute(
+            select(func.coalesce(func.sum(YieldLog.quantity_liters), 0.0))
+            .where(YieldLog.recorded_at >= today_start, YieldLog.deleted_at.is_(None))
+        ),
+        db.execute(
+            select(func.count()).select_from(HealthEvent).where(
+                HealthEvent.event_date >= week_ago,
+                HealthEvent.ai_risk_score > RISK_SCORE_THRESHOLD,
+                HealthEvent.deleted_at.is_(None),
             )
-        )
+        ),
+        db.execute(
+            select(func.coalesce(func.sum(SellRecord.total_amount), 0))
+            .where(SellRecord.deleted_at.is_(None))
+        ),
+        db.execute(
+            select(func.count(func.distinct(SellRecord.user_id)))
+            .where(SellRecord.sold_at >= month_ago, SellRecord.deleted_at.is_(None))
+        ),
+        db.execute(
+            select(func.count()).select_from(User).where(
+                User.role == "farmer", User.gender == "female", User.deleted_at.is_(None)
+            )
+        ),
+        db.execute(
+            select(func.coalesce(func.sum(Transaction.amount), 0))
+            .where(Transaction.user_id.in_(women_farmer_subq), Transaction.deleted_at.is_(None))
+        ),
+        db.execute(
+            select(func.coalesce(func.sum(SellRecord.total_amount), 0))
+            .where(SellRecord.user_id.in_(women_farmer_subq), SellRecord.deleted_at.is_(None))
+        ),
+        db.execute(
+            select(func.count()).select_from(Animal).where(
+                Animal.user_id.in_(women_farmer_subq), Animal.deleted_at.is_(None),
+            )
+        ),
+        db.execute(
+            select(func.count()).select_from(SHGGroup).where(SHGGroup.deleted_at.is_(None))
+        ),
     )
-    women_animals = women_animals_result.scalar() or 0
 
-    # SHG group count
-    shg_count_result = await db.execute(
-        select(func.count()).select_from(SHGGroup)
-    )
+    farmer_count = farmer_count_result.scalar() or 0
+    animal_count = animal_count_result.scalar() or 0
+    todays_milk = float(milk_result.scalar() or 0)
+    active_alerts = alert_result.scalar() or 0
+    marketplace_revenue = float(revenue_result.scalar() or 0)
+    active_sellers = sellers_result.scalar() or 0
+    women_farmers = women_farmers_result.scalar() or 0
+    women_tx_revenue = float(women_tx_result.scalar() or 0)
+    women_sell_revenue = float(women_sell_result.scalar() or 0)
+    women_revenue = women_tx_revenue + women_sell_revenue
+    women_animals = women_animals_result.scalar() or 0
     women_shg_count = shg_count_result.scalar() or 0
 
     return {
@@ -150,7 +144,7 @@ async def milk_chart_data(
             cast(YieldLog.recorded_at, Date).label("day"),
             func.coalesce(func.sum(YieldLog.quantity_liters), 0.0).label("total"),
         )
-        .where(YieldLog.recorded_at >= start_date)
+        .where(YieldLog.recorded_at >= start_date, YieldLog.deleted_at.is_(None))
         .group_by(cast(YieldLog.recorded_at, Date))
     )
     rows = {row.day: float(row.total) for row in result.all()}
@@ -184,6 +178,7 @@ async def gis_alert_markers(
         .where(
             HealthEvent.event_date >= week_ago,
             HealthEvent.ai_risk_score > RISK_SCORE_THRESHOLD,
+            HealthEvent.deleted_at.is_(None),
         )
         .options(
             selectinload(HealthEvent.animal).selectinload(Animal.owner),

@@ -5,7 +5,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 
 

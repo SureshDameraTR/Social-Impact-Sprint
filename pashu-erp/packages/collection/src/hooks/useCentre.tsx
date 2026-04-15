@@ -33,7 +33,7 @@ export function CentreProvider({ children }: { children: ReactNode }) {
   // Auto-fetch assigned centre when user logs in and no centre is cached
   useEffect(() => {
     if (!user || centreId) return;
-    api.get("/v1/milk-center/my-center").then(({ data }) => {
+    api.get("/milk-center/my-center").then(({ data }) => {
       setCentre(data.id, data.name);
     }).catch(() => {});
   }, [user, centreId, setCentre]);

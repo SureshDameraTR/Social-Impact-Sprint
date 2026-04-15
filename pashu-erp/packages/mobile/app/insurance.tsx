@@ -240,7 +240,7 @@ export default function InsuranceScreen() {
           <RadioButton.Group onValueChange={setCalcSpecies} value={calcSpecies}>
             <View style={styles.radioRow}>
               {['cattle', 'goat', 'sheep', 'poultry'].map((sp) => (
-                <View key={sp} style={styles.radioItem}>
+                <View key={sp} style={styles.radioItem} accessibilityLabel={`${t(`animals.${sp}`)} species`} accessibilityRole="radio" accessibilityState={{ checked: calcSpecies === sp }}>
                   <RadioButton value={sp} color={colors.primary} />
                   <Text>{t(`animals.${sp}`)}</Text>
                 </View>

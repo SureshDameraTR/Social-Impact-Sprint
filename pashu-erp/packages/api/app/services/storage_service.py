@@ -3,12 +3,9 @@
 Proxies file upload/download requests to the configured storage backend.
 """
 
-from typing import Optional, Tuple
-
-import httpx
-
 from app.config import settings
 from app.services.errors import ServiceNotConfiguredError
+from app.services.http_client import get_http_client, retry_on_network
 
 
 def _base_url() -> str:
@@ -18,6 +15,7 @@ def _base_url() -> str:
     return url.rstrip("/")
 
 
+@retry_on_network
 async def upload_file(
     file_bytes: bytes,
     filename: str,
@@ -36,29 +34,31 @@ async def upload_file(
         "entity_id": entity_id,
     }
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        resp = await client.post(f"{base}/files", files=files, data=data)
-        resp.raise_for_status()
-        return resp.json()
+    client = await get_http_client()
+    resp = await client.post(f"{base}/files", files=files, data=data)
+    resp.raise_for_status()
+    return resp.json()
 
 
-async def get_file(file_id: str) -> Tuple[bytes, str]:
+@retry_on_network
+async def get_file(file_id: str) -> tuple[bytes, str]:
     """Download a file from the storage backend.
 
     Returns a tuple of (file_bytes, content_type).
     """
     base = _base_url()
 
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(f"{base}/files/{file_id}")
-        resp.raise_for_status()
-        ct = resp.headers.get("content-type", "application/octet-stream")
-        return resp.content, ct
+    client = await get_http_client()
+    resp = await client.get(f"{base}/files/{file_id}")
+    resp.raise_for_status()
+    ct = resp.headers.get("content-type", "application/octet-stream")
+    return resp.content, ct
 
 
+@retry_on_network
 async def list_files(
-    entity_type: Optional[str] = None,
-    entity_id: Optional[str] = None,
+    entity_type: str | None = None,
+    entity_id: str | None = None,
 ) -> dict:
     """List files with optional entity filters."""
     base = _base_url()
@@ -68,7 +68,7 @@ async def list_files(
     if entity_id is not None:
         params["entity_id"] = entity_id
 
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(f"{base}/files", params=params)
-        resp.raise_for_status()
-        return resp.json()
+    client = await get_http_client()
+    resp = await client.get(f"{base}/files", params=params)
+    resp.raise_for_status()
+    return resp.json()

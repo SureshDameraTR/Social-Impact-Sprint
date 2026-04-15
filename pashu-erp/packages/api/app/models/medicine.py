@@ -1,7 +1,6 @@
-import enum
 from datetime import date, datetime
 
-from sqlalchemy import String, Integer, Date, DateTime, ForeignKey, text, func
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -25,7 +24,8 @@ class Medicine(AuditMixin, SoftDeleteMixin, Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     administrations = relationship(
-        "MedicineAdministration", back_populates="medicine", foreign_keys="MedicineAdministration.medicine_id", lazy="noload"
+        "MedicineAdministration", back_populates="medicine",
+        foreign_keys="MedicineAdministration.medicine_id", lazy="noload",
     )
 
 
@@ -50,5 +50,8 @@ class MedicineAdministration(AuditMixin, SoftDeleteMixin, Base):
     withdrawal_meat_until: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Relationships
-    animal = relationship("Animal", foreign_keys=[animal_id], lazy="selectin")
-    medicine = relationship("Medicine", back_populates="administrations", foreign_keys=[medicine_id], lazy="selectin")
+    animal = relationship("Animal", foreign_keys=[animal_id], lazy="noload")
+    medicine = relationship(
+        "Medicine", back_populates="administrations",
+        foreign_keys=[medicine_id], lazy="noload",
+    )

@@ -10,10 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
-from app.models.marketplace import ProductType, SellRecord
+from app.models.marketplace import SellRecord
 from app.models.user import User
-from app.services.market_rates import get_all_market_rates
 from app.schemas.marketplace import SellRecordCreate, SellRecordRead
+from app.services.market_rates import get_all_market_rates
 
 router = APIRouter(prefix="/v1/marketplace", tags=["Marketplace"])
 
@@ -30,7 +30,7 @@ async def list_sell_records(
     db: AsyncSession = Depends(get_db),
 ):
     """List sell records (admin: all, farmer: own only)."""
-    base = select(SellRecord)
+    base = select(SellRecord).where(SellRecord.deleted_at.is_(None))
     if current_user.role != "admin":
         base = base.where(SellRecord.user_id == current_user.id)
 
@@ -84,7 +84,7 @@ async def get_sell_history(
     if str(current_user.id) != str(user_id) and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    base = select(SellRecord).where(SellRecord.user_id == user_id)
+    base = select(SellRecord).where(SellRecord.user_id == user_id, SellRecord.deleted_at.is_(None))
 
     # Count
     count_result = await db.execute(
@@ -131,7 +131,7 @@ async def get_marketplace_summary(
             func.coalesce(func.sum(SellRecord.total_amount), 0).label("total_revenue"),
             func.coalesce(func.sum(SellRecord.quantity), 0).label("total_quantity"),
             func.count().label("total_sales"),
-        ).where(SellRecord.user_id == user_id)
+        ).where(SellRecord.user_id == user_id, SellRecord.deleted_at.is_(None))
     )
     totals = totals_result.one()
 
@@ -143,7 +143,7 @@ async def get_marketplace_summary(
             func.sum(SellRecord.total_amount).label("revenue"),
             func.count().label("count"),
         )
-        .where(SellRecord.user_id == user_id)
+        .where(SellRecord.user_id == user_id, SellRecord.deleted_at.is_(None))
         .group_by(SellRecord.product_type)
     )
     by_product: dict[str, dict] = {}

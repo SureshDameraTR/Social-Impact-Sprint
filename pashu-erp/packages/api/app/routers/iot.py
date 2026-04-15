@@ -7,10 +7,16 @@ Falls back to 503 via global exception handler when the gateway URL is not set.
 import logging
 
 import httpx
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.middleware.auth import get_current_user
 from app.models.user import User
+from app.schemas.iot import (
+    DeviceTypeCount,
+    IoTDeviceRead,
+    TelemetryListResponse,
+    TelemetryReading,
+)
 from app.services import iot_service
 
 logger = logging.getLogger(__name__)
@@ -34,7 +40,7 @@ async def list_devices(
         raise HTTPException(status_code=502, detail="IoT gateway unavailable")
 
 
-@router.get("/device-types")
+@router.get("/device-types", response_model=list[DeviceTypeCount])
 async def list_device_types(
     current_user: User = Depends(get_current_user),
 ):
@@ -61,7 +67,7 @@ async def list_device_types(
     return list(type_map.values())
 
 
-@router.get("/readings")
+@router.get("/readings", response_model=TelemetryListResponse)
 async def list_readings(
     device_id: str | None = Query(None, description="Filter by device ID"),
     limit: int = Query(50, ge=1, le=200),
@@ -84,7 +90,8 @@ async def list_readings(
             try:
                 latest = await iot_service.get_latest_telemetry(dev["device_id"])
                 readings.append(latest)
-            except Exception:
+            except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+                logger.warning("Telemetry fetch failed for %s: %s", dev["device_id"], exc)
                 continue
         return {"data": readings, "total": len(readings)}
     except httpx.HTTPStatusError as exc:
@@ -94,7 +101,7 @@ async def list_readings(
         raise HTTPException(status_code=502, detail="IoT gateway unavailable")
 
 
-@router.get("/devices/{device_id}")
+@router.get("/devices/{device_id}", response_model=IoTDeviceRead)
 async def get_device(
     device_id: str,
     current_user: User = Depends(get_current_user),
@@ -109,7 +116,7 @@ async def get_device(
         raise HTTPException(status_code=502, detail="IoT gateway unavailable")
 
 
-@router.get("/devices/{device_id}/latest")
+@router.get("/devices/{device_id}/latest", response_model=TelemetryReading)
 async def get_latest_telemetry(
     device_id: str,
     current_user: User = Depends(get_current_user),

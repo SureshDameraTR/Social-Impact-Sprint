@@ -47,10 +47,11 @@ interface RevenueByProduct {
   revenue: number;
 }
 
+const {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} = require("recharts") as typeof import("recharts");
+
 function MarketplaceChart({ data }: { data: RevenueByProduct[] }) {
-  const {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  } = require("recharts");
 
   return (
     <ResponsiveContainer width="100%" height={220}>
@@ -110,7 +111,7 @@ export default function MarketplacePage() {
     [txs, search]
   );
 
-  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress /></Box>;
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }} role="status" aria-label="Loading"><CircularProgress /></Box>;
   if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
 
   return (
@@ -166,6 +167,7 @@ export default function MarketplacePage() {
             placeholder="Search by farmer, product, or buyer..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+            aria-label="Search marketplace"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -177,7 +179,7 @@ export default function MarketplacePage() {
           />
         </Box>
         <TableContainer>
-          <Table>
+          <Table aria-label="Marketplace table">
             <TableHead>
               <TableRow>
                 <TableCell>Date</TableCell>

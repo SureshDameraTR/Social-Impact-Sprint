@@ -5,7 +5,7 @@ from sqlalchemy import Date, DateTime, Enum, ForeignKey, String, Text, func, tex
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import AuditMixin, Base
+from app.models.base import AuditMixin, Base, SoftDeleteMixin
 
 
 class ConsultationStatus(str, enum.Enum):
@@ -27,7 +27,7 @@ class ConsultationChannel(str, enum.Enum):
     referral = "referral"
 
 
-class VetConsultation(AuditMixin, Base):
+class VetConsultation(AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "vet_consultations"
 
     id: Mapped[str] = mapped_column(
@@ -73,6 +73,6 @@ class VetConsultation(AuditMixin, Base):
     )
 
     # Relationships
-    animal = relationship("Animal", lazy="selectin")
-    farmer = relationship("User", foreign_keys=[farmer_id], lazy="selectin")
+    animal = relationship("Animal", lazy="noload")
+    farmer = relationship("User", foreign_keys=[farmer_id], lazy="noload")
     vet = relationship("User", foreign_keys=[vet_id], lazy="noload")

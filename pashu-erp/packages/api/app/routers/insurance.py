@@ -36,7 +36,7 @@ async def get_user_policies(
 
     # Get user's animal IDs
     animal_result = await db.execute(
-        select(Animal.id).where(Animal.user_id == user_id)
+        select(Animal.id).where(Animal.user_id == user_id, Animal.deleted_at.is_(None))
     )
     animal_ids = [row[0] for row in animal_result.all()]
 
@@ -45,7 +45,7 @@ async def get_user_policies(
 
     result = await db.execute(
         select(InsurancePolicy)
-        .where(InsurancePolicy.animal_id.in_(animal_ids))
+        .where(InsurancePolicy.animal_id.in_(animal_ids), InsurancePolicy.deleted_at.is_(None))
         .order_by(InsurancePolicy.valid_to.desc())
         .offset(skip)
         .limit(limit)
@@ -62,7 +62,7 @@ async def file_claim(
     """File an insurance claim against a policy."""
     # Verify policy exists
     policy_result = await db.execute(
-        select(InsurancePolicy).where(InsurancePolicy.id == body.policy_id)
+        select(InsurancePolicy).where(InsurancePolicy.id == body.policy_id, InsurancePolicy.deleted_at.is_(None))
     )
     policy = policy_result.scalar_one_or_none()
     if policy is None:
@@ -70,7 +70,7 @@ async def file_claim(
 
     # Verify the animal belongs to the user
     animal_result = await db.execute(
-        select(Animal).where(Animal.id == policy.animal_id)
+        select(Animal).where(Animal.id == policy.animal_id, Animal.deleted_at.is_(None))
     )
     animal = animal_result.scalar_one_or_none()
     if animal is None or str(animal.user_id) != str(current_user.id):
@@ -92,10 +92,11 @@ async def file_claim(
 @router.get("/premium-estimate/{animal_id}", response_model=PremiumEstimate)
 async def estimate_premium(
     animal_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Estimate insurance premium for an animal based on species, breed type, and age."""
-    result = await db.execute(select(Animal).where(Animal.id == animal_id))
+    result = await db.execute(select(Animal).where(Animal.id == animal_id, Animal.deleted_at.is_(None)))
     animal = result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")

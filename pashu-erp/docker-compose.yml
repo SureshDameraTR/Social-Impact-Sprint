@@ -23,7 +23,7 @@ services:
   mock-backends:
     build: ./mocks
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
     volumes:
       - ./mocks/uploads:/app/uploads
     healthcheck:
@@ -35,7 +35,7 @@ services:
   api:
     build: ./packages/api
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./packages/api/app:/app/app
       - ./packages/api/alembic:/app/alembic
@@ -69,6 +69,48 @@ services:
         limits:
           memory: 512M
           cpus: '1.0'
+
+  admin:
+    build:
+      context: ./packages/admin
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    profiles:
+      - frontend
+
+  collection:
+    build:
+      context: ./packages/collection
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      VITE_API_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    profiles:
+      - frontend
+
+  vet:
+    build:
+      context: ./packages/vet
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      VITE_API_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    profiles:
+      - frontend
 
 volumes:
   pgdata:
