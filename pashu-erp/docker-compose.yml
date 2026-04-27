@@ -46,11 +46,13 @@ services:
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       ENVIRONMENT: ${ENVIRONMENT:-development}
-      CORS_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:8081"
-      WEATHER_API_URL: http://mock-backends:8001/api/weather
-      BHARAT_PASHUDHAN_API_URL: http://mock-backends:8001/api/registry
-      IOT_GATEWAY_URL: http://mock-backends:8001/api/iot
-      STORAGE_API_URL: http://mock-backends:8001/api/storage
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:8081}
+      AADHAAR_HASH_SECRET: ${AADHAAR_HASH_SECRET:-}
+      SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+      WEATHER_API_URL: ${WEATHER_API_URL:-http://mock-backends:8001/api/weather}
+      BHARAT_PASHUDHAN_API_URL: ${BHARAT_PASHUDHAN_API_URL:-http://mock-backends:8001/api/registry}
+      IOT_GATEWAY_URL: ${IOT_GATEWAY_URL:-http://mock-backends:8001/api/iot}
+      STORAGE_API_URL: ${STORAGE_API_URL:-http://mock-backends:8001/api/storage}
     depends_on:
       db:
         condition: service_healthy
