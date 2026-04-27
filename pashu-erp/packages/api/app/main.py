@@ -46,6 +46,7 @@ from app.routers import (
     reference,
     schemes,
     shg,
+    storage,
     users,
     vaccination,
     vet,
@@ -203,7 +204,31 @@ async def lifespan(app: FastAPI):
         cache_ttl=settings.weather_cache_ttl_seconds,
     )
 
+    # Initialize S3 storage service (only if credentials are configured)
+    if settings.s3_access_key:
+        from aiobotocore.session import AioSession
+
+        from app.services.storage_service import S3StorageService
+
+        s3_session = AioSession()
+        s3_ctx = s3_session.create_client(
+            "s3",
+            endpoint_url=settings.s3_endpoint_url or None,
+            aws_access_key_id=settings.s3_access_key,
+            aws_secret_access_key=settings.s3_secret_key,
+            region_name=settings.s3_region,
+        )
+        app.state.s3_client_ctx = s3_ctx
+        app.state.s3_raw = await s3_ctx.__aenter__()
+        app.state.s3_storage = S3StorageService(
+            s3_client=app.state.s3_raw,
+            bucket=settings.s3_bucket_name,
+            presigned_expiry=settings.s3_presigned_url_expiry,
+        )
+
     yield
+    if hasattr(app.state, "s3_client_ctx"):
+        await app.state.s3_client_ctx.__aexit__(None, None, None)
     await close_http_client()
     await engine.dispose()
 
@@ -273,6 +298,7 @@ def create_app() -> FastAPI:
     app.include_router(files.router)
     app.include_router(vet.router)
     app.include_router(consent.router)
+    app.include_router(storage.router)
 
     @app.exception_handler(RateLimitExceeded)
     async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
