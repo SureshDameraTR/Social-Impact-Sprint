@@ -10,6 +10,7 @@ from app.models.finance import Transaction
 from app.models.health import HealthEvent, Vaccination
 from app.models.insurance import InsuranceClaim, InsurancePolicy
 from app.models.breed import Breed, SpeciesRef  # noqa: F401
+from app.models.domain_knowledge import DiseaseRule, FeedStandard, VaccinationScheduleEntry  # noqa: F401
 from app.models.location import District, State, SubDistrict, Village  # noqa: F401
 from app.models.marketplace import SellRecord
 from app.models.medicine import Medicine, MedicineAdministration
@@ -53,4 +54,7 @@ __all__ = [
     "Village",
     "SpeciesRef",
     "Breed",
+    "DiseaseRule",
+    "VaccinationScheduleEntry",
+    "FeedStandard",
 ]

@@ -1,4 +1,5 @@
 from app.models.breed import Breed, SpeciesRef
+from app.models.domain_knowledge import DiseaseRule, FeedStandard, VaccinationScheduleEntry
 from app.models.location import District, State, SubDistrict, Village
 
 
@@ -61,3 +62,39 @@ class TestBreedModels:
         )
         assert breed.species_code == "cattle"
         assert breed.nbagr_code == "INDIA_CATTLE_0600"
+
+
+class TestDomainKnowledgeModels:
+    def test_disease_rule_has_required_fields(self):
+        rule = DiseaseRule(
+            species_code="cattle",
+            disease_name="Foot and Mouth Disease (FMD)",
+            symptoms=["fever", "mouth_blisters", "drooling"],
+            min_match=3,
+            risk_level="critical",
+            action="Isolate immediately. Contact veterinarian.",
+            source="ICAR-IVRI FMD Guidelines 2023",
+        )
+        assert rule.risk_level == "critical"
+        assert len(rule.symptoms) == 3
+
+    def test_vaccination_schedule_entry(self):
+        entry = VaccinationScheduleEntry(
+            species_code="cattle",
+            vaccine_name="FMD",
+            first_dose_months=4,
+            repeat_interval_months=6,
+            is_mandatory=True,
+        )
+        assert entry.is_mandatory is True
+
+    def test_feed_standard(self):
+        std = FeedStandard(
+            species_code="cattle",
+            lactation_stage="early",
+            dm_intake_pct_body_weight=3.5,
+            crude_protein_pct=18.0,
+            tdn_pct=70.0,
+            source="NDDB Feeding Standards 2023",
+        )
+        assert std.dm_intake_pct_body_weight == 3.5
