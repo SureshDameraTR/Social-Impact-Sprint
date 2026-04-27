@@ -11,6 +11,10 @@ Beadbox-*.exe
 .env.local
 .env.*.local
 
+# Credentials
+.aws_creds
+.godaddy_creds
+
 # Python
 __pycache__/
 *.pyc
