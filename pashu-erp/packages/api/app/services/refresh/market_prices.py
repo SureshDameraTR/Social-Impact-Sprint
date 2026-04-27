@@ -1,6 +1,7 @@
 # app/services/refresh/market_prices.py
 import logging
 
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.reference import MarketRate
@@ -30,6 +31,10 @@ class AgmarknetSyncService:
             max_records=5000,
         )
         result.records_fetched = len(records)
+
+        await db.execute(
+            delete(MarketRate).where(MarketRate.source == "Agmarknet")
+        )
 
         for rec in records:
             try:

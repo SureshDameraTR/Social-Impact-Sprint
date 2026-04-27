@@ -12,7 +12,7 @@ def get_seed_species() -> list[dict]:
             "code": "cattle",
             "name_en": "Cattle",
             "name_kn": "ಹಸು",
-            "name_hi": "ग௨ય",
+            "name_hi": "गाय",
             "emoji": "\U0001f404",
         },
         {

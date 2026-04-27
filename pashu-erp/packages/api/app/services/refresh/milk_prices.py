@@ -4,6 +4,7 @@ import re
 
 from bs4 import BeautifulSoup
 from httpx import AsyncClient
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.reference import MarketRate
@@ -54,6 +55,10 @@ class MilkPriceScraper:
             resp.raise_for_status()
             prices = self._parse_price_table(resp.text)
             result.records_fetched = len(prices)
+
+            await db.execute(
+                delete(MarketRate).where(MarketRate.source == "NDDB")
+            )
 
             for p in prices:
                 db.add(

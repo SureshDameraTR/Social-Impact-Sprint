@@ -7,9 +7,13 @@ interface SpeciesRecord {
 }
 
 interface BreedRecord {
-  code: string;
-  name_en: string;
+  id: string;
+  name: string;
+  name_local?: string;
   species_code: string;
+  origin?: string;
+  nbagr_code?: string;
+  is_indigenous: boolean;
 }
 
 interface DistrictRecord {
@@ -31,11 +35,11 @@ export function useSpecies() {
 }
 
 export function useBreeds(speciesCode?: string) {
+  const resource = speciesCode
+    ? `reference/breeds?species_code=${encodeURIComponent(speciesCode)}`
+    : "reference/breeds";
   const { data, isLoading } = useList<BreedRecord>({
-    resource: "reference/breeds",
-    filters: speciesCode
-      ? [{ field: "species_code", operator: "eq" as const, value: speciesCode }]
-      : [],
+    resource,
     pagination: { mode: "off" },
   });
   return { breeds: data?.data ?? [], isLoading };
@@ -43,10 +47,7 @@ export function useBreeds(speciesCode?: string) {
 
 export function useDistricts(stateLgdCode: number = 29) {
   const { data, isLoading } = useList<DistrictRecord>({
-    resource: "reference/districts",
-    filters: [
-      { field: "state_lgd_code", operator: "eq" as const, value: stateLgdCode },
-    ],
+    resource: `reference/districts?state_lgd_code=${stateLgdCode}`,
     pagination: { mode: "off" },
   });
   return { districts: data?.data ?? [], isLoading };

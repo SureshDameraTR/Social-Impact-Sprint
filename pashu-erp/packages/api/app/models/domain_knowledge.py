@@ -1,8 +1,8 @@
 from sqlalchemy import (
     Boolean,
-    Float,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     Text,
     text,
@@ -99,12 +99,12 @@ class FeedStandard(TimestampMixin, Base):
         String(20), nullable=True
     )
     dm_intake_pct_body_weight: Mapped[float] = mapped_column(
-        Float, nullable=False
+        Numeric(8, 4), nullable=False
     )
     crude_protein_pct: Mapped[float] = mapped_column(
-        Float, nullable=False
+        Numeric(8, 4), nullable=False
     )
-    tdn_pct: Mapped[float] = mapped_column(Float, nullable=False)
+    tdn_pct: Mapped[float] = mapped_column(Numeric(8, 4), nullable=False)
     source: Mapped[str | None] = mapped_column(String(200), nullable=True)
     is_active: Mapped[bool] = mapped_column(
         Boolean, server_default="true", nullable=False

@@ -48,6 +48,8 @@ async def get_download_url(
     file_key: str = Query(...),
     current_user: User = Depends(get_current_user),
 ):
+    if not file_key.startswith(f"uploads/{current_user.id}/"):
+        raise HTTPException(403, "Access denied to this file")
     s3_service = _get_storage_service()
     url = await s3_service.get_download_url(file_key)
     return {"download_url": url, "file_key": file_key}
