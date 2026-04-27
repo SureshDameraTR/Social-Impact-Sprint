@@ -191,6 +191,18 @@ def _validate_settings():
 async def lifespan(app: FastAPI):
     _validate_settings()
     app.state.start_time = datetime.now(timezone.utc)
+
+    # Initialize Open-Meteo weather service on app state
+    from app.services.http_client import get_http_client
+    from app.services.open_meteo import OpenMeteoService
+
+    http_client = await get_http_client()
+    app.state.open_meteo = OpenMeteoService(
+        http_client=http_client,
+        base_url=settings.open_meteo_base_url,
+        cache_ttl=settings.weather_cache_ttl_seconds,
+    )
+
     yield
     await close_http_client()
     await engine.dispose()

@@ -1,8 +1,13 @@
 """IMD weather service for Karnataka districts.
 
-Requires WEATHER_API_URL setting to be configured.
-Raises ServiceNotConfiguredError when the URL is empty.
+Tries Open-Meteo (free, no key) first, falls back to the mock weather backend
+when Open-Meteo is unavailable or not configured.
+
+Requires WEATHER_API_URL setting for the mock fallback path.
+Raises ServiceNotConfiguredError when both sources are unavailable.
 """
+
+import logging
 
 from app.config import settings
 from app.schemas.weather import WeatherForecast
@@ -10,39 +15,7 @@ from app.services.circuit_breakers import weather_breaker
 from app.services.errors import ServiceNotConfiguredError
 from app.services.http_client import get_http_client, retry_on_network
 
-KARNATAKA_DISTRICTS = {
-    "bagalkote": {"lat": 16.18, "lon": 75.70},
-    "ballari": {"lat": 15.14, "lon": 76.92},
-    "belagavi": {"lat": 15.85, "lon": 74.50},
-    "bengaluru rural": {"lat": 13.22, "lon": 77.56},
-    "bengaluru urban": {"lat": 12.97, "lon": 77.59},
-    "bidar": {"lat": 17.91, "lon": 77.52},
-    "chamarajanagara": {"lat": 11.93, "lon": 76.94},
-    "chikballapura": {"lat": 13.44, "lon": 77.73},
-    "chikkamagaluru": {"lat": 13.32, "lon": 75.78},
-    "chitradurga": {"lat": 14.23, "lon": 76.40},
-    "dakshina kannada": {"lat": 12.87, "lon": 74.88},
-    "davanagere": {"lat": 14.47, "lon": 75.92},
-    "dharwad": {"lat": 15.46, "lon": 75.01},
-    "gadag": {"lat": 15.43, "lon": 75.63},
-    "hassan": {"lat": 13.01, "lon": 76.10},
-    "haveri": {"lat": 14.79, "lon": 75.40},
-    "kalaburagi": {"lat": 17.33, "lon": 76.83},
-    "kodagu": {"lat": 12.42, "lon": 75.74},
-    "kolar": {"lat": 13.14, "lon": 78.13},
-    "koppal": {"lat": 15.35, "lon": 76.15},
-    "mandya": {"lat": 12.52, "lon": 76.90},
-    "mysuru": {"lat": 12.30, "lon": 76.66},
-    "raichur": {"lat": 16.21, "lon": 77.37},
-    "ramanagara": {"lat": 12.72, "lon": 77.28},
-    "shivamogga": {"lat": 13.93, "lon": 75.57},
-    "tumakuru": {"lat": 13.34, "lon": 77.10},
-    "udupi": {"lat": 13.34, "lon": 74.75},
-    "uttara kannada": {"lat": 14.80, "lon": 74.13},
-    "vijayapura": {"lat": 16.83, "lon": 75.71},
-    "vijayanagara": {"lat": 15.27, "lon": 76.39},
-    "yadgir": {"lat": 16.77, "lon": 77.14},
-}
+logger = logging.getLogger(__name__)
 
 
 def _require_weather_url() -> str:
@@ -62,10 +35,88 @@ def _calculate_heat_stress_index(temp_max: float, humidity: float) -> float:
     return round(thi, 1)
 
 
+def _get_app_state():
+    """Access the running FastAPI app's state for the Open-Meteo service."""
+    from app.main import app
+
+    return app.state
+
+
+def _derive_condition(precipitation_mm: float, humidity: float, wind_kmh: float) -> str:
+    """Derive a human-readable weather condition from Open-Meteo variables."""
+    if precipitation_mm > 25:
+        return "Thunderstorm" if wind_kmh > 20 else "Heavy Rain"
+    if precipitation_mm > 10:
+        return "Heavy Rain" if wind_kmh > 15 else "Moderate Rain"
+    if precipitation_mm > 2:
+        return "Moderate Rain" if wind_kmh > 10 else "Light Rain"
+    if precipitation_mm > 0:
+        return "Light Rain"
+    if humidity > 70:
+        return "Cloudy"
+    if humidity > 50:
+        return "Partly Cloudy"
+    return "Clear Sky"
+
+
+def _transform_open_meteo_response(data: dict, district: str) -> list[WeatherForecast]:
+    """Transform Open-Meteo response to a list of WeatherForecast objects."""
+    daily = data.get("daily", {})
+    forecasts = []
+    for i, date_str in enumerate(daily.get("time", [])):
+        temp_max = daily.get("temperature_2m_max", [None])[i]
+        temp_min = daily.get("temperature_2m_min", [None])[i]
+        precipitation = daily.get("precipitation_sum", [0.0])[i] or 0.0
+        wind_speed = daily.get("windspeed_10m_max", [0.0])[i] or 0.0
+        humidity_max = daily.get("relative_humidity_2m_max", [50.0])[i] or 50.0
+        humidity_min = daily.get("relative_humidity_2m_min", [30.0])[i] or 30.0
+
+        # Use average humidity for the day
+        humidity = round((humidity_max + humidity_min) / 2.0, 1)
+
+        # Derive condition from precipitation, humidity, and wind
+        condition = _derive_condition(precipitation, humidity, wind_speed)
+
+        # Compute heat stress index using the existing THI formula
+        avg_temp = ((temp_max or 25.0) + (temp_min or 15.0)) / 2.0
+        heat_stress = _calculate_heat_stress_index(avg_temp, humidity)
+
+        forecasts.append(WeatherForecast(
+            date=date_str,
+            district=district,
+            temp_min=temp_min or 0.0,
+            temp_max=temp_max or 0.0,
+            humidity=humidity,
+            rainfall_mm=precipitation,
+            wind_speed=wind_speed,
+            condition=condition,
+            heat_stress_index=heat_stress,
+        ))
+    return forecasts
+
+
 @weather_breaker
 @retry_on_network
 async def get_forecast(district: str, days: int = 5) -> list[WeatherForecast]:
-    """Return weather forecast for a Karnataka district."""
+    """Return weather forecast -- tries Open-Meteo first, falls back to mock."""
+    open_meteo = getattr(_get_app_state(), "open_meteo", None)
+
+    if open_meteo:
+        try:
+            from app.database import async_session
+
+            async with async_session() as db_session:
+                result = await open_meteo.get_forecast_for_district(
+                    district, days, db_session
+                )
+                if result:
+                    return _transform_open_meteo_response(result, district)
+        except Exception:
+            logger.warning(
+                "Open-Meteo failed for %s, falling back to mock", district
+            )
+
+    # Fallback: mock weather backend
     base_url = _require_weather_url()
     client = await get_http_client()
     resp = await client.get(
