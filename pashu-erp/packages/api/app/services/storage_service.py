@@ -1,78 +1,49 @@
-"""Storage service client.
+# app/services/storage_service.py
+import logging
+import uuid
 
-Proxies file upload/download requests to the configured storage backend.
-"""
+logger = logging.getLogger(__name__)
 
-from app.config import settings
-from app.services.circuit_breakers import storage_breaker
-from app.services.errors import ServiceNotConfiguredError
-from app.services.http_client import get_http_client, retry_on_network
-
-
-def _base_url() -> str:
-    url = settings.storage_api_url
-    if not url:
-        raise ServiceNotConfiguredError("STORAGE_API_URL")
-    return url.rstrip("/")
+ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
-@storage_breaker
-@retry_on_network
-async def upload_file(
-    file_bytes: bytes,
-    filename: str,
-    content_type: str,
-    category: str,
-    entity_type: str,
-    entity_id: str,
-) -> dict:
-    """Upload a file to the storage backend."""
-    base = _base_url()
+class S3StorageService:
+    def __init__(self, s3_client, bucket: str, presigned_expiry: int = 3600):
+        self._s3 = s3_client
+        self._bucket = bucket
+        self._expiry = presigned_expiry
 
-    files = {"file": (filename, file_bytes, content_type)}
-    data = {
-        "category": category,
-        "entity_type": entity_type,
-        "entity_id": entity_id,
-    }
+    async def get_upload_url(
+        self,
+        file_key: str | None = None,
+        content_type: str = "image/jpeg",
+        folder: str = "uploads",
+    ) -> dict:
+        if content_type not in ALLOWED_CONTENT_TYPES:
+            raise ValueError(f"Content type {content_type} not allowed")
 
-    client = await get_http_client()
-    resp = await client.post(f"{base}/files", files=files, data=data)
-    resp.raise_for_status()
-    return resp.json()
+        if not file_key:
+            ext = content_type.split("/")[-1]
+            file_key = f"{folder}/{uuid.uuid4()}.{ext}"
 
+        url = await self._s3.generate_presigned_url(
+            "put_object",
+            Params={
+                "Bucket": self._bucket,
+                "Key": file_key,
+                "ContentType": content_type,
+            },
+            ExpiresIn=self._expiry,
+        )
+        return {"upload_url": url, "file_key": file_key, "expires_in": self._expiry}
 
-@storage_breaker
-@retry_on_network
-async def get_file(file_id: str) -> tuple[bytes, str]:
-    """Download a file from the storage backend.
+    async def get_download_url(self, file_key: str) -> str:
+        return await self._s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self._bucket, "Key": file_key},
+            ExpiresIn=self._expiry,
+        )
 
-    Returns a tuple of (file_bytes, content_type).
-    """
-    base = _base_url()
-
-    client = await get_http_client()
-    resp = await client.get(f"{base}/files/{file_id}")
-    resp.raise_for_status()
-    ct = resp.headers.get("content-type", "application/octet-stream")
-    return resp.content, ct
-
-
-@storage_breaker
-@retry_on_network
-async def list_files(
-    entity_type: str | None = None,
-    entity_id: str | None = None,
-) -> dict:
-    """List files with optional entity filters."""
-    base = _base_url()
-    params: dict = {}
-    if entity_type is not None:
-        params["entity_type"] = entity_type
-    if entity_id is not None:
-        params["entity_id"] = entity_id
-
-    client = await get_http_client()
-    resp = await client.get(f"{base}/files", params=params)
-    resp.raise_for_status()
-    return resp.json()
+    async def delete_file(self, file_key: str) -> None:
+        await self._s3.delete_object(Bucket=self._bucket, Key=file_key)
