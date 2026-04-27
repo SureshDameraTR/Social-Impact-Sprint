@@ -1,6 +1,11 @@
 import importlib
 import sys
 import types
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
 
 from app.models.breed import Breed, SpeciesRef
 from app.models.domain_knowledge import DiseaseRule, FeedStandard, VaccinationScheduleEntry
@@ -150,3 +155,71 @@ class TestReferenceSchemas:
             "is_indigenous": True,
         })
         assert schema.name == "Hallikar"
+
+
+@pytest.fixture
+async def ref_client(mock_db):
+    """Minimal test client that mounts only the reference router.
+
+    This avoids importing the full app (which triggers the milk.py Decimal
+    constraint bug in Pydantic) while still exercising the public endpoints.
+    ``mock_db`` comes from conftest.
+    """
+    from app.database import get_db
+    from app.routers.reference import router
+
+    app = FastAPI()
+    app.include_router(router)
+
+    async def _override_db():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = _override_db
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+
+    app.dependency_overrides.clear()
+
+
+class TestReferenceLocationEndpoints:
+    async def test_list_states(self, ref_client: AsyncClient, mock_db):
+        """Reference endpoints are public — no auth required."""
+        state = MagicMock(spec=State)
+        state.lgd_code = 29
+        state.name = "Karnataka"
+        state.name_local = "ಕರ್ನಾಟಕ"
+
+        count_result = MagicMock()
+        count_result.scalar.return_value = 1
+        data_result = MagicMock()
+        data_result.scalars.return_value.all.return_value = [state]
+        mock_db.execute = AsyncMock(side_effect=[count_result, data_result])
+
+        resp = await ref_client.get("/v1/reference/states")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["total"] == 1
+        assert body["data"][0]["name"] == "Karnataka"
+
+    async def test_list_districts_by_state(self, ref_client: AsyncClient, mock_db):
+        district = MagicMock(spec=District)
+        district.lgd_code = 2922
+        district.name = "Mysuru"
+        district.name_local = None
+        district.state_lgd_code = 29
+        district.latitude = 12.30
+        district.longitude = 76.66
+        district.elevation_m = None
+
+        count_result = MagicMock()
+        count_result.scalar.return_value = 1
+        data_result = MagicMock()
+        data_result.scalars.return_value.all.return_value = [district]
+        mock_db.execute = AsyncMock(side_effect=[count_result, data_result])
+
+        resp = await ref_client.get("/v1/reference/districts?state_lgd_code=29")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["data"][0]["name"] == "Mysuru"
