@@ -1,7 +1,5 @@
 import Providers from "./providers";
 
-export const dynamic = "force-dynamic";
-
 export const metadata = {
   title: "PashuRaksha ERP - Admin Dashboard",
 };
