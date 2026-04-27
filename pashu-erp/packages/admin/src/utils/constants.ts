@@ -14,6 +14,7 @@ export const RESOURCE_NAMES = {
 export const RISK_LEVELS = ["critical", "high", "medium", "low"] as const;
 export type RiskLevel = (typeof RISK_LEVELS)[number];
 
+// DEPRECATED: Use useSpecies() from hooks/useReferenceData instead. Kept as offline fallback.
 export const SPECIES = [
   "Cattle",
   "Buffalo",
