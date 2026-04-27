@@ -5,22 +5,24 @@ import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { api } from '../../src/config/api';
 import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors, statusColors } from '../../src/config/theme';
-
-const SPECIES_OPTIONS = [
-  { key: 'cattle', emoji: '🐄', breeds: ['Hallikar', 'Amrit Mahal', 'Khillari', 'Deoni', 'Krishna Valley', 'HF Cross'] },
-  { key: 'goat', emoji: '🐐', breeds: ['Osmanabadi', 'Beetal', 'Jamunapari', 'Sirohi', 'Black Bengal'] },
-  { key: 'sheep', emoji: '🐑', breeds: ['Bannur', 'Deccani', 'Nellore', 'Hassan', 'Bellary'] },
-  { key: 'poultry', emoji: '🐔', breeds: ['Giriraja', 'Swarnadhara', 'Vanaraja', 'Desi', 'BV 380'] },
-];
+import { useSpecies, useBreeds } from '../../src/hooks/useReferenceData';
 
 export default function FirstAnimalScreen() {
   const { t } = useTranslation();
+  const { data: speciesData } = useSpecies();
   const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
   const [selectedBreed, setSelectedBreed] = useState<string | null>(null);
   const [animalName, setAnimalName] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const speciesData = SPECIES_OPTIONS.find((s) => s.key === selectedSpecies);
+  const speciesOptions = (speciesData?.data ?? []).map((s) => ({
+    key: s.code,
+    emoji: s.emoji || '🐾',
+    label: s.name_en,
+  }));
+
+  const { data: breedsData } = useBreeds(selectedSpecies ?? undefined);
+  const breeds = breedsData?.data?.map((b) => b.name) ?? [];
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -35,7 +37,7 @@ export default function FirstAnimalScreen() {
         {t('animals.species')}
       </Text>
       <View style={styles.speciesGrid}>
-        {SPECIES_OPTIONS.map((sp) => (
+        {speciesOptions.map((sp) => (
           <Pressable
             key={sp.key}
             style={[
@@ -64,13 +66,13 @@ export default function FirstAnimalScreen() {
         ))}
       </View>
 
-      {speciesData && (
+      {selectedSpecies && breeds.length > 0 && (
         <>
           <Text variant="titleMedium" style={styles.sectionLabel}>
             {t('animals.breed')}
           </Text>
           <View style={styles.breedRow}>
-            {speciesData.breeds.map((breed) => (
+            {breeds.map((breed) => (
               <Chip
                 key={breed}
                 selected={selectedBreed === breed}

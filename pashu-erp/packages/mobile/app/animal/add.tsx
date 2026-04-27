@@ -5,19 +5,16 @@ import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { SPACING, TOUCH_TARGET_MIN, colors } from '../../src/config/theme';
 import { api } from '../../src/config/api';
-
-type Species = 'cattle' | 'goat' | 'sheep' | 'poultry';
-
-const SPECIES_OPTIONS: { value: Species; emoji: string }[] = [
-  { value: 'cattle', emoji: '\uD83D\uDC04' },
-  { value: 'goat', emoji: '\uD83D\uDC10' },
-  { value: 'sheep', emoji: '\uD83D\uDC11' },
-  { value: 'poultry', emoji: '\uD83D\uDC14' },
-];
+import { useSpecies } from '../../src/hooks/useReferenceData';
 
 export default function AddAnimalScreen() {
   const { t } = useTranslation();
-  const [species, setSpecies] = useState<Species>('cattle');
+  const { data: speciesData } = useSpecies();
+  const speciesOptions = (speciesData?.data ?? []).map((s) => ({
+    value: s.code,
+    emoji: s.emoji || '🐾',
+  }));
+  const [species, setSpecies] = useState<string>('cattle');
   const [name, setName] = useState('');
   const [breed, setBreed] = useState('');
   const [tagNumber, setTagNumber] = useState('');
@@ -64,7 +61,7 @@ export default function AddAnimalScreen() {
           {t('animals.species')}
         </Text>
         <View style={styles.speciesRow}>
-          {SPECIES_OPTIONS.map((opt) => (
+          {speciesOptions.map((opt) => (
             <Button
               key={opt.value}
               mode={species === opt.value ? 'contained' : 'outlined'}

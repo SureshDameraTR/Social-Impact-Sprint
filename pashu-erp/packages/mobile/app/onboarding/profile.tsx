@@ -6,19 +6,12 @@ import { router } from 'expo-router';
 import * as Storage from '../../src/config/storage';
 import { api } from '../../src/config/api';
 import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors } from '../../src/config/theme';
-
-const KARNATAKA_DISTRICTS = [
-  'Bagalkote', 'Ballari', 'Belagavi', 'Bengaluru Rural', 'Bengaluru Urban',
-  'Bidar', 'Chamarajanagara', 'Chikballapura', 'Chikkamagaluru', 'Chitradurga',
-  'Dakshina Kannada', 'Davanagere', 'Dharwad', 'Gadag', 'Hassan',
-  'Haveri', 'Kalaburagi', 'Kodagu', 'Kolar', 'Koppal',
-  'Mandya', 'Mysuru', 'Raichur', 'Ramanagara', 'Shivamogga',
-  'Tumakuru', 'Udupi', 'Uttara Kannada', 'Vijayapura', 'Vijayanagara',
-  'Yadgir',
-];
+import { useDistricts } from '../../src/hooks/useReferenceData';
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
+  const { data: districtData } = useDistricts();
+  const districts = districtData?.data?.map((d) => d.name) ?? [];
   const [name, setName] = useState('');
   const [district, setDistrict] = useState('');
   const [village, setVillage] = useState('');
@@ -78,7 +71,7 @@ export default function ProfileScreen() {
         }
         contentStyle={styles.menuContent}
       >
-        {KARNATAKA_DISTRICTS.map((d) => (
+        {districts.map((d) => (
           <Menu.Item
             key={d}
             onPress={() => {
