@@ -9,6 +9,7 @@ from app.models.feed import FeedIngredient
 from app.models.finance import Transaction
 from app.models.health import HealthEvent, Vaccination
 from app.models.insurance import InsuranceClaim, InsurancePolicy
+from app.models.location import District, State, SubDistrict, Village  # noqa: F401
 from app.models.marketplace import SellRecord
 from app.models.medicine import Medicine, MedicineAdministration
 from app.models.milk import MilkCollectionCenter, MilkCollectionRecord, YieldLog
@@ -45,4 +46,8 @@ __all__ = [
     "VetConsultation",
     "RefreshToken",
     "OTPRequest",
+    "State",
+    "District",
+    "SubDistrict",
+    "Village",
 ]
