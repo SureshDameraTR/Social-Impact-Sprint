@@ -1,6 +1,7 @@
 """Add vet_consultations table."""
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers
@@ -11,46 +12,49 @@ depends_on = None
 
 
 def upgrade():
-    # Create enum types
-    consultation_status = sa.Enum(
-        "pending", "in_review", "diagnosed", "closed", name="consultation_status"
-    )
-    consultation_status.create(op.get_bind(), checkfirst=True)
+    # Create enum types via raw SQL
+    op.execute("CREATE TYPE consultation_status AS ENUM ('pending', 'in_review', 'diagnosed', 'closed')")
+    op.execute("CREATE TYPE consultation_priority AS ENUM ('routine', 'urgent', 'emergency')")
+    op.execute("CREATE TYPE consultation_channel AS ENUM ('photo', 'walk_in', 'referral')")
 
-    consultation_priority = sa.Enum(
-        "routine", "urgent", "emergency", name="consultation_priority"
+    # Reference existing types with create_type=False to prevent double-creation
+    consultation_status = postgresql.ENUM(
+        "pending", "in_review", "diagnosed", "closed",
+        name="consultation_status", create_type=False,
     )
-    consultation_priority.create(op.get_bind(), checkfirst=True)
-
-    consultation_channel = sa.Enum(
-        "photo", "walk_in", "referral", name="consultation_channel"
+    consultation_priority = postgresql.ENUM(
+        "routine", "urgent", "emergency",
+        name="consultation_priority", create_type=False,
     )
-    consultation_channel.create(op.get_bind(), checkfirst=True)
+    consultation_channel = postgresql.ENUM(
+        "photo", "walk_in", "referral",
+        name="consultation_channel", create_type=False,
+    )
 
     # Create vet_consultations table
     op.create_table(
         "vet_consultations",
         sa.Column(
             "id",
-            sa.dialects.postgresql.UUID(as_uuid=True),
+            postgresql.UUID(as_uuid=True),
             server_default=sa.text("gen_random_uuid()"),
             primary_key=True,
         ),
         sa.Column(
             "animal_id",
-            sa.dialects.postgresql.UUID(as_uuid=True),
+            postgresql.UUID(as_uuid=True),
             sa.ForeignKey("animals.id"),
             nullable=False,
         ),
         sa.Column(
             "farmer_id",
-            sa.dialects.postgresql.UUID(as_uuid=True),
+            postgresql.UUID(as_uuid=True),
             sa.ForeignKey("users.id"),
             nullable=False,
         ),
         sa.Column(
             "vet_id",
-            sa.dialects.postgresql.UUID(as_uuid=True),
+            postgresql.UUID(as_uuid=True),
             sa.ForeignKey("users.id"),
             nullable=True,
         ),
@@ -62,7 +66,7 @@ def upgrade():
         ),
         sa.Column("channel", consultation_channel, nullable=False),
         sa.Column("farmer_notes", sa.Text, nullable=True),
-        sa.Column("photo_urls", sa.dialects.postgresql.JSONB, nullable=True),
+        sa.Column("photo_urls", postgresql.JSONB, nullable=True),
         sa.Column("diagnosis", sa.Text, nullable=True),
         sa.Column("prescription", sa.Text, nullable=True),
         sa.Column("follow_up_date", sa.Date, nullable=True),
@@ -70,12 +74,12 @@ def upgrade():
         sa.Column("district", sa.String(100), nullable=False),
         sa.Column(
             "created_by",
-            sa.dialects.postgresql.UUID(as_uuid=True),
+            postgresql.UUID(as_uuid=True),
             nullable=True,
         ),
         sa.Column(
             "updated_by",
-            sa.dialects.postgresql.UUID(as_uuid=True),
+            postgresql.UUID(as_uuid=True),
             nullable=True,
         ),
         sa.Column(

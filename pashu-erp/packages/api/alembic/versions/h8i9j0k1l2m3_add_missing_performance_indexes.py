@@ -13,14 +13,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.create_index("ix_milk_collection_records_center_id", "milk_collection_records", ["center_id"])
-    op.create_index("ix_milk_collection_records_farmer_user_id", "milk_collection_records", ["farmer_user_id"])
-    op.create_index("ix_health_events_animal_date", "health_events", ["animal_id", "created_at"])
+    # ix_health_events_animal_date already created in a1b2c3d4e5f6
+    # ix_milk_collection_center_id and ix_milk_collection_farmer already created in a1b2c3d4e5f6
     op.create_index("ix_transactions_category", "transactions", ["category"])
 
 
 def downgrade() -> None:
     op.drop_index("ix_transactions_category", "transactions")
-    op.drop_index("ix_health_events_animal_date", "health_events")
-    op.drop_index("ix_milk_collection_records_farmer_user_id", "milk_collection_records")
-    op.drop_index("ix_milk_collection_records_center_id", "milk_collection_records")
