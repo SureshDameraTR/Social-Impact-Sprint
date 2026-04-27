@@ -53,13 +53,15 @@ def upgrade():
         )
         op.create_index(f"ix_{table}_deleted_at", table, ["deleted_at"])
 
-    # 3. Add unique constraint on aadhaar_hash (users table)
+    # 3. Add aadhaar_hash column and unique constraint (users table)
+    op.add_column("users", sa.Column("aadhaar_hash", sa.String(128), nullable=True))
     op.create_unique_constraint("uq_users_aadhaar_hash", "users", ["aadhaar_hash"])
 
 
 def downgrade():
-    # Remove unique constraint
+    # Remove unique constraint and aadhaar_hash column
     op.drop_constraint("uq_users_aadhaar_hash", "users", type_="unique")
+    op.drop_column("users", "aadhaar_hash")
 
     # Remove soft-delete and audit columns
     for table in reversed(TABLES):
