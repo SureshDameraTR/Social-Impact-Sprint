@@ -4,6 +4,7 @@ volume_size         = 20
 ssh_public_key_path = "~/.ssh/pashuraksha.pub"
 operator_ip         = "YOUR_IP/32"       # Run: curl ifconfig.me
 domain              = "maxsocial.co.in"
+subdomain_prefix    = "dev."             # "dev." for dev.api.*, or "" for production
 github_repo         = "https://github.com/your-org/Social-Impact-Sprint.git"
 db_password         = "CHANGE_ME"
 jwt_secret          = "CHANGE_ME"

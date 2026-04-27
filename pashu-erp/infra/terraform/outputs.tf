@@ -11,22 +11,22 @@ output "ssh_command" {
 output "dns_records" {
   description = "A records to create in GoDaddy"
   value = {
-    "@"       = aws_eip.app.public_ip
-    "www"     = aws_eip.app.public_ip
-    "api"     = aws_eip.app.public_ip
-    "admin"   = aws_eip.app.public_ip
-    "collect" = aws_eip.app.public_ip
-    "vet"     = aws_eip.app.public_ip
+    "@"                              = aws_eip.app.public_ip
+    "www"                            = aws_eip.app.public_ip
+    "${var.subdomain_prefix}api"     = aws_eip.app.public_ip
+    "${var.subdomain_prefix}admin"   = aws_eip.app.public_ip
+    "${var.subdomain_prefix}collect" = aws_eip.app.public_ip
+    "${var.subdomain_prefix}vet"     = aws_eip.app.public_ip
   }
 }
 
 output "urls" {
   description = "Service URLs (available after DNS propagation)"
   value = {
-    api        = "https://api.${var.domain}"
-    admin      = "https://admin.${var.domain}"
-    collection = "https://collect.${var.domain}"
-    vet        = "https://vet.${var.domain}"
+    api        = "https://${var.subdomain_prefix}api.${var.domain}"
+    admin      = "https://${var.subdomain_prefix}admin.${var.domain}"
+    collection = "https://${var.subdomain_prefix}collect.${var.domain}"
+    vet        = "https://${var.subdomain_prefix}vet.${var.domain}"
   }
 }
 

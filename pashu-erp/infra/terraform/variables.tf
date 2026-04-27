@@ -49,6 +49,12 @@ variable "jwt_secret" {
   sensitive   = true
 }
 
+variable "subdomain_prefix" {
+  description = "Prefix for subdomains (e.g. 'dev.' for dev.api.maxsocial.co.in, or '' for production)"
+  type        = string
+  default     = "dev."
+}
+
 variable "backup_bucket_name" {
   description = "S3 bucket name for database backups"
   type        = string

@@ -33,11 +33,12 @@ resource "aws_instance" "app" {
   }
 
   user_data = templatefile("cloud-init.yml", {
-    github_repo   = var.github_repo
-    domain        = var.domain
-    db_password   = var.db_password
-    jwt_secret    = var.jwt_secret
-    backup_bucket = var.backup_bucket_name
+    github_repo      = var.github_repo
+    domain           = var.domain
+    subdomain_prefix = var.subdomain_prefix
+    db_password      = var.db_password
+    jwt_secret       = var.jwt_secret
+    backup_bucket    = var.backup_bucket_name
   })
 
   tags = { Name = "pashuraksha-mvp" }
