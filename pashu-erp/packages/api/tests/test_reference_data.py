@@ -1,3 +1,4 @@
+from app.models.breed import Breed, SpeciesRef
 from app.models.location import District, State, SubDistrict, Village
 
 
@@ -37,3 +38,26 @@ class TestLocationModels:
             sub_district_lgd_code=292201,
         )
         assert v.name == "Navalgund"
+
+
+
+class TestBreedModels:
+    def test_species_ref_has_required_fields(self):
+        sp = SpeciesRef(
+            code="cattle",
+            name_en="Cattle",
+            name_kn="ಹಸು",
+            emoji="\U0001f404",
+        )
+        assert sp.code == "cattle"
+        assert sp.emoji == "\U0001f404"
+
+    def test_breed_has_required_fields(self):
+        breed = Breed(
+            name="Hallikar",
+            species_code="cattle",
+            origin="Karnataka",
+            nbagr_code="INDIA_CATTLE_0600",
+        )
+        assert breed.species_code == "cattle"
+        assert breed.nbagr_code == "INDIA_CATTLE_0600"
