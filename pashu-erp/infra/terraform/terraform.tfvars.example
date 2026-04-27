@@ -1,0 +1,10 @@
+aws_region          = "ap-south-1"
+instance_type       = "t3.micro"
+volume_size         = 20
+ssh_public_key_path = "~/.ssh/pashuraksha.pub"
+operator_ip         = "YOUR_IP/32"       # Run: curl ifconfig.me
+domain              = "maxsocial.co.in"
+github_repo         = "https://github.com/your-org/Social-Impact-Sprint.git"
+db_password         = "CHANGE_ME"
+jwt_secret          = "CHANGE_ME"
+backup_bucket_name  = "pashuraksha-backups"
