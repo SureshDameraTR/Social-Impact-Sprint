@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     environment: str = "development"
     sarvam_api_key: str = ""
     sarvam_base_url: str = "https://api.sarvam.ai"
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_from_number: str = ""
+    twilio_allowed_phones: str = ""  # comma-separated whitelist, empty = allow all
     weather_api_url: str = ""
     bharat_pashudhan_api_url: str = ""
     iot_gateway_url: str = ""
