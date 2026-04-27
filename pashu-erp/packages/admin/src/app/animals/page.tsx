@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useList } from "@refinedev/core";
+import { useSpecies } from "@/hooks/useReferenceData";
 import {
   Box,
   Typography,
@@ -40,11 +41,11 @@ interface Animal {
   sex: string;
 }
 
-const speciesList = ["All", "Cattle", "Buffalo", "Goat", "Sheep", "Poultry"];
-
 type SortKey = "name" | "species" | "user_id" | "sex";
 
 export default function AnimalsPage() {
+  const { speciesNames } = useSpecies();
+  const speciesList = useMemo(() => ["All", ...speciesNames], [speciesNames]);
   const [search, setSearch] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("All");
   const [page, setPage] = useState(0);

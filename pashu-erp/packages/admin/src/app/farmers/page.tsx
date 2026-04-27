@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useList } from "@refinedev/core";
+import { useDistricts } from "@/hooks/useReferenceData";
 import {
   Box,
   Typography,
@@ -36,13 +37,17 @@ interface Farmer {
   registered_date: string;
 }
 
-const districtColors: Record<string, string> = {
-  Mysuru: colors.primary,
-  Mandya: colors.accentBlue,
-  Hassan: colors.accentAmber,
-  Chamarajanagar: colors.accentRed,
-  Kodagu: colors.accentGreen,
-};
+const DISTRICT_PALETTE = [
+  colors.primary,
+  colors.accentBlue,
+  colors.accentAmber,
+  colors.accentRed,
+  colors.accentGreen,
+  "#9C27B0",
+  "#00BCD4",
+  "#FF5722",
+  "#607D8B",
+];
 
 function getInitials(name: string) {
   return name
@@ -56,6 +61,15 @@ function getInitials(name: string) {
 type SortKey = "name" | "district" | "animals_count" | "registered_date";
 
 export default function FarmersPage() {
+  const { districts } = useDistricts();
+  const districtColors: Record<string, string> = useMemo(() => {
+    const map: Record<string, string> = {};
+    districts.forEach((d, i) => {
+      map[d.name] = DISTRICT_PALETTE[i % DISTRICT_PALETTE.length];
+    });
+    return map;
+  }, [districts]);
+
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
