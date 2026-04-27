@@ -2,7 +2,7 @@
 
 Single source of truth for all SDLC agents. When files move or new modules appear, update this file — agents reference it instead of hardcoding paths.
 
-Last verified: 2026-04-16
+Last verified: 2026-04-27
 
 ## Packages
 
@@ -22,12 +22,13 @@ Last verified: 2026-04-16
 | PostgreSQL 16 | `db` | 5432 | postgres:16-alpine |
 | FastAPI API | `api` | 8000 | Built from `packages/api/` |
 | Mock Backends | `mock-backends` | 8001 | Built from `mocks/` |
+| MinIO (S3) | `minio` | 9000/9001 | minio/minio:latest |
 
 Config: `docker-compose.yml`, `docker-compose.test.yml`, `.env`, `.env.example`
 
 ## API Package — File Registry
 
-### Models (26 ORM models) — `packages/api/app/models/`
+### Models (29 ORM models) — `packages/api/app/models/`
 | File | Table | Key Relations |
 |------|-------|---------------|
 | `user.py` | users | has_many: animals, health_events, yield_logs |
@@ -43,7 +44,10 @@ Config: `docker-compose.yml`, `docker-compose.test.yml`, `.env`, `.env.example`
 | `feed.py` | feed_ingredients, feed_formulations | formulation has_many: ingredients |
 | `alerts.py` | health_alerts | belongs_to: user (reporter) |
 | `insurance.py` | insurance_policies, insurance_claims | claim belongs_to: policy |
-| `reference.py` | reference data (market rates, breeds) | - |
+| `reference.py` | market_rates, insurance_premiums, medicine_catalog | - |
+| `location.py` | states, districts, sub_districts, villages | LGD integer PKs; hierarchical FKs |
+| `breed.py` | species_ref, breeds | breed belongs_to: species_ref; NBAGR codes |
+| `domain_knowledge.py` | disease_rules, vaccination_schedule, feed_standards | FK to species_ref; versioned, soft-active |
 | `shg.py` | self_help_groups, shg_members | member belongs_to: group, user |
 | `weather.py` | weather_data | - |
 | `vet.py` | vet_consultations | belongs_to: animal, user (vet) |
@@ -51,7 +55,7 @@ Config: `docker-compose.yml`, `docker-compose.test.yml`, `.env`, `.env.example`
 | `base.py` | - | Base class: UUID PK, created_at, updated_at, deleted_at |
 | `consent.py` | consents | belongs_to: user; DPDP consent records (purpose, status, audit trail) |
 
-### Routers (29 endpoints) — `packages/api/app/routers/`
+### Routers (31 endpoints) — `packages/api/app/routers/`
 | File | Prefix | Auth | Methods |
 |------|--------|------|---------|
 | `auth.py` | `/v1/auth` | None | POST send-otp, verify-otp |
@@ -79,32 +83,44 @@ Config: `docker-compose.yml`, `docker-compose.test.yml`, `.env`, `.env.example`
 | `iot.py` | `/v1/iot` | farmer/admin | GET devices, telemetry |
 | `map_points.py` | `/v1/map-points` | any | GET points |
 | `users.py` | `/v1/users` | admin | CRUD users |
-| `reference.py` | `/v1/reference` | any | GET breeds, rates |
+| `reference.py` | `/v1/reference` | Public + auth | GET states, districts, sub-districts, villages, species, breeds, disease-rules, vaccination-schedule, feed-standards (public); GET market-rates, insurance-premiums, medicines (auth) |
+| `storage.py` | `/v1/storage` | Bearer | POST upload-url, GET download-url (S3 presigned URLs) |
+| `admin_refresh.py` | `/v1/admin/refresh` | Admin | POST locations, market-prices, milk-prices, disease-rules, all |
 | `files.py` | `/v1/files` | any | POST upload |
 | `vet.py` | `/v1/vet` | vet | CRUD consultations |
 | `consent.py` | `/v1/consent` | any | grant, withdraw, list my consents, erasure request |
 
-### Schemas (20 Pydantic models) — `packages/api/app/schemas/`
-`animals.py`, `health.py`, `milk.py`, `finance.py`, `marketplace.py`, `schemes.py`, `medicine.py`, `advisory.py`, `ethno_vet.py`, `feed.py`, `alerts.py`, `insurance.py`, `weather.py`, `shg.py`, `admin.py`, `income.py`, `auth.py`, `consent.py`
+### Schemas (21 Pydantic models) — `packages/api/app/schemas/`
+`animals.py`, `health.py`, `milk.py`, `finance.py`, `marketplace.py`, `schemes.py`, `medicine.py`, `advisory.py`, `ethno_vet.py`, `feed.py`, `alerts.py`, `insurance.py`, `weather.py`, `shg.py`, `admin.py`, `income.py`, `auth.py`, `consent.py`, `reference.py`
 
-**Gap**: Routers without dedicated schemas: `iot`, `map_points`, `onboarding`, `vaccination`, `milk_center`, `bharat_pashudhan`, `reference`, `files`, `vet`
+`reference.py` schemas: StateRead, DistrictRead, SubDistrictRead, VillageRead, SpeciesRead, BreedRead, DiseaseRuleRead, VaccinationScheduleRead, FeedStandardRead, MarketPriceRead + list response wrappers
 
-### Services (13 business logic) — `packages/api/app/services/`
+**Gap**: Routers without dedicated schemas: `iot`, `map_points`, `onboarding`, `vaccination`, `milk_center`, `bharat_pashudhan`, `files`, `vet`
+
+### Services (22 business logic) — `packages/api/app/services/`
 | File | Purpose |
 |------|---------|
-| `disease_rules.py` | Symptom → disease matching engine (55+ rules) |
-| `vaccination_scheduler.py` | Species/age → vaccination schedule |
+| `disease_rules.py` | Symptom → disease matching engine (55+ rules) + DB-backed lookup |
+| `vaccination_scheduler.py` | Species/age → vaccination schedule + DB-backed lookup |
 | `feed_calculator.py` | Nutritional requirements calculator |
 | `market_rates.py` | Market rate lookup |
 | `milk_pricing.py` | FAT/SNF-based pricing |
-| `weather_service.py` | External weather API client |
+| `weather_service.py` | Weather API client (Open-Meteo primary, mock fallback) |
+| `open_meteo.py` | Open-Meteo weather API client with TTLCache and retry |
+| `data_gov_client.py` | data.gov.in reusable API client with pagination |
+| `storage_service.py` | S3/MinIO presigned URL service |
+| `seed_reference.py` | Bootstrap seed data (species, breeds, Karnataka districts) |
 | `bharat_pashudhan.py` | National registry client |
 | `iot_service.py` | IoT gateway client |
-| `storage_service.py` | File storage client |
 | `errors.py` | Custom exception hierarchy |
 | `otp/base.py` | OTP provider interface |
 | `otp/sarvam.py` | Sarvam SMS provider |
 | `otp/console.py` | Dev console OTP (logs to stdout) |
+| `refresh/base.py` | RefreshResult dataclass for idempotent sync jobs |
+| `refresh/lgd_sync.py` | LGD location sync from data.gov.in |
+| `refresh/market_prices.py` | Agmarknet commodity price sync |
+| `refresh/milk_prices.py` | NDDB/KMF milk price scraper (BeautifulSoup) |
+| `refresh/disease_sync.py` | Disease rules bootstrap from hardcoded to DB |
 
 ### Middleware — `packages/api/app/middleware/`
 | File | Purpose |
@@ -114,7 +130,7 @@ Config: `docker-compose.yml`, `docker-compose.test.yml`, `.env`, `.env.example`
 | `request_logging.py` | Request ID injection, timing |
 
 ### Migrations — `packages/api/alembic/versions/`
-12 versions: initial_schema → performance_indexes → otp_table → reference_data → float_to_numeric → audit_softdelete → gender_column → vet_consultations → composite_indexes → refresh_tokens → fk_constraints_updated_at → buffalo_species_enum
+13 versions: initial_schema → performance_indexes → otp_table → reference_data → float_to_numeric → audit_softdelete → gender_column → vet_consultations → composite_indexes → refresh_tokens → fk_constraints_updated_at → buffalo_species_enum → add_reference_data_system (9 new tables)
 
 ### Config
 | File | Purpose |
@@ -147,6 +163,11 @@ Config: `docker-compose.yml`, `docker-compose.test.yml`, `.env`, `.env.example`
 | `vet/alerts/page.tsx` | `/vet/alerts` | `/v1/alerts` |
 | `vet/cases/page.tsx` | `/vet/cases` | `/v1/vet` |
 | `vet/cases/[id]/page.tsx` | `/vet/cases/:id` | `/v1/vet/:id` |
+
+### Hooks — `packages/admin/src/hooks/`
+| File | Purpose |
+|------|---------|
+| `useReferenceData.ts` | `useSpecies()`, `useBreeds()`, `useDistricts()` — fetch from `/v1/reference/*` via Refine `useList` |
 
 ### Components — `packages/admin/src/components/`
 `AdminSidebar.tsx`, `SpeciesChip.tsx`, `RiskBadge.tsx`, `StatCard.tsx`, `GISMap.tsx`, `EmptyState.tsx`
@@ -189,8 +210,15 @@ Config: `docker-compose.yml`, `docker-compose.test.yml`, `.env`, `.env.example`
 ### Build Config
 `eas.json` — EAS Build profiles (development, preview, production)
 
+### Hooks — `packages/mobile/src/hooks/`
+| File | Purpose |
+|------|---------|
+| `useReferenceData.ts` | `useSpecies()`, `useBreeds()`, `useDistricts()` — fetch from `/v1/reference/*` via @tanstack/react-query |
+| `useAppUpdate.ts` | App update check |
+| `useSnackbar.tsx` | Snackbar context |
+
 ### Config — `packages/mobile/src/config/`
-`api.ts` — Axios client (15s timeout, 3 retries, exponential backoff)
+`api.ts` — ApiClient (15s timeout, 3 retries, exponential backoff, offline queue)
 
 ### i18n — `packages/mobile/src/i18n/`
 `en.json`, `kn.json` (Kannada — primary), `hi.json` (Hindi — partial)
