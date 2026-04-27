@@ -67,9 +67,7 @@ async def get_current_user(
     """Decode JWT from cookie or Bearer header and return the authenticated User."""
     token = _extract_token(request, credentials)
     try:
-        payload = jwt.decode(
-            token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
-        )
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         user_id: str | None = payload.get("sub")
         if user_id is None:
             raise HTTPException(
@@ -80,7 +78,7 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
-        )
+        ) from None
 
     cached = _get_cached_user(user_id)
     if cached is not None:

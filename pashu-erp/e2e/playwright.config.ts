@@ -20,6 +20,11 @@ export default defineConfig({
       testMatch: ['admin-smoke.spec.ts', 'visual/visual-baseline.spec.ts'],
     },
     {
+      name: 'fullstack',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: ['fullstack-smoke.spec.ts'],
+    },
+    {
       name: 'collection',
       use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:3001' },
       testMatch: ['visual/visual-baseline.spec.ts'],
@@ -33,19 +38,19 @@ export default defineConfig({
 
   webServer: [
     {
-      command: 'cd packages/admin && npx next dev --port 3000',
+      command: 'cd ../packages/admin && npx next dev --port 3000',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
     {
-      command: 'cd packages/collection && npx vite --port 3001',
+      command: 'cd ../packages/collection && npx vite --port 3001',
       url: 'http://localhost:3001',
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
     },
     {
-      command: 'cd packages/vet && npx vite --port 3002',
+      command: 'cd ../packages/vet && npx vite --port 3002',
       url: 'http://localhost:3002',
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,

@@ -10,14 +10,17 @@ import { api } from '../src/config/api';
 import { loadLanguage } from '../src/i18n';
 
 interface UserProfile {
+  id: string;
   name: string;
   phone: string;
-  village: string;
-  totalAnimals: number;
-  farmSize: string;
-  memberSince: string;
-  todayMilk: number;
-  monthlyIncome: number;
+  role: string;
+  lang_pref: string | null;
+  location_district: string | null;
+  location_state: string | null;
+  village_code: string | null;
+  preferences: Record<string, unknown> | null;
+  animal_count: number;
+  created_at: string | null;
 }
 
 export default function ProfileScreen() {
@@ -86,7 +89,9 @@ export default function ProfileScreen() {
           {profile?.phone || '\u2014'}
         </Text>
         <Text variant="bodyMedium" style={styles.village}>
-          {profile?.village || '\u2014'}
+          {profile?.location_district
+            ? `${profile.location_district}, ${profile.location_state || 'Karnataka'}`
+            : '\u2014'}
         </Text>
       </View>
 
@@ -128,17 +133,19 @@ export default function ProfileScreen() {
           <Divider style={styles.cardDivider} />
           <List.Item
             title={t('animals.totalAnimals')}
-            description={profile ? String(profile.totalAnimals) : '\u2014'}
+            description={profile ? String(profile.animal_count) : '\u2014'}
             left={(props) => <List.Icon {...props} icon="paw" />}
           />
           <List.Item
-            title={t('profile.farmSize')}
-            description={profile?.farmSize || '\u2014'}
-            left={(props) => <List.Icon {...props} icon="terrain" />}
+            title={t('profile.village')}
+            description={profile?.village_code || '\u2014'}
+            left={(props) => <List.Icon {...props} icon="map-marker" />}
           />
           <List.Item
             title={t('profile.memberSince')}
-            description={profile?.memberSince || '\u2014'}
+            description={profile?.created_at
+              ? new Date(profile.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' })
+              : '\u2014'}
             left={(props) => <List.Icon {...props} icon="calendar" />}
           />
         </Card.Content>
@@ -148,20 +155,20 @@ export default function ProfileScreen() {
       <View style={styles.statsRow}>
         <Card style={styles.statCard}>
           <Card.Content style={styles.statContent}>
-            <Text style={styles.statIcon}>{'\uD83E\uDD5B'}</Text>
+            <Text style={styles.statIcon}>{'\uD83D\uDC04'}</Text>
             <Text variant="headlineSmall" style={styles.statValue}>
-              {profile ? `${profile.todayMilk}L` : '\u2014'}
+              {profile ? String(profile.animal_count) : '\u2014'}
             </Text>
-            <Text variant="bodySmall">{t('milk.todayTotal')}</Text>
+            <Text variant="bodySmall">{t('animals.totalAnimals')}</Text>
           </Card.Content>
         </Card>
         <Card style={styles.statCard}>
           <Card.Content style={styles.statContent}>
-            <Text style={styles.statIcon}>{'\uD83D\uDCB0'}</Text>
+            <Text style={styles.statIcon}>{'\uD83C\uDF3E'}</Text>
             <Text variant="headlineSmall" style={styles.statValue}>
-              {profile ? `\u20B9${(profile.monthlyIncome / 1000).toFixed(1)}K` : '\u2014'}
+              {profile?.role || '\u2014'}
             </Text>
-            <Text variant="bodySmall">{t('income.monthly')}</Text>
+            <Text variant="bodySmall">{t('profile.role')}</Text>
           </Card.Content>
         </Card>
       </View>
@@ -184,7 +191,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surface,
   },
   scroll: {
     padding: SPACING.md,

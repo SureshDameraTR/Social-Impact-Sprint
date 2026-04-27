@@ -45,10 +45,6 @@ const speciesList = ["All", "Cattle", "Buffalo", "Goat", "Sheep", "Poultry"];
 type SortKey = "name" | "species" | "user_id" | "sex";
 
 export default function AnimalsPage() {
-  useEffect(() => {
-    document.title = 'Animals — PashuRaksha ERP';
-  }, []);
-
   const [search, setSearch] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("All");
   const [page, setPage] = useState(0);
@@ -62,6 +58,7 @@ export default function AnimalsPage() {
       current: page + 1,
       pageSize: rowsPerPage,
     },
+    sorters: sortBy ? [{ field: sortBy, order: sortDir }] : [],
   });
 
   const animals = data?.data ?? [];
@@ -76,6 +73,7 @@ export default function AnimalsPage() {
       setSortDir("asc");
       return key;
     });
+    setPage(0);
   }, []);
 
   const filtered = useMemo(
@@ -89,16 +87,6 @@ export default function AnimalsPage() {
       }),
     [animals, search, speciesFilter]
   );
-
-  const sortedRows = useMemo(() => {
-    if (!sortBy) return filtered;
-    const sorted = [...filtered];
-    sorted.sort((a, b) => {
-      const cmp = a[sortBy].localeCompare(b[sortBy]);
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-    return sorted;
-  }, [filtered, sortBy, sortDir]);
 
   if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }} role="status" aria-label="Loading"><CircularProgress /></Box>;
   if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
@@ -174,16 +162,14 @@ export default function AnimalsPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedRows.length === 0 ? (
+              {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} sx={{ border: 0 }}>
                     <EmptyState />
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedRows
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((animal) => (
+                filtered.map((animal) => (
                     <TableRow key={animal.id}>
                       <TableCell sx={sxNameCell}>
                         {animal.name}
@@ -209,7 +195,7 @@ export default function AnimalsPage() {
         </TableContainer>
         <TablePagination
           component="div"
-          count={search || speciesFilter !== "All" ? sortedRows.length : serverTotal}
+          count={search || speciesFilter !== "All" ? filtered.length : serverTotal}
           page={page}
           onPageChange={(_, p) => setPage(p)}
           rowsPerPage={rowsPerPage}

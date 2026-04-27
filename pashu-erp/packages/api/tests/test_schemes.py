@@ -4,7 +4,6 @@ import uuid
 from datetime import date, datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
 
 
@@ -32,9 +31,7 @@ def _mock_scheme() -> MagicMock:
 
 
 class TestListSchemes:
-    async def test_list_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []
@@ -43,9 +40,7 @@ class TestListSchemes:
         resp = await client.get("/v1/schemes")
         assert resp.status_code == 200
 
-    async def test_list_with_ministry_filter(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_with_ministry_filter(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with ministry filter returns 200."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []
@@ -66,9 +61,7 @@ class TestListSchemes:
 
 
 class TestGetScheme:
-    async def test_get_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 for existing scheme."""
         scheme = _mock_scheme()
         result = MagicMock()
@@ -78,9 +71,7 @@ class TestGetScheme:
         resp = await client.get(f"/v1/schemes/{scheme.id}")
         assert resp.status_code == 200
 
-    async def test_get_not_found(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_not_found(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with nonexistent ID returns 404."""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
@@ -110,13 +101,9 @@ class TestCreateScheme:
         )
         assert resp.status_code == 201
 
-    async def test_create_missing_fields(
-        self, client_as_admin: AsyncClient
-    ) -> None:
+    async def test_create_missing_fields(self, client_as_admin: AsyncClient) -> None:
         """POST without required fields returns 422."""
-        resp = await client_as_admin.post(
-            "/v1/schemes", json={"name": "Test"}
-        )
+        resp = await client_as_admin.post("/v1/schemes", json={"name": "Test"})
         assert resp.status_code == 422
 
     async def test_create_no_auth(self, client_no_auth: AsyncClient) -> None:

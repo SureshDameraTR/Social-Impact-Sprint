@@ -3,7 +3,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -15,22 +15,57 @@ from app.models.user import User
 from app.schemas.insurance import (
     InsuranceClaimCreate,
     InsuranceClaimRead,
-    InsurancePolicyRead,
+    InsurancePolicyListResponse,
     PremiumEstimate,
 )
 
 router = APIRouter(prefix="/v1/insurance", tags=["Insurance"])
 
 
-@router.get("/policies/{user_id}", response_model=list[InsurancePolicyRead])
-async def get_user_policies(
-    user_id: UUID,
-    skip: int = Query(0, ge=0),
+@router.get("/policies", response_model=InsurancePolicyListResponse)
+async def get_my_policies(
+    offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get all insurance policies for a user's animals."""
+    """Get insurance policies for the authenticated user's animals."""
+    user_id = current_user.id
+
+    animal_result = await db.execute(
+        select(Animal.id).where(Animal.user_id == user_id, Animal.deleted_at.is_(None))
+    )
+    animal_ids = [row[0] for row in animal_result.all()]
+
+    if not animal_ids:
+        return {"data": [], "total": 0}
+
+    count_result = await db.execute(
+        select(func.count())
+        .select_from(InsurancePolicy)
+        .where(InsurancePolicy.animal_id.in_(animal_ids), InsurancePolicy.deleted_at.is_(None))
+    )
+    total = count_result.scalar() or 0
+
+    result = await db.execute(
+        select(InsurancePolicy)
+        .where(InsurancePolicy.animal_id.in_(animal_ids), InsurancePolicy.deleted_at.is_(None))
+        .order_by(InsurancePolicy.valid_to.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    return {"data": result.scalars().all(), "total": total}
+
+
+@router.get("/policies/{user_id}", response_model=InsurancePolicyListResponse)
+async def get_user_policies(
+    user_id: UUID,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get all insurance policies for a user's animals (admin or self)."""
     if str(current_user.id) != str(user_id) and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
 
@@ -41,16 +76,23 @@ async def get_user_policies(
     animal_ids = [row[0] for row in animal_result.all()]
 
     if not animal_ids:
-        return []
+        return {"data": [], "total": 0}
+
+    count_result = await db.execute(
+        select(func.count())
+        .select_from(InsurancePolicy)
+        .where(InsurancePolicy.animal_id.in_(animal_ids), InsurancePolicy.deleted_at.is_(None))
+    )
+    total = count_result.scalar() or 0
 
     result = await db.execute(
         select(InsurancePolicy)
         .where(InsurancePolicy.animal_id.in_(animal_ids), InsurancePolicy.deleted_at.is_(None))
         .order_by(InsurancePolicy.valid_to.desc())
-        .offset(skip)
+        .offset(offset)
         .limit(limit)
     )
-    return result.scalars().all()
+    return {"data": result.scalars().all(), "total": total}
 
 
 @router.post("/claims", response_model=InsuranceClaimRead, status_code=status.HTTP_201_CREATED)
@@ -62,7 +104,9 @@ async def file_claim(
     """File an insurance claim against a policy."""
     # Verify policy exists
     policy_result = await db.execute(
-        select(InsurancePolicy).where(InsurancePolicy.id == body.policy_id, InsurancePolicy.deleted_at.is_(None))
+        select(InsurancePolicy).where(
+            InsurancePolicy.id == body.policy_id, InsurancePolicy.deleted_at.is_(None)
+        )
     )
     policy = policy_result.scalar_one_or_none()
     if policy is None:
@@ -96,10 +140,15 @@ async def estimate_premium(
     db: AsyncSession = Depends(get_db),
 ):
     """Estimate insurance premium for an animal based on species, breed type, and age."""
-    result = await db.execute(select(Animal).where(Animal.id == animal_id, Animal.deleted_at.is_(None)))
+    result = await db.execute(
+        select(Animal).where(Animal.id == animal_id, Animal.deleted_at.is_(None))
+    )
     animal = result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
+
+    if str(animal.user_id) != str(current_user.id) and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to estimate for this animal")
 
     species = animal.species.lower() if animal.species else "cattle"
     breed_type = animal.breed_type.lower() if animal.breed_type else "indigenous"

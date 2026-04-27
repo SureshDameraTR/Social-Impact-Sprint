@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,7 +14,7 @@ from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.animal import Animal
 from app.models.user import User
-from app.schemas.animals import AnimalCreate, AnimalRead, AnimalUpdate
+from app.schemas.animals import AnimalCreate, AnimalListResponse, AnimalRead, AnimalUpdate
 
 router = APIRouter(prefix="/v1/animals", tags=["Animals"])
 
@@ -59,18 +59,20 @@ async def create_animal(
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="pashu_aadhaar_id already exists",
-                )
+                ) from None
             # Auto-generated ID collided — retry with a new random value
             if attempt == settings.max_id_retries - 1:
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="Could not generate a unique Pashu Aadhaar ID; please retry",
-                )
+                ) from None
 
 
-@router.get("")
+@router.get("", response_model=AnimalListResponse)
 async def list_animals(
-    species: str | None = Query(None, description="Filter by species (cattle, goat, sheep, poultry)"),
+    species: str | None = Query(
+        None, description="Filter by species (cattle, goat, sheep, poultry)"
+    ),
     limit: int = Query(50, le=200),
     offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
@@ -92,9 +94,7 @@ async def list_animals(
         base = base.where(Animal.species == species)
 
     # Count
-    count_result = await db.execute(
-        select(func.count()).select_from(base.subquery())
-    )
+    count_result = await db.execute(select(func.count()).select_from(base.subquery()))
     total = count_result.scalar() or 0
 
     # Data
@@ -105,20 +105,43 @@ async def list_animals(
     return {"data": data, "total": total, "limit": limit, "offset": offset}
 
 
+async def _can_access_animal(user: User, animal: Animal, db: AsyncSession) -> bool:
+    """Check if a user can view/manage an animal.
+
+    Admins can access any animal; vets can access animals whose owner is in
+    the same district; farmers can only access their own.
+    """
+    if user.role == "admin":
+        return True
+    if user.role == "vet":
+        owner = await db.get(User, animal.user_id)
+        if owner and owner.village_code and user.village_code:
+            return owner.village_code[:2] == user.village_code[:2]
+        return True  # fallback if village_code not set
+    return str(animal.user_id) == str(user.id)
+
+
+def _can_modify_animal(user: User, animal: Animal) -> bool:
+    """Check if a user can modify an animal. Only owner or admin."""
+    if user.role == "admin":
+        return True
+    return str(animal.user_id) == str(user.id)
+
+
 @router.get("/{animal_id}", response_model=AnimalRead)
 async def get_animal(
     animal_id: UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get a single animal by ID (owner check)."""
+    """Get a single animal by ID (admin/vet can view any, farmer: own only)."""
     result = await db.execute(
         select(Animal).where(Animal.id == animal_id, Animal.deleted_at.is_(None))
     )
     animal = result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
-    if str(animal.user_id) != str(current_user.id):
+    if not await _can_access_animal(current_user, animal, db):
         raise HTTPException(status_code=403, detail="Not your animal")
     return animal
 
@@ -137,7 +160,7 @@ async def update_animal(
     animal = result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
-    if str(animal.user_id) != str(current_user.id):
+    if not _can_modify_animal(current_user, animal):
         raise HTTPException(status_code=403, detail="Not your animal")
 
     update_data = body.model_dump(exclude_unset=True)
@@ -168,8 +191,30 @@ async def delete_animal(
     animal = result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
-    if str(animal.user_id) != str(current_user.id):
+    if not _can_modify_animal(current_user, animal):
         raise HTTPException(status_code=403, detail="Not your animal")
 
-    animal.deleted_at = datetime.now(timezone.utc)
+    from app.models.health import HealthEvent, Vaccination
+    from app.models.milk import YieldLog
+
+    now = datetime.now(timezone.utc)
+    animal.deleted_at = now
+
+    # Cascade soft-delete to related records
+    await db.execute(
+        update(HealthEvent)
+        .where(HealthEvent.animal_id == animal_id, HealthEvent.deleted_at.is_(None))
+        .values(deleted_at=now)
+    )
+    await db.execute(
+        update(YieldLog)
+        .where(YieldLog.animal_id == animal_id, YieldLog.deleted_at.is_(None))
+        .values(deleted_at=now)
+    )
+    await db.execute(
+        update(Vaccination)
+        .where(Vaccination.animal_id == animal_id, Vaccination.deleted_at.is_(None))
+        .values(deleted_at=now)
+    )
+
     await db.commit()

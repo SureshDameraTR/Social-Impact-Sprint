@@ -10,11 +10,16 @@ Run:
   .venv/bin/python -m pytest tests/test_integration_e2e.py -v --tb=short
 """
 
-import re
 import json
+import re
 import urllib.request
+
 import pytest
-from playwright.sync_api import sync_playwright, Page, expect
+
+try:
+    from playwright.sync_api import Page, expect, sync_playwright
+except ModuleNotFoundError:
+    pytest.skip("playwright not installed", allow_module_level=True)
 
 API_URL = "http://localhost:8000"
 ADMIN_URL = "http://localhost:3000"
@@ -56,11 +61,13 @@ def auth_data():
 def _inject_auth(page: Page, auth_data: dict):
     """Inject auth token into localStorage."""
     token = auth_data.get("access_token", "")
-    user_json = json.dumps({
-        "id": auth_data.get("user_id", "unknown"),
-        "name": auth_data.get("name", "Admin"),
-        "role": auth_data.get("role", "admin"),
-    })
+    user_json = json.dumps(
+        {
+            "id": auth_data.get("user_id", "unknown"),
+            "name": auth_data.get("name", "Admin"),
+            "role": auth_data.get("role", "admin"),
+        }
+    )
     page.evaluate(f"""() => {{
         localStorage.setItem('token', '{token}');
         localStorage.setItem('user', '{user_json}');
@@ -76,17 +83,19 @@ def _go(page: Page, path: str, auth_data: dict = None):
     page.wait_for_timeout(2500)
 
 
-@pytest.fixture()
+@pytest.fixture
 def page(browser, auth_data):
     """Fresh page per test with auth pre-set via addInitScript."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     ctx.set_default_timeout(20000)
     token = auth_data.get("access_token", "")
-    user_json = json.dumps({
-        "id": auth_data.get("user_id", "unknown"),
-        "name": auth_data.get("name", "Admin"),
-        "role": auth_data.get("role", "admin"),
-    })
+    user_json = json.dumps(
+        {
+            "id": auth_data.get("user_id", "unknown"),
+            "name": auth_data.get("name", "Admin"),
+            "role": auth_data.get("role", "admin"),
+        }
+    )
     # This runs BEFORE any page JS, ensuring token is available at first render
     ctx.add_init_script(f"""
         localStorage.setItem('token', '{token}');
@@ -102,6 +111,7 @@ def page(browser, auth_data):
 
 
 # ─── Dashboard ────────────────────────────────────────────────────────
+
 
 class TestDashboard:
     def test_loads(self, page: Page, auth_data):
@@ -120,6 +130,7 @@ class TestDashboard:
 
 
 # ─── Farmers ──────────────────────────────────────────────────────────
+
 
 class TestFarmers:
     def test_loads(self, page: Page, auth_data):
@@ -140,6 +151,7 @@ class TestFarmers:
 
 # ─── Animals ──────────────────────────────────────────────────────────
 
+
 class TestAnimals:
     def test_loads(self, page: Page, auth_data):
         _go(page, "/animals", auth_data)
@@ -154,6 +166,7 @@ class TestAnimals:
 
 
 # ─── Milk ─────────────────────────────────────────────────────────────
+
 
 class TestMilk:
     def test_loads(self, page: Page, auth_data):
@@ -176,6 +189,7 @@ class TestMilk:
 
 # ─── Health ───────────────────────────────────────────────────────────
 
+
 class TestHealth:
     def test_loads(self, page: Page, auth_data):
         _go(page, "/health", auth_data)
@@ -189,11 +203,14 @@ class TestHealth:
     def test_has_filter(self, page: Page, auth_data):
         _go(page, "/health", auth_data)
         # MUI Select renders as div with role, or InputLabel
-        filters = page.locator("[role='combobox'], .MuiSelect-select, .MuiInputLabel-root, .MuiFormControl-root select")
+        filters = page.locator(
+            "[role='combobox'], .MuiSelect-select, .MuiInputLabel-root, .MuiFormControl-root select"
+        )
         assert filters.count() > 0 or "risk" in page.inner_text("body").lower()
 
 
 # ─── Marketplace ──────────────────────────────────────────────────────
+
 
 class TestMarketplace:
     def test_loads(self, page: Page, auth_data):
@@ -215,6 +232,7 @@ class TestMarketplace:
 
 # ─── Income ───────────────────────────────────────────────────────────
 
+
 class TestIncome:
     def test_loads(self, page: Page, auth_data):
         _go(page, "/income", auth_data)
@@ -229,6 +247,7 @@ class TestIncome:
 
 # ─── Vaccinations ─────────────────────────────────────────────────────
 
+
 class TestVaccinations:
     def test_loads(self, page: Page, auth_data):
         _go(page, "/vaccinations", auth_data)
@@ -237,13 +256,15 @@ class TestVaccinations:
     def test_has_content(self, page: Page, auth_data):
         _go(page, "/vaccinations", auth_data)
         body = page.inner_text("body").lower()
-        has_data = any(t in body for t in [
-            "coverage", "schedule", "fmd", "brucella", "cattle", "goat", "village"
-        ])
+        has_data = any(
+            t in body
+            for t in ["coverage", "schedule", "fmd", "brucella", "cattle", "goat", "village"]
+        )
         assert has_data or len(body) > 200
 
 
 # ─── Schemes ──────────────────────────────────────────────────────────
+
 
 class TestSchemes:
     def test_loads(self, page: Page, auth_data):
@@ -254,6 +275,7 @@ class TestSchemes:
 
 # ─── Map ──────────────────────────────────────────────────────────────
 
+
 class TestMap:
     def test_loads(self, page: Page, auth_data):
         _go(page, "/map", auth_data)
@@ -261,6 +283,7 @@ class TestMap:
 
 
 # ─── IoT ──────────────────────────────────────────────────────────────
+
 
 class TestIoT:
     def test_loads(self, page: Page, auth_data):
@@ -270,6 +293,7 @@ class TestIoT:
 
 # ─── Navigation ───────────────────────────────────────────────────────
 
+
 class TestNavigation:
     def test_sidebar_links(self, page: Page, auth_data):
         _go(page, "/", auth_data)
@@ -277,9 +301,19 @@ class TestNavigation:
         assert nav.count() >= 5
 
     def test_all_pages_accessible(self, page: Page, auth_data):
-        routes = ["/", "/farmers", "/animals", "/milk", "/health",
-                  "/marketplace", "/income", "/vaccinations", "/schemes",
-                  "/map", "/iot"]
+        routes = [
+            "/",
+            "/farmers",
+            "/animals",
+            "/milk",
+            "/health",
+            "/marketplace",
+            "/income",
+            "/vaccinations",
+            "/schemes",
+            "/map",
+            "/iot",
+        ]
         errors = []
         for route in routes:
             _go(page, route, auth_data)
@@ -293,16 +327,19 @@ class TestNavigation:
 
 # ─── Console Errors ──────────────────────────────────────────────────
 
+
 def _make_auth_context(browser, auth_data):
     """Create a browser context with auth pre-injected via addInitScript."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     ctx.set_default_timeout(20000)
     token = auth_data.get("access_token", "")
-    user_json = json.dumps({
-        "id": auth_data.get("user_id", "unknown"),
-        "name": auth_data.get("name", "Admin"),
-        "role": auth_data.get("role", "admin"),
-    })
+    user_json = json.dumps(
+        {
+            "id": auth_data.get("user_id", "unknown"),
+            "name": auth_data.get("name", "Admin"),
+            "role": auth_data.get("role", "admin"),
+        }
+    )
     ctx.add_init_script(f"""
         localStorage.setItem('token', '{token}');
         localStorage.setItem('user', '{user_json}');
@@ -325,15 +362,19 @@ class TestConsoleErrors:
 
         pg.close()
         ctx.close()
-        critical = [e for e in errors
-                    if "ResizeObserver" not in e
-                    and "chunk" not in e.lower()
-                    and "hooks" not in e.lower()
-                    and "hydrat" not in e.lower()]
+        critical = [
+            e
+            for e in errors
+            if "ResizeObserver" not in e
+            and "chunk" not in e.lower()
+            and "hooks" not in e.lower()
+            and "hydrat" not in e.lower()
+        ]
         assert not critical, f"Console errors: {critical}"
 
 
 # ─── API Integration ─────────────────────────────────────────────────
+
 
 class TestAPIIntegration:
     def test_api_calls_return_200(self, browser, auth_data):
@@ -341,6 +382,7 @@ class TestAPIIntegration:
         pg = ctx.new_page()
 
         failed = []
+
         def on_response(response):
             if "/v1/" in response.url and response.status >= 400:
                 failed.append(f"{response.url} → {response.status}")

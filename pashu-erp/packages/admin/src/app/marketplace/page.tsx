@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useList } from "@refinedev/core";
 import {
   Box,
@@ -72,17 +72,13 @@ function MarketplaceChart({ data }: { data: RevenueByProduct[] }) {
 const MarketplaceChartLazy = dynamic(() => Promise.resolve(MarketplaceChart), {
   ssr: false,
   loading: () => (
-    <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5', borderRadius: 1 }}>
+    <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'grey.100', borderRadius: 1 }}>
       Loading chart...
     </Box>
   ),
 });
 
 export default function MarketplacePage() {
-  useEffect(() => {
-    document.title = 'Marketplace — PashuRaksha ERP';
-  }, []);
-
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -91,12 +87,12 @@ export default function MarketplacePage() {
 
   const txs = data?.data ?? [];
 
-  const totalVolume = useMemo(() => txs.reduce((s, t) => s + t.total_amount, 0), [txs]);
+  const totalVolume = useMemo(() => txs.reduce((s, t) => s + Number(t.total_amount), 0), [txs]);
   const uniqueSellers = useMemo(() => new Set(txs.map((t) => t.user_id)).size, [txs]);
 
   const revenueByProduct = useMemo(() => {
     const map: Record<string, number> = {};
-    txs.forEach((t) => { map[t.product_type] = (map[t.product_type] || 0) + t.total_amount; });
+    txs.forEach((t) => { map[t.product_type] = (map[t.product_type] || 0) + Number(t.total_amount); });
     return Object.entries(map).map(([product, revenue]) => ({ product, revenue }));
   }, [txs]);
 

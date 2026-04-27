@@ -51,28 +51,15 @@ export const options = {
   },
 };
 
-// ── Auth helper ──────────────────────────────────────────────────────────────
-
-function getToken() {
-  // Send OTP
-  http.post(`${API}/v1/auth/send-otp`, JSON.stringify({
-    phone: '+919900000001',
-  }), { headers: { 'Content-Type': 'application/json' } });
-
-  // Verify OTP
-  const res = http.post(`${API}/v1/auth/verify-otp`, JSON.stringify({
-    phone: '+919900000001',
-    otp: '123456',
-  }), { headers: { 'Content-Type': 'application/json' } });
-
-  const body = JSON.parse(res.body);
-  return body.access_token;
-}
-
 // ── Setup (runs once) ────────────────────────────────────────────────────────
+// Pass token via:  k6 run -e TOKEN=<jwt> e2e/load/baseline.js
+// Generate token:  python -c "from e2e.comprehensive.api_perf_phase3 import get_token, reset_otp_limits; reset_otp_limits(); print(get_token('+919900000001'))"
 
 export function setup() {
-  const token = getToken();
+  const token = __ENV.TOKEN;
+  if (!token) {
+    throw new Error('TOKEN env var required. Pre-obtain via OTP flow and pass with: k6 run -e TOKEN=<jwt> ...');
+  }
   return { token };
 }
 

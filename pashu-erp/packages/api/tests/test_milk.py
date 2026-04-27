@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
 
 from tests.conftest import FARMER_USER_ID
@@ -36,9 +35,7 @@ def _mock_animal(user_id: str = FARMER_USER_ID) -> MagicMock:
 
 
 class TestListMilkRecords:
-    async def test_list_milk_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_milk_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with paginated structure."""
         count_result = MagicMock()
         count_result.scalar.return_value = 0
@@ -64,9 +61,7 @@ class TestListMilkRecords:
 
 
 class TestGetTodayTotal:
-    async def test_today_total_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_today_total_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with today's milk data."""
         row = MagicMock()
         row.total = 12.5
@@ -88,9 +83,7 @@ class TestGetTodayTotal:
 
 
 class TestMilkHistory:
-    async def test_history_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_history_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with history data."""
         count_result = MagicMock()
         count_result.scalar.return_value = 0
@@ -111,9 +104,7 @@ class TestMilkHistory:
 
 
 class TestDailySummary:
-    async def test_daily_summary_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_daily_summary_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with daily chart data."""
         result = MagicMock()
         result.all.return_value = []
@@ -132,9 +123,7 @@ class TestDailySummary:
 
 
 class TestRecordYield:
-    async def test_record_yield_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_record_yield_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST with valid data returns 201."""
         animal = _mock_animal()
         result = MagicMock()
@@ -169,9 +158,7 @@ class TestRecordYield:
         )
         assert resp.status_code == 404
 
-    async def test_record_yield_forbidden(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_record_yield_forbidden(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST on another user's animal returns 403."""
         animal = _mock_animal(user_id=str(uuid.uuid4()))
         result = MagicMock()
@@ -212,9 +199,7 @@ class TestRecordYield:
 
 
 class TestDailyCollection:
-    async def test_daily_collection_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_daily_collection_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with daily collection summary."""
         center_id = uuid.uuid4()
         row = MagicMock()

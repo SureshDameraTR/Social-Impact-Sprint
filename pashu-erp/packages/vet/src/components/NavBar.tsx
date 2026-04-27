@@ -46,14 +46,14 @@ export default function NavBar() {
           value={currentTab === -1 ? false : currentTab}
           onChange={(_, idx) => navigate(NAV_TABS[idx].path)}
           textColor="inherit"
-          TabIndicatorProps={{ sx: { bgcolor: "#fff", height: 3 } }}
+          TabIndicatorProps={{ sx: { bgcolor: "common.white", height: 3 } }}
           sx={{ flexGrow: 1, ml: 2 }}
         >
           {NAV_TABS.map((tab) => (
             <Tab
               key={tab.path}
               label={tab.label}
-              sx={{ color: "#fff", fontWeight: 600, textTransform: "none" }}
+              sx={{ color: "common.white", fontWeight: 600, textTransform: "none" }}
             />
           ))}
         </Tabs>

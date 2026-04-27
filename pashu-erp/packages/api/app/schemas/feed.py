@@ -33,6 +33,11 @@ class FeedIngredientRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class FeedIngredientListResponse(BaseModel):
+    data: list[FeedIngredientRead]
+    total: int
+
+
 class RationIngredient(BaseModel):
     name: str
     daily_qty_kg: Decimal = Field(..., max_digits=10, decimal_places=2)

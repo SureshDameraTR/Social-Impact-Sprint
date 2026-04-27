@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useList } from "@refinedev/core";
 import {
   Box,
@@ -56,11 +56,11 @@ interface TelemetryReading {
 /* ---------- Helpers ---------- */
 
 const TYPE_COLORS: Record<string, string> = {
-  smart_collar: "#43a047",
-  ear_tag_sensor: "#1e88e5",
-  bolus_sensor: "#e53935",
-  milk_meter: "#fb8c00",
-  weather_station: "#8e24aa",
+  smart_collar: colors.accentGreen,
+  ear_tag_sensor: colors.accentBlue,
+  bolus_sensor: colors.accentRed,
+  milk_meter: colors.accentAmber,
+  weather_station: colors.secondary,
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -95,10 +95,6 @@ function formatTimestamp(iso: string): string {
 /* ---------- Page ---------- */
 
 export default function IotPage() {
-  useEffect(() => {
-    document.title = "IoT Devices — PashuRaksha ERP";
-  }, []);
-
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -135,7 +131,7 @@ export default function IotPage() {
 
   if (isLoading)
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", p: 8 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", p: 8 }} role="status" aria-label="Loading IoT data">
         <CircularProgress />
       </Box>
     );
@@ -290,6 +286,7 @@ export default function IotPage() {
               setSearch(e.target.value);
               setPage(0);
             }}
+            aria-label="Search IoT devices"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -306,7 +303,7 @@ export default function IotPage() {
           </Alert>
         ) : (
           <TableContainer>
-            <Table>
+            <Table aria-label="IoT telemetry readings">
               <TableHead>
                 <TableRow>
                   <TableCell>Device ID</TableCell>
@@ -351,13 +348,13 @@ export default function IotPage() {
                                 row.battery_pct > 50
                                   ? colors.successLight
                                   : row.battery_pct > 20
-                                    ? "#fff3e0"
+                                    ? colors.warningLight
                                     : colors.errorLight,
                               color:
                                 row.battery_pct > 50
                                   ? colors.accentGreen
                                   : row.battery_pct > 20
-                                    ? "#e65100"
+                                    ? colors.accentAmber
                                     : colors.accentRed,
                               border: "none",
                             }}

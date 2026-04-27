@@ -247,20 +247,22 @@ export default function CaseDetail() {
                     Photos ({c.photo_urls.length})
                   </Typography>
                   <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                    {c.photo_urls.map((url, i) => (
-                      <Box
-                        key={i}
-                        component="img"
-                        src={url}
-                        alt={`Photo ${i + 1}`}
-                        sx={{ width: 80, height: 80, borderRadius: 1, objectFit: "cover" }}
-                      />
-                    ))}
+                    {c.photo_urls
+                      .filter((u) => u.startsWith("/") || u.startsWith("https://"))
+                      .map((url, i) => (
+                        <Box
+                          key={i}
+                          component="img"
+                          src={url}
+                          alt={`Photo ${i + 1}`}
+                          sx={{ width: 80, height: 80, borderRadius: 1, objectFit: "cover" }}
+                        />
+                      ))}
                   </Box>
                 </>
               )}
 
-              {c.video_call_url && (
+              {c.video_call_url && c.video_call_url.startsWith("https://") && (
                 <>
                   <Divider sx={{ my: 2 }} />
                   <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
@@ -271,7 +273,7 @@ export default function CaseDetail() {
                     startIcon={<VideocamIcon />}
                     href={c.video_call_url}
                     target="_blank"
-                    rel="noopener"
+                    rel="noopener noreferrer"
                     size="small"
                   >
                     Join Video Call
@@ -421,8 +423,8 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
       <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100, flexShrink: 0 }}>
         {label}
       </Typography>
-      <Typography variant="body2" fontWeight={500} sx={{ wordBreak: "break-word" }}>
-        {typeof value === "string" ? value : value}
+      <Typography variant="body2" fontWeight={500} sx={{ wordBreak: "break-word" }} component="div">
+        {value}
       </Typography>
     </Box>
   );

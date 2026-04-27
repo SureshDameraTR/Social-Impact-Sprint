@@ -30,8 +30,9 @@ async def get_active_withdrawals(
     """Get active medicine withdrawal statuses for all of the user's animals."""
     # Get user's animal IDs
     animal_result = await db.execute(
-        select(Animal.id, Animal.name, Animal.species)
-        .where(Animal.user_id == current_user.id, Animal.deleted_at.is_(None))
+        select(Animal.id, Animal.name, Animal.species).where(
+            Animal.user_id == current_user.id, Animal.deleted_at.is_(None)
+        )
     )
     animals = animal_result.all()
     if not animals:
@@ -44,7 +45,10 @@ async def get_active_withdrawals(
 
     result = await db.execute(
         select(MedicineAdministration)
-        .where(MedicineAdministration.animal_id.in_(animal_ids), MedicineAdministration.deleted_at.is_(None))
+        .where(
+            MedicineAdministration.animal_id.in_(animal_ids),
+            MedicineAdministration.deleted_at.is_(None),
+        )
         .options(selectinload(MedicineAdministration.medicine))
         .order_by(MedicineAdministration.administered_at.desc())
     )
@@ -59,16 +63,22 @@ async def get_active_withdrawals(
 
         animal_info = animal_map.get(str(admin.animal_id), {})
         med = admin.medicine
-        withdrawals.append({
-            "animal_id": str(admin.animal_id),
-            "animal_name": animal_info.get("name"),
-            "species": animal_info.get("species"),
-            "medicine": med.name_en if med else "Unknown",
-            "administered_at": admin.administered_at.isoformat(),
-            "milk_withdrawal_until": admin.withdrawal_milk_until.isoformat() if milk_active else None,
-            "meat_withdrawal_until": admin.withdrawal_meat_until.isoformat() if meat_active else None,
-            "milk_safe": not milk_active,
-            "meat_safe": not meat_active,
-        })
+        withdrawals.append(
+            {
+                "animal_id": str(admin.animal_id),
+                "animal_name": animal_info.get("name"),
+                "species": animal_info.get("species"),
+                "medicine": med.name_en if med else "Unknown",
+                "administered_at": admin.administered_at.isoformat(),
+                "milk_withdrawal_until": admin.withdrawal_milk_until.isoformat()
+                if milk_active
+                else None,
+                "meat_withdrawal_until": admin.withdrawal_meat_until.isoformat()
+                if meat_active
+                else None,
+                "milk_safe": not milk_active,
+                "meat_safe": not meat_active,
+            }
+        )
 
     return {"data": withdrawals, "total": len(withdrawals)}

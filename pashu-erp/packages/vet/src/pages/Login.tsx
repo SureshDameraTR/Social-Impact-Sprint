@@ -13,9 +13,12 @@ import {
   Alert,
   Link,
   CircularProgress,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import PhoneIcon from "@mui/icons-material/Phone";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 import { requestOtp, verifyOtp } from "../api/auth";
 import { useAuth } from "../hooks/useAuth";
 
@@ -26,6 +29,12 @@ const RESEND_COOLDOWN_SECONDS = 60;
 export default function Login() {
   const navigate = useNavigate();
   const auth = useAuth();
+  const { t, i18n } = useTranslation();
+
+  const changeLanguage = (lang: string) => {
+    i18n.changeLanguage(lang);
+    localStorage.setItem('lang', lang);
+  };
 
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
@@ -139,7 +148,7 @@ export default function Login() {
         <Box
           sx={{
             bgcolor: "primary.dark",
-            color: "#fff",
+            color: "common.white",
             textAlign: "center",
             py: 4,
             borderRadius: "12px 12px 0 0",
@@ -149,14 +158,27 @@ export default function Login() {
             {"\uD83E\uDE7A"}
           </Typography>
           <Typography variant="h5" fontWeight={700}>
-            PashuRaksha
+            {t('login.title')}
           </Typography>
           <Typography variant="body2" sx={{ color: "primary.light", mt: 0.5 }}>
-            Veterinary Portal
+            {t('login.subtitle')}
           </Typography>
         </Box>
 
         <CardContent sx={{ p: 4 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+            <ToggleButtonGroup
+              value={i18n.language}
+              exclusive
+              onChange={(_, lang) => lang && changeLanguage(lang)}
+              size="small"
+            >
+              <ToggleButton value="en">{t('common.english')}</ToggleButton>
+              <ToggleButton value="kn">{t('common.kannada')}</ToggleButton>
+              <ToggleButton value="hi">{t('common.hindi')}</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
           {error && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
               {error}
@@ -166,11 +188,11 @@ export default function Login() {
           {step === "phone" ? (
             <>
               <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-                Vet Login
+                {t('login.vetLogin')}
               </Typography>
               <TextField
                 fullWidth
-                label="Mobile Number"
+                label={t('login.mobileNumber')}
                 placeholder="9876543210"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
@@ -186,7 +208,7 @@ export default function Login() {
                 error={phone.length === 10 && !isPhoneValid}
                 helperText={
                   phone.length === 10 && !isPhoneValid
-                    ? "Enter a valid Indian mobile number"
+                    ? t('login.invalidPhone')
                     : " "
                 }
                 sx={{ mb: 2 }}
@@ -199,14 +221,14 @@ export default function Login() {
                 disabled={!isPhoneValid || loading}
                 sx={{ py: 1.5, fontSize: 16 }}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : "Send OTP"}
+                {loading ? <CircularProgress size={24} color="inherit" /> : t('login.sendOtp')}
               </Button>
             </>
           ) : (
             <>
               <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                 <Typography variant="body1" sx={{ mr: 1 }}>
-                  OTP sent to +91 {phone}
+                  {t('login.otpSentTo', { phone })}
                 </Typography>
                 <Link
                   component="button"
@@ -214,7 +236,7 @@ export default function Login() {
                   onClick={handleChangePhone}
                   sx={{ color: "primary.main" }}
                 >
-                  Change
+                  {t('login.change')}
                 </Link>
               </Box>
 
@@ -245,7 +267,7 @@ export default function Login() {
                     sx={{ color: "primary.main", "&.Mui-checked": { color: "primary.main" } }}
                   />
                 }
-                label="Remember this device (7 days)"
+                label={t('login.rememberDevice')}
                 sx={{ mb: 2, display: "block" }}
               />
 
@@ -257,13 +279,13 @@ export default function Login() {
                 disabled={!isOtpComplete || loading}
                 sx={{ py: 1.5, fontSize: 16, mb: 1.5 }}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : "Verify & Login"}
+                {loading ? <CircularProgress size={24} color="inherit" /> : t('login.verifyLogin')}
               </Button>
 
               <Box sx={{ textAlign: "center" }}>
                 {resendCooldown > 0 ? (
                   <Typography variant="body2" color="text.secondary">
-                    Resend OTP in {resendCooldown}s
+                    {t('login.resendOtpIn', { seconds: resendCooldown })}
                   </Typography>
                 ) : (
                   <Link
@@ -273,7 +295,7 @@ export default function Login() {
                     disabled={loading}
                     sx={{ color: "primary.main" }}
                   >
-                    Resend OTP
+                    {t('login.resendOtp')}
                   </Link>
                 )}
               </Box>

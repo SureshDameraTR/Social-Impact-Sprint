@@ -1,6 +1,7 @@
 
-# Beads / Dolt files (added by bd init)
+# Beads / Dolt files (local issue tracker state)
 .dolt/
+.beads/
 *.db
 .beads-credential-key
 Beadbox-*.exe
@@ -35,6 +36,7 @@ packages/*/package-lock.json
 # IDE
 .idea/
 .vscode/
+.cursor/
 *.swp
 *.swo
 
@@ -44,3 +46,13 @@ Thumbs.db
 
 # Packages
 *.tgz
+
+# Claude Code
+.claude/
+
+# Test artifacts and generated reports
+**/screenshots/
+coverage/
+playwright-report/
+test-results/
+*.log

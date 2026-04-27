@@ -18,13 +18,27 @@ export interface VoiceResult {
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
+/** Mock responses keyed by context, used when no real backend is available */
+const MOCK_RESPONSES: Record<VoiceContext, VoiceResult> = {
+  milk_quantity: { text: '\u0CAE\u0CC2\u0CB0\u0CC1 \u0CB2\u0CC0\u0C9F\u0CB0\u0CCD', confidence: 0.95, parsedNumber: 3, language: 'kn' },
+  sell_quantity: { text: '\u0C90\u0CA6\u0CC1', confidence: 0.92, parsedNumber: 5, language: 'kn' },
+  generic: { text: '\u0CB9\u0CA4\u0CCD\u0CA4\u0CC1', confidence: 0.90, parsedNumber: 10, language: 'kn' },
+};
+
 /**
  * Transcribe audio to text via backend proxy to Sarvam AI.
+ * If the URI starts with "mock://", returns a mock response for dev/testing.
  */
 export async function transcribeAudio(
   audioUri: string,
   context: VoiceContext = 'generic'
 ): Promise<VoiceResult> {
+  // Mock path for dev/testing (no real mic available)
+  if (audioUri.startsWith('mock://')) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return MOCK_RESPONSES[context];
+  }
+
   // Proxy through our backend (which holds the Sarvam API key)
   const formData = new FormData();
   formData.append('file', {

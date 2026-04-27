@@ -3,3 +3,4 @@ packages:
   - "packages/mobile"
   - "packages/collection"
   - "packages/vet"
+  - "packages/api"

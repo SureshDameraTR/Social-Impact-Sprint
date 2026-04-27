@@ -20,11 +20,11 @@ const NUMPAD = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '\u232B']
 const MIN_QUANTITY = 0.1;
 const MAX_QUANTITY = 999;
 
-function validateQuantity(value: string): string | null {
+function validateQuantity(value: string, t: (key: string, opts?: Record<string, unknown>) => string): string | null {
   const num = parseFloat(value);
-  if (isNaN(num) || num < 0) return 'Enter a valid quantity';
-  if (num < MIN_QUANTITY) return `Minimum ${MIN_QUANTITY} L`;
-  if (num > MAX_QUANTITY) return `Maximum ${MAX_QUANTITY} L`;
+  if (isNaN(num) || num < 0) return t('errors.invalidQuantity');
+  if (num < MIN_QUANTITY) return t('errors.minimumQuantity', { min: MIN_QUANTITY });
+  if (num > MAX_QUANTITY) return t('errors.maximumQuantity', { max: MAX_QUANTITY });
   return null;
 }
 
@@ -67,7 +67,7 @@ export default function MilkScreen() {
   }, []);
 
   const handleRecord = useCallback(async () => {
-    const err = validateQuantity(quantity);
+    const err = validateQuantity(quantity, t);
     if (err) {
       setQuantityError(err);
       return;
@@ -89,8 +89,7 @@ export default function MilkScreen() {
       // Refresh today total
       api.get<{ total_liters: number }>('/milk/today').then(res => setTodayTotal(res.total_liters)).catch(() => {});
     } catch (e) {
-      if (__DEV__) console.error('Milk entry failed:', e);
-      showError(t('milk.recordFailed') ?? 'Failed to record milk entry. Please try again.');
+      showError(t('milk.recordFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -251,7 +250,7 @@ export default function MilkScreen() {
               key={key}
               onPress={() => handleNumpad(key)}
               style={styles.numpadKey}
-              accessibilityLabel={key === '\u232B' ? 'Delete' : key}
+              accessibilityLabel={key === '\u232B' ? t('common.delete') : key}
               accessibilityRole="button"
             >
               <Text style={styles.numpadText}>{key}</Text>

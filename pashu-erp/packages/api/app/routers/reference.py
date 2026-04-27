@@ -1,8 +1,8 @@
 """Reference data endpoints -- market rates, insurance premiums, medicine catalog."""
 
-import time
 from uuid import UUID
 
+from cachetools import TTLCache
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,29 +25,24 @@ router = APIRouter(prefix="/v1/reference", tags=["Reference Data"])
 
 
 # ---------------------------------------------------------------------------
-# Simple in-memory cache: key -> (data, timestamp)
+# Bounded TTL cache (maxsize prevents unbounded growth)
 # ---------------------------------------------------------------------------
-_cache: dict[str, tuple[list, float]] = {}
-_CACHE_TTL = 60  # seconds
+_cache: TTLCache = TTLCache(maxsize=100, ttl=60)
 
 
 def _get_cached(key: str) -> list | None:
-    entry = _cache.get(key)
-    if entry and time.monotonic() - entry[1] < _CACHE_TTL:
-        return entry[0]
-    _cache.pop(key, None)
-    return None
+    return _cache.get(key)
 
 
 def _set_cached(key: str, data: list) -> None:
-    _cache[key] = (data, time.monotonic())
+    _cache[key] = data
 
 
 def _invalidate_prefix(prefix: str) -> None:
     """Remove all cache entries whose key starts with prefix."""
-    stale = [k for k in _cache if k.startswith(prefix)]
+    stale = [k for k in list(_cache.keys()) if k.startswith(prefix)]
     for k in stale:
-        del _cache[k]
+        _cache.pop(k, None)
 
 
 # ---------------------------------------------------------------------------
@@ -66,9 +61,9 @@ async def list_market_rates(
     cache_key = f"market_rates:{district}:{product}"
     cached = _get_cached(cache_key)
     if cached is not None:
-        return {"data": cached}
+        return {"data": cached, "total": len(cached)}
 
-    stmt = select(MarketRate)
+    stmt = select(MarketRate).where(MarketRate.deleted_at.is_(None))
     if district:
         stmt = stmt.where(MarketRate.district == district)
     if product:
@@ -81,7 +76,7 @@ async def list_market_rates(
         d.pop("_sa_instance_state", None)
 
     _set_cached(cache_key, data)
-    return {"data": data}
+    return {"data": data, "total": len(data)}
 
 
 @router.put("/market-rates/{rate_id}", response_model=MarketRateRead)
@@ -92,9 +87,7 @@ async def update_market_rate(
     db: AsyncSession = Depends(get_db),
 ):
     """Admin-only: update a market rate record."""
-    result = await db.execute(
-        select(MarketRate).where(MarketRate.id == rate_id)
-    )
+    result = await db.execute(select(MarketRate).where(MarketRate.id == rate_id))
     rate = result.scalar_one_or_none()
     if rate is None:
         raise HTTPException(status_code=404, detail="Market rate not found")
@@ -127,9 +120,9 @@ async def list_insurance_premiums(
     cache_key = f"insurance_premiums:{species}:{breed_type}"
     cached = _get_cached(cache_key)
     if cached is not None:
-        return {"data": cached}
+        return {"data": cached, "total": len(cached)}
 
-    stmt = select(InsurancePremium)
+    stmt = select(InsurancePremium).where(InsurancePremium.deleted_at.is_(None))
     if species:
         stmt = stmt.where(InsurancePremium.species == species)
     if breed_type:
@@ -142,7 +135,7 @@ async def list_insurance_premiums(
         d.pop("_sa_instance_state", None)
 
     _set_cached(cache_key, data)
-    return {"data": data}
+    return {"data": data, "total": len(data)}
 
 
 @router.put("/insurance-premiums/{premium_id}", response_model=InsurancePremiumRead)
@@ -153,9 +146,7 @@ async def update_insurance_premium(
     db: AsyncSession = Depends(get_db),
 ):
     """Admin-only: update an insurance premium record."""
-    result = await db.execute(
-        select(InsurancePremium).where(InsurancePremium.id == premium_id)
-    )
+    result = await db.execute(select(InsurancePremium).where(InsurancePremium.id == premium_id))
     premium = result.scalar_one_or_none()
     if premium is None:
         raise HTTPException(status_code=404, detail="Insurance premium not found")
@@ -189,9 +180,9 @@ async def list_medicines(
     cache_key = f"medicines:{species}:{category}:{is_active}"
     cached = _get_cached(cache_key)
     if cached is not None:
-        return {"data": cached}
+        return {"data": cached, "total": len(cached)}
 
-    stmt = select(MedicineCatalog)
+    stmt = select(MedicineCatalog).where(MedicineCatalog.deleted_at.is_(None))
     if species:
         stmt = stmt.where(MedicineCatalog.species_applicable.any(species))
     if category:
@@ -206,4 +197,4 @@ async def list_medicines(
         d.pop("_sa_instance_state", None)
 
     _set_cached(cache_key, data)
-    return {"data": data}
+    return {"data": data, "total": len(data)}

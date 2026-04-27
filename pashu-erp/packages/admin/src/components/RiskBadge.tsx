@@ -19,7 +19,7 @@ interface RiskBadgeProps {
 }
 
 function RiskBadgeInner({ level, size = "small" }: RiskBadgeProps) {
-  const config = riskConfig[level as RiskLevel] || { bg: '#f0f0f0', color: '#666', label: level };
+  const config = riskConfig[level as RiskLevel] || { bg: colors.surfaceAlt, color: colors.textDim, label: level };
   return (
     <Chip
       label={config.label}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useList } from "@refinedev/core";
 import Link from "next/link";
 import {
+  Alert,
   Box,
   Grid,
   Typography,
@@ -56,24 +57,22 @@ const priorityBg: Record<string, string> = {
 };
 
 export default function VetDashboardPage() {
-  useEffect(() => {
-    document.title = "Vet Dashboard — PashuRaksha ERP";
-  }, []);
-
-  const { data: statsData, isLoading: statsLoading } =
+  const { data: statsData, isLoading: statsLoading, isError: statsError } =
     useList<VetDashboardStats>({ resource: "vet/dashboard/stats" });
-  const { data: casesData, isLoading: casesLoading } = useList<VetCase>({
+  const { data: casesData, isLoading: casesLoading, isError: casesError } = useList<VetCase>({
     resource: "vet/cases",
     filters: [{ field: "status", operator: "eq", value: "pending" }],
     pagination: { current: 1, pageSize: 10 },
   });
-  const { data: alertMapData, isLoading: alertsLoading } = useList<MapPoint>({
+  const { data: alertMapData, isLoading: alertsLoading, isError: alertsError } = useList<MapPoint>({
     resource: "health/alerts/map",
   });
 
   const stats = statsData?.data?.[0];
   const cases: VetCase[] = casesData?.data ?? [];
   const alertPoints: MapPoint[] = alertMapData?.data ?? [];
+
+  const hasError = statsError || casesError || alertsError;
 
   return (
     <Box p={3}>
@@ -83,6 +82,11 @@ export default function VetDashboardPage() {
       <Typography variant="body1" color="text.secondary" mb={3}>
         Veterinary case management and district overview
       </Typography>
+      {hasError && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Some dashboard data failed to load. Displayed values may be incomplete.
+        </Alert>
+      )}
 
       {/* Stat Cards */}
       <Grid container spacing={2.5} mb={4}>

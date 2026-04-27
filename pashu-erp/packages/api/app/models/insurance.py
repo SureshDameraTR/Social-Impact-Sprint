@@ -1,11 +1,21 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String, Text, func, text
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+    String,
+    Text,
+    func,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import AuditMixin, Base, SoftDeleteMixin
+from app.models.base import AuditMixin, Base, SoftDeleteMixin, TimestampMixin
 
 
 class PolicyStatus(str, enum.Enum):
@@ -21,8 +31,12 @@ class ClaimStatus(str, enum.Enum):
     rejected = "rejected"
 
 
-class InsurancePolicy(AuditMixin, SoftDeleteMixin, Base):
+class InsurancePolicy(TimestampMixin, AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "insurance_policies"
+    __table_args__ = (
+        CheckConstraint("premium_amount > 0", name="ck_insurance_policies_premium_positive"),
+        CheckConstraint("coverage_amount > 0", name="ck_insurance_policies_coverage_positive"),
+    )
 
     id: Mapped[str] = mapped_column(
         UUID(as_uuid=True),
@@ -41,13 +55,13 @@ class InsurancePolicy(AuditMixin, SoftDeleteMixin, Base):
     status: Mapped[str] = mapped_column(
         Enum(PolicyStatus, name="policy_status"), nullable=False, default="active"
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
     # Relationships — lazy="noload" to prevent automatic eager loading
     animal = relationship("Animal", foreign_keys=[animal_id], lazy="noload")
     claims = relationship(
-        "InsuranceClaim", back_populates="policy",
-        foreign_keys="InsuranceClaim.policy_id", lazy="noload",
+        "InsuranceClaim",
+        back_populates="policy",
+        foreign_keys="InsuranceClaim.policy_id",
+        lazy="noload",
     )
 
 
@@ -69,9 +83,14 @@ class InsuranceClaim(AuditMixin, SoftDeleteMixin, Base):
         Enum(ClaimStatus, name="claim_status"), nullable=False, default="filed"
     )
     filed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=True
+    )
 
     # Relationships
     policy = relationship(
-        "InsurancePolicy", back_populates="claims",
-        foreign_keys=[policy_id], lazy="noload",
+        "InsurancePolicy",
+        back_populates="claims",
+        foreign_keys=[policy_id],
+        lazy="noload",
     )

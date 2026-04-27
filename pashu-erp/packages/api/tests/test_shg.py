@@ -4,7 +4,6 @@ import uuid
 from datetime import date, datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
 
 from tests.conftest import FARMER_USER_ID
@@ -50,9 +49,7 @@ def _valid_shg_payload() -> dict:
 
 
 class TestCreateSHG:
-    async def test_create_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_create_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST with valid data returns 201."""
         resp = await client.post("/v1/shg", json=_valid_shg_payload())
         assert resp.status_code == 201
@@ -74,9 +71,7 @@ class TestCreateSHG:
 
 
 class TestListSHG:
-    async def test_list_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []
@@ -92,9 +87,7 @@ class TestListSHG:
 
 
 class TestGetSHG:
-    async def test_get_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 for existing group."""
         group = _mock_shg()
         result = MagicMock()
@@ -104,9 +97,7 @@ class TestGetSHG:
         resp = await client.get(f"/v1/shg/{group.id}")
         assert resp.status_code == 200
 
-    async def test_get_not_found(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_not_found(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with nonexistent ID returns 404."""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
@@ -115,6 +106,16 @@ class TestGetSHG:
         resp = await client.get(f"/v1/shg/{uuid.uuid4()}")
         assert resp.status_code == 404
 
+    async def test_get_forbidden_other_user(self, client: AsyncClient, mock_db: AsyncMock) -> None:
+        """GET on another user's SHG group returns 403."""
+        group = _mock_shg(admin_user_id=str(uuid.uuid4()))
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = group
+        mock_db.execute = AsyncMock(return_value=result)
+
+        resp = await client.get(f"/v1/shg/{group.id}")
+        assert resp.status_code == 403
+
 
 # ---------------------------------------------------------------------------
 # PATCH /v1/shg/{id}
@@ -122,9 +123,7 @@ class TestGetSHG:
 
 
 class TestUpdateSHG:
-    async def test_update_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_update_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """PATCH returns 200."""
         group = _mock_shg()
         result = MagicMock()
@@ -137,9 +136,7 @@ class TestUpdateSHG:
         )
         assert resp.status_code == 200
 
-    async def test_update_not_found(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_update_not_found(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """PATCH on nonexistent group returns 404."""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
@@ -151,9 +148,7 @@ class TestUpdateSHG:
         )
         assert resp.status_code == 404
 
-    async def test_update_forbidden(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_update_forbidden(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """PATCH by non-admin returns 403."""
         group = _mock_shg(admin_user_id=str(uuid.uuid4()))
         result = MagicMock()
@@ -173,9 +168,7 @@ class TestUpdateSHG:
 
 
 class TestPanchsutraCompliance:
-    async def test_compliance_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_compliance_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with compliance score."""
         group = _mock_shg()
         result = MagicMock()
@@ -190,9 +183,7 @@ class TestPanchsutraCompliance:
         assert "percentage" in body
         assert "principles" in body
 
-    async def test_compliance_not_found(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_compliance_not_found(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with nonexistent SHG returns 404."""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
@@ -200,3 +191,15 @@ class TestPanchsutraCompliance:
 
         resp = await client.get(f"/v1/shg/{uuid.uuid4()}/compliance")
         assert resp.status_code == 404
+
+    async def test_compliance_forbidden_other_user(
+        self, client: AsyncClient, mock_db: AsyncMock
+    ) -> None:
+        """GET compliance on another user's SHG returns 403."""
+        group = _mock_shg(admin_user_id=str(uuid.uuid4()))
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = group
+        mock_db.execute = AsyncMock(return_value=result)
+
+        resp = await client.get(f"/v1/shg/{group.id}/compliance")
+        assert resp.status_code == 403

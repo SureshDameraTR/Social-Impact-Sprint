@@ -5,7 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
-class AlertSeverity(str, Enum):
+class WeatherAlertSeverity(str, Enum):
     low = "low"
     moderate = "moderate"
     severe = "severe"
@@ -15,7 +15,7 @@ class AlertSeverity(str, Enum):
 class WeatherAlertCreate(BaseModel):
     district: str = Field(..., max_length=100)
     alert_type: str = Field(..., max_length=50)
-    severity: AlertSeverity
+    severity: WeatherAlertSeverity
     description: str | None = None
     valid_from: datetime
     valid_to: datetime
@@ -26,7 +26,7 @@ class WeatherAlertRead(BaseModel):
     id: UUID
     district: str
     alert_type: str
-    severity: AlertSeverity
+    severity: WeatherAlertSeverity
     description: str | None = None
     valid_from: datetime
     valid_to: datetime

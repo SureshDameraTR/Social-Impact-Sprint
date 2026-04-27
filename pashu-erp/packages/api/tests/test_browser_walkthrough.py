@@ -12,7 +12,12 @@ import json
 import os
 import urllib.request
 from datetime import datetime
-from playwright.sync_api import sync_playwright
+
+pytest = __import__("pytest")
+try:
+    from playwright.sync_api import sync_playwright
+except ModuleNotFoundError:
+    pytest.skip("playwright not installed", allow_module_level=True)
 
 API_URL = "http://localhost:8000"
 ADMIN_URL = "http://localhost:3000"
@@ -30,7 +35,9 @@ failed = 0
 
 
 def log(msg, status="INFO"):
-    icon = {"PASS": "\u2705", "FAIL": "\u274c", "INFO": "\u2139\ufe0f", "WARN": "\u26a0\ufe0f"}.get(status, "")
+    icon = {"PASS": "\u2705", "FAIL": "\u274c", "INFO": "\u2139\ufe0f", "WARN": "\u26a0\ufe0f"}.get(
+        status, ""
+    )
     print(f"  {icon} {msg}")
 
 
@@ -77,14 +84,20 @@ def navigate(page, path, auth):
         page.goto(ADMIN_URL)
         page.wait_for_load_state("domcontentloaded")
     # Inject auth
-    page.evaluate("""({ token, user }) => {
+    page.evaluate(
+        """({ token, user }) => {
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
-    }""", {"token": auth["access_token"], "user": {
-        "id": auth.get("user_id", ""),
-        "name": auth.get("name", "Admin"),
-        "role": auth.get("role", "admin"),
-    }})
+    }""",
+        {
+            "token": auth["access_token"],
+            "user": {
+                "id": auth.get("user_id", ""),
+                "name": auth.get("name", "Admin"),
+                "role": auth.get("role", "admin"),
+            },
+        },
+    )
     page.goto(url)
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(2500)
@@ -93,10 +106,10 @@ def navigate(page, path, auth):
 def main():
     os.makedirs(SCREENSHOT_DIR, exist_ok=True)
     auth = get_token()
-    print(f"\n{'='*60}")
-    print(f"  PashuRaksha ERP — Browser Integration Walkthrough")
+    print(f"\n{'=' * 60}")
+    print("  PashuRaksha ERP — Browser Integration Walkthrough")
     print(f"  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     with sync_playwright() as p:
         browser = p.chromium.connect_over_cdp(CDP_URL)
@@ -105,11 +118,13 @@ def main():
 
         # Inject auth via addInitScript
         token = auth["access_token"]
-        user_json = json.dumps({
-            "id": auth.get("user_id", ""),
-            "name": auth.get("name", "Admin"),
-            "role": auth.get("role", "admin"),
-        })
+        user_json = json.dumps(
+            {
+                "id": auth.get("user_id", ""),
+                "name": auth.get("name", "Admin"),
+                "role": auth.get("role", "admin"),
+            }
+        )
         ctx.add_init_script(f"""
             localStorage.setItem('token', '{token}');
             localStorage.setItem('user', '{user_json}');
@@ -120,11 +135,13 @@ def main():
         # Track API calls
         api_calls = []
         api_errors = []
+
         def on_response(resp):
             if "/v1/" in resp.url:
                 api_calls.append({"url": resp.url, "status": resp.status})
                 if resp.status >= 400:
                     api_errors.append(f"{resp.url} -> {resp.status}")
+
         page.on("response", on_response)
 
         # Track console errors
@@ -138,8 +155,11 @@ def main():
 
         body = page.inner_text("body")
         check("Dashboard loads", "PashuRaksha" in body or "Dashboard" in body)
-        check("Dashboard has stat cards", page.locator(".MuiPaper-root, .MuiCard-root").count() >= 3,
-              f"Found {page.locator('.MuiPaper-root, .MuiCard-root').count()} cards")
+        check(
+            "Dashboard has stat cards",
+            page.locator(".MuiPaper-root, .MuiCard-root").count() >= 3,
+            f"Found {page.locator('.MuiPaper-root, .MuiCard-root').count()} cards",
+        )
 
         # Check stat values
         has_numbers = bool(__import__("re").search(r"\d+", body))
@@ -151,8 +171,11 @@ def main():
 
         # Check sidebar navigation
         nav_links = page.locator("aside a, nav a, .MuiDrawer-root a")
-        check("Sidebar has navigation links", nav_links.count() >= 8,
-              f"Found {nav_links.count()} nav links")
+        check(
+            "Sidebar has navigation links",
+            nav_links.count() >= 8,
+            f"Found {nav_links.count()} nav links",
+        )
 
         # ─── 2. FARMERS ─────────────────────────────────────
         print("\n[2/11] Farmers")
@@ -209,9 +232,13 @@ def main():
             # Look for dropdown menu items
             menu_items = page.locator("[role='option'], .MuiMenuItem-root")
             menu_count = menu_items.count()
-            check("Animals species filter has options", menu_count >= 2, f"Found {menu_count} options")
+            check(
+                "Animals species filter has options", menu_count >= 2, f"Found {menu_count} options"
+            )
             # Click "Cattle" if available
-            cattle_opt = page.locator("[role='option']:has-text('Cattle'), .MuiMenuItem-root:has-text('Cattle')")
+            cattle_opt = page.locator(
+                "[role='option']:has-text('Cattle'), .MuiMenuItem-root:has-text('Cattle')"
+            )
             if cattle_opt.count() > 0:
                 cattle_opt.first.click()
                 page.wait_for_timeout(1000)
@@ -260,7 +287,9 @@ def main():
             check("Milk has date filter labels", filter_area.count() >= 1)
 
         # Test sort on quantity column
-        qty_sort = page.locator("th:has-text('Quantity') button, [class*='SortLabel']:has-text('Quantity')")
+        qty_sort = page.locator(
+            "th:has-text('Quantity') button, [class*='SortLabel']:has-text('Quantity')"
+        )
         if qty_sort.count() > 0:
             qty_sort.first.click()
             page.wait_for_timeout(500)
@@ -281,7 +310,9 @@ def main():
         check("Health shows risk levels", has_risk)
 
         # Check alert count in subtitle
-        has_alert_count = "alert" in body_lower and __import__("re").search(r"\d+\s+active", body_lower)
+        has_alert_count = "alert" in body_lower and __import__("re").search(
+            r"\d+\s+active", body_lower
+        )
         check("Health shows active alert count", bool(has_alert_count) or "alert" in body_lower)
 
         # Check table
@@ -289,14 +320,21 @@ def main():
         check("Health table has alerts", rows.count() > 0, f"Found {rows.count()} alerts")
 
         # Check symptoms column
-        check("Health shows symptoms", "fever" in body_lower or "swollen" in body_lower or "reduced" in body_lower)
+        check(
+            "Health shows symptoms",
+            "fever" in body_lower or "swollen" in body_lower or "reduced" in body_lower,
+        )
 
         # Test risk filter dropdown
-        risk_filter = page.locator(".MuiSelect-select, .MuiFormControl-root select, [role='combobox']")
+        risk_filter = page.locator(
+            ".MuiSelect-select, .MuiFormControl-root select, [role='combobox']"
+        )
         if risk_filter.count() > 0:
             risk_filter.first.click()
             page.wait_for_timeout(500)
-            critical_opt = page.locator("[role='option']:has-text('Critical'), .MuiMenuItem-root:has-text('Critical')")
+            critical_opt = page.locator(
+                "[role='option']:has-text('Critical'), .MuiMenuItem-root:has-text('Critical')"
+            )
             if critical_opt.count() > 0:
                 critical_opt.first.click()
                 page.wait_for_timeout(1000)
@@ -352,7 +390,9 @@ def main():
         check("Schemes shows subsidy information", has_currency)
 
         # Check active/expired chips
-        active_chips = page.locator(".MuiChip-root:has-text('Active'), .MuiChip-root:has-text('Expired')")
+        active_chips = page.locator(
+            ".MuiChip-root:has-text('Active'), .MuiChip-root:has-text('Expired')"
+        )
         check("Schemes shows active/expired status", active_chips.count() > 0)
 
         # Test search
@@ -384,7 +424,11 @@ def main():
 
         # Check transaction table
         rows = page.locator("table tbody tr")
-        check("Marketplace table has transactions", rows.count() > 0, f"Found {rows.count()} transactions")
+        check(
+            "Marketplace table has transactions",
+            rows.count() > 0,
+            f"Found {rows.count()} transactions",
+        )
 
         # Check product type chips
         chips = page.locator("table .MuiChip-root")
@@ -421,8 +465,12 @@ def main():
         check("Income shows currency amounts", has_currency)
 
         # Check charts (bar chart + pie chart)
-        charts = page.locator(".recharts-wrapper, .recharts-responsive-container, .recharts-surface")
-        check("Income has charts", charts.count() > 0 or "Category" in body or "Distribution" in body)
+        charts = page.locator(
+            ".recharts-wrapper, .recharts-responsive-container, .recharts-surface"
+        )
+        check(
+            "Income has charts", charts.count() > 0 or "Category" in body or "Distribution" in body
+        )
 
         # Check income sections
         has_category = "category" in body.lower() or "product" in body.lower()
@@ -453,7 +501,10 @@ def main():
 
         body = page.inner_text("body")
         check("IoT page loads", len(body) > 50)
-        check("IoT shows device content", "iot" in body.lower() or "device" in body.lower() or "sensor" in body.lower())
+        check(
+            "IoT shows device content",
+            "iot" in body.lower() or "device" in body.lower() or "sensor" in body.lower(),
+        )
 
         # ─── CROSS-CUTTING TESTS ─────────────────────────────
         print("\n[X] Cross-cutting checks")
@@ -467,7 +518,11 @@ def main():
             href = nav_links.nth(i).get_attribute("href")
             if href:
                 all_hrefs.add(href)
-        check("All nav links are unique routes", len(all_hrefs) >= 8, f"Found {len(all_hrefs)} unique routes: {sorted(all_hrefs)}")
+        check(
+            "All nav links are unique routes",
+            len(all_hrefs) >= 8,
+            f"Found {len(all_hrefs)} unique routes: {sorted(all_hrefs)}",
+        )
 
         # Check no 404 pages
         errors_found = []
@@ -476,42 +531,56 @@ def main():
             body = page.inner_text("body").lower()
             if "404" in body and "not found" in body:
                 errors_found.append(href)
-        check("No 404 pages", len(errors_found) == 0, f"404s: {errors_found}" if errors_found else "")
+        check(
+            "No 404 pages", len(errors_found) == 0, f"404s: {errors_found}" if errors_found else ""
+        )
 
         # API error check
-        check("No API errors (4xx/5xx)", len(api_errors) == 0,
-              f"{len(api_errors)} errors: {api_errors[:5]}" if api_errors else f"All {len(api_calls)} API calls succeeded")
+        check(
+            "No API errors (4xx/5xx)",
+            len(api_errors) == 0,
+            f"{len(api_errors)} errors: {api_errors[:5]}"
+            if api_errors
+            else f"All {len(api_calls)} API calls succeeded",
+        )
 
         # Console error check (excluding known React warnings)
-        critical_errors = [e for e in console_errors
-                         if "ResizeObserver" not in e
-                         and "hooks" not in e.lower()
-                         and "hydrat" not in e.lower()
-                         and "React child" not in e
-                         and "order of Hooks" not in e
-                         and "LatLng" not in e  # Map markers with missing coords
-                         and "toLowerCase" not in e  # Null field in filter
-                         ]
+        critical_errors = [
+            e
+            for e in console_errors
+            if "ResizeObserver" not in e
+            and "hooks" not in e.lower()
+            and "hydrat" not in e.lower()
+            and "React child" not in e
+            and "order of Hooks" not in e
+            and "LatLng" not in e  # Map markers with missing coords
+            and "toLowerCase" not in e  # Null field in filter
+        ]
         if critical_errors:
             unique_errs = list(set(e[:100] for e in critical_errors))
             for e in unique_errs[:5]:
                 log(f"Console: {e}", "WARN")
-        check("No critical console errors", len(critical_errors) == 0,
-              f"{len(critical_errors)} errors, unique: {list(set(e[:80] for e in critical_errors))[:3]}" if critical_errors else "Clean")
+        check(
+            "No critical console errors",
+            len(critical_errors) == 0,
+            f"{len(critical_errors)} errors, unique: {list(set(e[:80] for e in critical_errors))[:3]}"
+            if critical_errors
+            else "Clean",
+        )
 
         # ─── SUMMARY ─────────────────────────────────────────
         page.close()
         ctx.close()
         browser.close()
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  RESULTS: {passed}/{total} passed, {failed} failed")
     print(f"  Screenshots: {SCREENSHOT_DIR}/")
     print(f"  API calls made: {len(api_calls)}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     if failed > 0:
-        print(f"\n  Failed tests:")
+        print("\n  Failed tests:")
         for r in results:
             if r["status"] == "FAIL":
                 print(f"    \u274c {r['test']}: {r['detail']}")

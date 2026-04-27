@@ -83,6 +83,34 @@ def validate_agent(path: Path) -> dict:
     }
 
 
+def check_test_coverage(agents: list[dict]) -> list[str]:
+    """Check whether each agent that has a corresponding test file in the test suite."""
+    warnings: list[str] = []
+    # Map agent roles to expected test file patterns
+    test_dir = Path("pashu-erp/packages/api/tests")
+    if not test_dir.is_dir():
+        # Try from repo root
+        test_dir = Path("packages/api/tests")
+    if not test_dir.is_dir():
+        warnings.append("API test directory not found -- skipping test coverage check")
+        return warnings
+
+    existing_tests = {f.stem for f in test_dir.glob("test_*.py")}
+    # Agents that map to testable API modules
+    testable_agents = {
+        "backend-developer": "test_auth",
+        "api-tester": "test_auth",
+        "unit-tester": "test_disease_rules",
+        "database-admin": "test_animals",
+    }
+    for agent_name, expected_test in testable_agents.items():
+        agent_exists = any(a["agent"] == agent_name for a in agents)
+        if agent_exists and expected_test not in existing_tests:
+            warnings.append(f"agent '{agent_name}' has no corresponding test file '{expected_test}.py'")
+
+    return warnings
+
+
 def cross_reference_index(agents: list[dict]) -> list[str]:
     """Compare agent files against AGENTS.md index."""
     warnings: list[str] = []
@@ -170,6 +198,12 @@ def main() -> None:
         for w in impact_warnings:
             print(f"WARN  {w}")
 
+    test_warnings = check_test_coverage(results)
+    if test_warnings:
+        print(f"\n=== Test Coverage ===")
+        for w in test_warnings:
+            print(f"WARN  {w}")
+
     # Verdict
     verdict = "FAIL" if errors > 0 else "PASS"
     print(f"\nVERDICT: {verdict} ({total} agents, {errors} errors)")
@@ -185,6 +219,7 @@ def main() -> None:
             "agents": results,
             "index_warnings": index_warnings,
             "impact_map_warnings": impact_warnings,
+            "test_coverage_warnings": test_warnings,
         }
         REPORT_DIR.mkdir(parents=True, exist_ok=True)
         out = REPORT_DIR / "agent-validation.json"

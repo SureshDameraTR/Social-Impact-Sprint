@@ -8,7 +8,7 @@ from uuid import uuid4
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
-router = APIRouter(prefix="/api/storage", tags=["Storage"])
+router = APIRouter(prefix="/api/v1/storage", tags=["Storage"])
 
 UPLOAD_DIR = Path(__file__).parent.parent / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -46,7 +46,7 @@ async def upload_file(
 
     metadata = {
         "file_id": file_id,
-        "url": f"/api/storage/files/{file_id}",
+        "url": f"/api/v1/storage/files/{file_id}",
         "filename": file.filename or "unknown",
         "content_type": file.content_type,
         "size_bytes": len(contents),

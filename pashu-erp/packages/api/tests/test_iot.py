@@ -1,11 +1,9 @@
 """Unit tests for IoT endpoints — /v1/iot."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
-import pytest
 from httpx import AsyncClient
-
 
 # ---------------------------------------------------------------------------
 # GET /v1/iot/devices
@@ -152,7 +150,13 @@ class TestGetLatestTelemetry:
         with patch(
             "app.routers.iot.iot_service.get_latest_telemetry",
             new_callable=AsyncMock,
-            return_value={"temperature": 38.5, "timestamp": "2026-04-15T10:00:00Z"},
+            return_value={
+                "device_id": "D1",
+                "timestamp": "2026-04-15T10:00:00Z",
+                "metrics": [
+                    {"type": "temperature", "value": 38.5, "unit": "celsius"},
+                ],
+            },
         ):
             resp = await client.get("/v1/iot/devices/D1/latest")
             assert resp.status_code == 200

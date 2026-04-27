@@ -17,7 +17,9 @@ router = APIRouter(prefix="/v1/registry", tags=["Bharat Pashudhan"])
 
 
 @router.get("/lookup/{pashu_aadhaar_id}", response_model=RegistryAnimalLookup)
-async def lookup_from_registry(pashu_aadhaar_id: str, current_user: User = Depends(get_current_user)):
+async def lookup_from_registry(
+    pashu_aadhaar_id: str, current_user: User = Depends(get_current_user)
+):
     """Look up an animal from the national Bharat Pashudhan registry."""
     try:
         result = await lookup_animal(pashu_aadhaar_id)
@@ -25,12 +27,13 @@ async def lookup_from_registry(pashu_aadhaar_id: str, current_user: User = Depen
         raise HTTPException(
             status_code=exc.response.status_code,
             detail=f"Registry lookup failed: {exc.response.text}",
-        )
+        ) from exc
 
     if result is None:
         raise HTTPException(
             status_code=404,
-            detail=f"Animal with Pashu Aadhaar ID '{pashu_aadhaar_id}' not found in national registry",
+            detail=f"Animal with Pashu Aadhaar ID '{pashu_aadhaar_id}'"
+            " not found in national registry",
         )
     return result
 
@@ -44,5 +47,5 @@ async def sync_with_registry(animal_id: UUID, current_user: User = Depends(get_c
         raise HTTPException(
             status_code=exc.response.status_code,
             detail=f"Registry sync failed: {exc.response.text}",
-        )
+        ) from exc
     return result

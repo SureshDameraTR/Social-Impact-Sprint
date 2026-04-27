@@ -3,7 +3,7 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, TextInput, Button, SegmentedButtons, Snackbar } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
-import { SPACING, TOUCH_TARGET_MIN } from '../../src/config/theme';
+import { SPACING, TOUCH_TARGET_MIN, colors } from '../../src/config/theme';
 import { api } from '../../src/config/api';
 
 type Species = 'cattle' | 'goat' | 'sheep' | 'poultry';
@@ -46,7 +46,7 @@ export default function AddAnimalScreen() {
       setSnackVisible(true);
       setTimeout(() => router.back(), 1500);
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : (t('animal.saveFailed') ?? 'Failed to save'));
+      setSaveError(e instanceof Error ? e.message : t('animals.saveFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -55,7 +55,7 @@ export default function AddAnimalScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text variant="headlineSmall" style={styles.heading}>
+        <Text variant="headlineSmall" style={styles.heading} accessibilityRole="header">
           {t('animals.addAnimal')}
         </Text>
 
@@ -88,6 +88,7 @@ export default function AddAnimalScreen() {
           onChangeText={setName}
           mode="outlined"
           style={styles.input}
+          accessibilityLabel={t('animals.name')}
         />
 
         <TextInput
@@ -96,6 +97,7 @@ export default function AddAnimalScreen() {
           onChangeText={setBreed}
           mode="outlined"
           style={styles.input}
+          accessibilityLabel={t('animals.breed')}
         />
 
         <TextInput
@@ -104,6 +106,7 @@ export default function AddAnimalScreen() {
           onChangeText={setTagNumber}
           mode="outlined"
           style={styles.input}
+          accessibilityLabel={t('animals.tagNumber')}
         />
 
         <View style={styles.row}>
@@ -114,6 +117,7 @@ export default function AddAnimalScreen() {
             keyboardType="number-pad"
             mode="outlined"
             style={[styles.input, styles.halfInput]}
+            accessibilityLabel={t('animals.age')}
           />
           <TextInput
             label={`${t('animals.weight')} (kg)`}
@@ -122,6 +126,7 @@ export default function AddAnimalScreen() {
             keyboardType="decimal-pad"
             mode="outlined"
             style={[styles.input, styles.halfInput]}
+            accessibilityLabel={`${t('animals.weight')} (kg)`}
           />
         </View>
 
@@ -150,6 +155,8 @@ export default function AddAnimalScreen() {
             onPress={() => router.back()}
             style={styles.actionButton}
             contentStyle={styles.actionButtonContent}
+            accessibilityLabel={t('common.cancel')}
+            accessibilityRole="button"
           >
             {t('common.cancel')}
           </Button>
@@ -161,6 +168,8 @@ export default function AddAnimalScreen() {
             style={styles.actionButton}
             contentStyle={styles.actionButtonContent}
             labelStyle={styles.saveLabel}
+            accessibilityLabel={t('common.save')}
+            accessibilityRole="button"
           >
             {t('common.save')}
           </Button>
@@ -182,7 +191,7 @@ export default function AddAnimalScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surface,
   },
   scroll: {
     padding: SPACING.md,

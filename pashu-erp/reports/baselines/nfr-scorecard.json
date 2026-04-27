@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "date": "2026-04-16",
+  "agent": "nfr",
+  "overall_score": 68,
+  "threshold": 70,
+  "production_ready": false,
+  "categories": {
+    "reliability": { "score": 62, "status": "FAIL", "gap": "No circuit breakers in production code" },
+    "availability": { "score": 68, "status": "FAIL", "gap": "No restart policies, no HA configuration" },
+    "scalability": { "score": 72, "status": "PASS", "gap": "Connection pooling present, needs load testing" },
+    "performance": { "score": 58, "status": "FAIL", "gap": "N+1 queries identified, no response caching" },
+    "security": { "score": 78, "status": "PASS", "gap": "Aadhaar hashing uses fast SHA-256" },
+    "observability": { "score": 72, "status": "PASS", "gap": "Structured logging present, no metrics endpoint" },
+    "maintainability": { "score": 75, "status": "PASS", "gap": "Clean architecture, some DRY violations" },
+    "usability": { "score": 65, "status": "FAIL", "gap": "Collection/Vet packages have zero i18n" },
+    "compliance": { "score": 60, "status": "FAIL", "gap": "No DPDP consent mechanism implemented" },
+    "operability": { "score": 70, "status": "PASS", "gap": "Docker health checks present, no CI/CD" }
+  },
+  "agent_verdicts": {
+    "total_agents": 33,
+    "block": 17,
+    "warn": 15,
+    "pass": 0,
+    "timeout": 1
+  },
+  "findings": {
+    "critical": 60,
+    "high": 143,
+    "medium": 185,
+    "low": 122,
+    "total": 510
+  }
+}

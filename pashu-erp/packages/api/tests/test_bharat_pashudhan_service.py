@@ -1,21 +1,30 @@
 """Tests for Bharat Pashudhan service client (app.services.bharat_pashudhan)."""
 
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import httpx
 import pytest
 
-from app.services.errors import ServiceNotConfiguredError
 from app.services.bharat_pashudhan import lookup_animal, sync_animal
+from app.services.errors import ServiceNotConfiguredError
+
+
+def _patch_client(mc):
+    """Patch get_http_client to return the mock client."""
+    return patch(
+        "app.services.bharat_pashudhan.get_http_client",
+        new_callable=AsyncMock,
+        return_value=mc,
+    )
 
 
 # ---------------------------------------------------------------------------
 # lookup_animal
 # ---------------------------------------------------------------------------
 
-class TestLookupAnimal:
 
+class TestLookupAnimal:
     async def test_found_returns_record_with_metadata(self):
         """Successful lookup returns dict with lookup_timestamp and source."""
         mock_resp = MagicMock()
@@ -29,12 +38,14 @@ class TestLookupAnimal:
 
         mock_client = AsyncMock()
         mock_client.get.return_value = mock_resp
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("app.services.bharat_pashudhan.settings") as mock_settings, \
-             patch("app.services.bharat_pashudhan.httpx.AsyncClient", return_value=mock_client):
-            mock_settings.bharat_pashudhan_api_url = "http://mock:8001/registry"
+        with (
+            patch("app.services.bharat_pashudhan.settings") as mock_settings,
+            _patch_client(mock_client),
+        ):
+            mock_settings.bharat_pashudhan_api_url = (
+                "http://mock:8001/registry"
+            )
             result = await lookup_animal("123456789012")
 
         assert result is not None
@@ -49,12 +60,14 @@ class TestLookupAnimal:
 
         mock_client = AsyncMock()
         mock_client.get.return_value = mock_resp
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("app.services.bharat_pashudhan.settings") as mock_settings, \
-             patch("app.services.bharat_pashudhan.httpx.AsyncClient", return_value=mock_client):
-            mock_settings.bharat_pashudhan_api_url = "http://mock:8001/registry"
+        with (
+            patch("app.services.bharat_pashudhan.settings") as mock_settings,
+            _patch_client(mock_client),
+        ):
+            mock_settings.bharat_pashudhan_api_url = (
+                "http://mock:8001/registry"
+            )
             result = await lookup_animal("000000000000")
 
         assert result is None
@@ -76,12 +89,14 @@ class TestLookupAnimal:
 
         mock_client = AsyncMock()
         mock_client.get.return_value = mock_resp
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("app.services.bharat_pashudhan.settings") as mock_settings, \
-             patch("app.services.bharat_pashudhan.httpx.AsyncClient", return_value=mock_client):
-            mock_settings.bharat_pashudhan_api_url = "http://mock:8001/registry"
+        with (
+            patch("app.services.bharat_pashudhan.settings") as mock_settings,
+            _patch_client(mock_client),
+        ):
+            mock_settings.bharat_pashudhan_api_url = (
+                "http://mock:8001/registry"
+            )
             with pytest.raises(httpx.HTTPStatusError):
                 await lookup_animal("123456789012")
 
@@ -90,22 +105,27 @@ class TestLookupAnimal:
 # sync_animal
 # ---------------------------------------------------------------------------
 
-class TestSyncAnimal:
 
+class TestSyncAnimal:
     async def test_sync_success(self):
         animal_id = uuid4()
         mock_resp = MagicMock()
-        mock_resp.json.return_value = {"synced": True, "animal_id": str(animal_id)}
+        mock_resp.json.return_value = {
+            "synced": True,
+            "animal_id": str(animal_id),
+        }
         mock_resp.raise_for_status = MagicMock()
 
         mock_client = AsyncMock()
         mock_client.post.return_value = mock_resp
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("app.services.bharat_pashudhan.settings") as mock_settings, \
-             patch("app.services.bharat_pashudhan.httpx.AsyncClient", return_value=mock_client):
-            mock_settings.bharat_pashudhan_api_url = "http://mock:8001/registry"
+        with (
+            patch("app.services.bharat_pashudhan.settings") as mock_settings,
+            _patch_client(mock_client),
+        ):
+            mock_settings.bharat_pashudhan_api_url = (
+                "http://mock:8001/registry"
+            )
             result = await sync_animal(animal_id)
 
         assert result["synced"] is True

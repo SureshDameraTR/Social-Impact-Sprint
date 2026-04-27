@@ -52,45 +52,55 @@ async def get_map_points(
             continue
         owner = animal.owner
         if owner and owner.village_code:
-            points.append({
-                "type": "health_alert",
-                "id": str(event.id),
-                "label": f"Risk: {event.ai_risk_score:.0%}",
-                "district": owner.location_district,
-                "village_code": owner.village_code,
-                "risk_score": event.ai_risk_score,
-                "species": animal.species,
-                "date": event.event_date.isoformat(),
-            })
+            points.append(
+                {
+                    "type": "health_alert",
+                    "id": str(event.id),
+                    "label": f"Risk: {event.ai_risk_score:.0%}",
+                    "district": owner.location_district,
+                    "village_code": owner.village_code,
+                    "risk_score": event.ai_risk_score,
+                    "species": animal.species,
+                    "date": event.event_date.isoformat(),
+                }
+            )
 
     # 2. Milk collection centers
     center_result = await db.execute(
-        select(MilkCollectionCenter).where(MilkCollectionCenter.is_active == True, MilkCollectionCenter.deleted_at.is_(None))  # noqa: E712
+        select(MilkCollectionCenter).where(
+            MilkCollectionCenter.is_active.is_(True), MilkCollectionCenter.deleted_at.is_(None)
+        )
     )
     for center in center_result.scalars().all():
-        points.append({
-            "type": "milk_center",
-            "id": str(center.id),
-            "label": center.name,
-            "district": center.district,
-            "village_code": center.village_code,
-        })
+        points.append(
+            {
+                "type": "milk_center",
+                "id": str(center.id),
+                "label": center.name,
+                "district": center.district,
+                "village_code": center.village_code,
+            }
+        )
 
     # 3. Active community alerts (with lat/lon)
     alert_result = await db.execute(
-        select(CommunityAlert).where(CommunityAlert.expires_at > func.now(), CommunityAlert.deleted_at.is_(None))
+        select(CommunityAlert).where(
+            CommunityAlert.expires_at > func.now(), CommunityAlert.deleted_at.is_(None)
+        )
     )
     for alert in alert_result.scalars().all():
-        points.append({
-            "type": "community_alert",
-            "id": str(alert.id),
-            "label": alert.disease_name,
-            "lat": alert.lat,
-            "lon": alert.lon,
-            "radius_km": alert.radius_km,
-            "severity": alert.severity,
-            "verified": alert.verified,
-        })
+        points.append(
+            {
+                "type": "community_alert",
+                "id": str(alert.id),
+                "label": alert.disease_name,
+                "lat": alert.lat,
+                "lon": alert.lon,
+                "radius_km": alert.radius_km,
+                "severity": alert.severity,
+                "verified": alert.verified,
+            }
+        )
 
     # 4. Farmers with village codes (aggregated count per village)
     farmer_result = await db.execute(
@@ -103,11 +113,13 @@ async def get_map_points(
         .group_by(User.village_code, User.location_district)
     )
     for row in farmer_result.all():
-        points.append({
-            "type": "farmer_cluster",
-            "village_code": row.village_code,
-            "district": row.location_district,
-            "farmer_count": row.farmer_count,
-        })
+        points.append(
+            {
+                "type": "farmer_cluster",
+                "village_code": row.village_code,
+                "district": row.location_district,
+                "farmer_count": row.farmer_count,
+            }
+        )
 
-    return {"total": len(points), "points": points}
+    return {"data": points, "total": len(points)}

@@ -6,7 +6,7 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { EmptyState } from '../src/components/EmptyState';
 import { useSnackbar } from '../src/hooks/useSnackbar';
-import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors, statusColors } from '../src/config/theme';
+import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors, statusColors, accentColors } from '../src/config/theme';
 import { api } from '../src/config/api';
 
 interface WeatherCurrent {
@@ -75,7 +75,7 @@ export default function WeatherScreen() {
       });
       await sound.playAsync();
     } catch (e) {
-      showError(t('weather.ttsError', 'Could not play weather summary'));
+      showError(t('weather.ttsError'));
     } finally {
       setTtsLoading(false);
     }
@@ -163,7 +163,7 @@ export default function WeatherScreen() {
         <Card.Content style={styles.heroContent}>
           <Text style={styles.heroEmoji}>{current.emoji}</Text>
           <Text variant="displaySmall" style={styles.heroTemp}>
-            {current.temp}\u00B0C
+            {current.temp}°C
           </Text>
           <Text variant="bodyLarge" style={styles.heroCondition}>
             {current.condition}
@@ -215,7 +215,7 @@ export default function WeatherScreen() {
                 <Card.Content style={styles.forecastContent}>
                   <Text variant="labelLarge" style={styles.forecastDay}>{day.day}</Text>
                   <Text style={styles.forecastEmoji}>{day.emoji}</Text>
-                  <Text variant="titleMedium" style={styles.forecastTemp}>{day.temp}\u00B0C</Text>
+                  <Text variant="titleMedium" style={styles.forecastTemp}>{day.temp}°C</Text>
                   <Text variant="bodySmall" style={styles.forecastRain}>
                     {'\uD83C\uDF27'} {day.rain}%
                   </Text>
@@ -244,7 +244,7 @@ export default function WeatherScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surface,
   },
   content: {
     padding: SPACING.md,
@@ -255,15 +255,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   location: {
-    color: '#616161',
+    color: colors.onSurfaceVariant,
     marginBottom: SPACING.md,
   },
   alertBanner: {
-    backgroundColor: '#FFF3E0',
+    backgroundColor: accentColors.amberLight,
     borderRadius: CARD_BORDER_RADIUS,
     marginBottom: SPACING.md,
     borderLeftWidth: 4,
-    borderLeftColor: '#FF9800',
+    borderLeftColor: statusColors.watch,
   },
   alertContent: {
     flexDirection: 'row',
@@ -274,11 +274,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   alertText: {
-    color: '#E65100',
+    color: accentColors.amber,
     flex: 1,
   },
   heroCard: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: statusColors.healthyBg,
     borderRadius: CARD_BORDER_RADIUS,
     marginBottom: SPACING.md,
   },
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   heroCondition: {
-    color: '#616161',
+    color: colors.onSurfaceVariant,
     marginBottom: SPACING.md,
   },
   heroStats: {
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   sectionTitle: {
-    color: '#212121',
+    color: colors.onSurface,
     fontWeight: 'bold',
     marginBottom: SPACING.sm,
     marginTop: SPACING.sm,
@@ -343,18 +343,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xs,
   },
   forecastDay: {
-    color: '#616161',
+    color: colors.onSurfaceVariant,
   },
   forecastEmoji: {
     fontSize: 28,
     marginVertical: SPACING.xs,
   },
   forecastTemp: {
-    color: '#212121',
+    color: colors.onSurface,
     fontWeight: 'bold',
   },
   forecastRain: {
-    color: '#1565C0',
+    color: colors.tertiary,
   },
   voiceButton: {
     borderColor: colors.primary,

@@ -12,11 +12,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.database import get_db
-
-# Admin dashboard configuration (previously in constants.py)
-RISK_SCORE_THRESHOLD: float = 0.5
-ALERT_WINDOW_DAYS: int = 7
 from app.middleware.auth import get_current_user, require_admin
 from app.models.animal import Animal
 from app.models.health import HealthEvent
@@ -24,6 +21,7 @@ from app.models.user import User
 from app.models.vet import VetConsultation
 from app.schemas.health import (
     HealthEventCreate,
+    HealthEventListResponse,
     HealthEventRead,
 )
 from app.services.disease_rules import evaluate_symptoms
@@ -35,6 +33,7 @@ router = APIRouter(prefix="/v1", tags=["Health"])
 # Health Events
 # ---------------------------------------------------------------------------
 
+
 @router.post("/health/log", response_model=HealthEventRead, status_code=status.HTTP_201_CREATED)
 async def log_health_event(
     body: HealthEventCreate,
@@ -43,7 +42,9 @@ async def log_health_event(
 ):
     """Log a health event for an animal and run the disease triage engine."""
     # Verify animal exists and belongs to user
-    result = await db.execute(select(Animal).where(Animal.id == body.animal_id, Animal.deleted_at.is_(None)))
+    result = await db.execute(
+        select(Animal).where(Animal.id == body.animal_id, Animal.deleted_at.is_(None))
+    )
     animal = result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
@@ -104,7 +105,7 @@ async def log_health_event(
     return event
 
 
-@router.get("/health/history/{animal_id}")
+@router.get("/health/history/{animal_id}", response_model=HealthEventListResponse)
 async def get_health_history(
     animal_id: UUID,
     limit: int = Query(50, le=200),
@@ -114,7 +115,9 @@ async def get_health_history(
 ):
     """Get health event history for an animal with pagination."""
     # Verify ownership
-    animal_result = await db.execute(select(Animal).where(Animal.id == animal_id, Animal.deleted_at.is_(None)))
+    animal_result = await db.execute(
+        select(Animal).where(Animal.id == animal_id, Animal.deleted_at.is_(None))
+    )
     animal = animal_result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
@@ -123,7 +126,9 @@ async def get_health_history(
 
     # Count
     count_result = await db.execute(
-        select(func.count()).select_from(HealthEvent).where(HealthEvent.animal_id == animal_id, HealthEvent.deleted_at.is_(None))
+        select(func.count())
+        .select_from(HealthEvent)
+        .where(HealthEvent.animal_id == animal_id, HealthEvent.deleted_at.is_(None))
     )
     total = count_result.scalar() or 0
 
@@ -139,7 +144,7 @@ async def get_health_history(
     return {"data": data, "total": total, "limit": limit, "offset": offset}
 
 
-@router.get("/health")
+@router.get("/health", response_model=HealthEventListResponse)
 async def list_health_events(
     limit: int = Query(100, le=500),
     offset: int = Query(0, ge=0),
@@ -147,18 +152,24 @@ async def list_health_events(
     db: AsyncSession = Depends(get_db),
 ):
     """List recent health events (admin: all, farmer: own animals only)."""
-    week_ago = datetime.now(timezone.utc) - timedelta(days=ALERT_WINDOW_DAYS)
-    base = select(HealthEvent).where(HealthEvent.event_date >= week_ago, HealthEvent.deleted_at.is_(None))
+    week_ago = datetime.now(timezone.utc) - timedelta(days=settings.alert_window_days)
+    base = select(HealthEvent).where(
+        HealthEvent.event_date >= week_ago, HealthEvent.deleted_at.is_(None)
+    )
     if current_user.role == "admin":
         pass  # no filter — admin sees all
     elif current_user.role == "vet":
         # Vet sees all health events in their district
-        base = base.join(Animal, HealthEvent.animal_id == Animal.id).join(
-            User, Animal.user_id == User.id
-        ).where(User.location_district == current_user.location_district)
+        base = (
+            base.join(Animal, HealthEvent.animal_id == Animal.id)
+            .join(User, Animal.user_id == User.id)
+            .where(User.location_district == current_user.location_district)
+        )
     else:
         # Farmer: own animals only
-        animal_ids_q = select(Animal.id).where(Animal.user_id == current_user.id, Animal.deleted_at.is_(None))
+        animal_ids_q = select(Animal.id).where(
+            Animal.user_id == current_user.id, Animal.deleted_at.is_(None)
+        )
         base = base.where(HealthEvent.animal_id.in_(animal_ids_q))
 
     count_result = await db.execute(select(func.count()).select_from(base.subquery()))
@@ -177,13 +188,13 @@ async def get_health_alerts_map(
     db: AsyncSession = Depends(get_db),
 ):
     """Health events with coordinates for GIS map display."""
-    week_ago = datetime.now(timezone.utc) - timedelta(days=ALERT_WINDOW_DAYS)
+    week_ago = datetime.now(timezone.utc) - timedelta(days=settings.alert_window_days)
 
     result = await db.execute(
         select(HealthEvent)
         .where(
             HealthEvent.event_date >= week_ago,
-            HealthEvent.ai_risk_score > RISK_SCORE_THRESHOLD,
+            HealthEvent.ai_risk_score > settings.risk_score_threshold,
             HealthEvent.deleted_at.is_(None),
         )
         .options(
@@ -200,15 +211,17 @@ async def get_health_alerts_map(
         if animal is None:
             continue
         owner = animal.owner
-        markers.append({
-            "event_id": str(event.id),
-            "animal_id": str(event.animal_id),
-            "species": animal.species if animal else None,
-            "risk_score": event.ai_risk_score,
-            "probable_diseases": event.probable_diseases,
-            "district": owner.location_district if owner else None,
-            "village_code": owner.village_code if owner else None,
-            "event_date": event.event_date.isoformat(),
-        })
+        markers.append(
+            {
+                "event_id": str(event.id),
+                "animal_id": str(event.animal_id),
+                "species": animal.species if animal else None,
+                "risk_score": event.ai_risk_score,
+                "probable_diseases": event.probable_diseases,
+                "district": owner.location_district if owner else None,
+                "village_code": owner.village_code if owner else None,
+                "event_date": event.event_date.isoformat(),
+            }
+        )
 
     return {"alert_count": len(markers), "markers": markers}

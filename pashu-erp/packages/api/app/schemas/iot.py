@@ -6,6 +6,7 @@ from pydantic import BaseModel
 # Device schemas
 # ---------------------------------------------------------------------------
 
+
 class IoTDeviceRead(BaseModel):
     device_id: str
     animal_id: str | None = None
@@ -29,6 +30,7 @@ class IoTDeviceListResponse(BaseModel):
 # Device type aggregation
 # ---------------------------------------------------------------------------
 
+
 class DeviceTypeCount(BaseModel):
     name: str
     total: int
@@ -39,6 +41,7 @@ class DeviceTypeCount(BaseModel):
 # ---------------------------------------------------------------------------
 # Telemetry schemas
 # ---------------------------------------------------------------------------
+
 
 class TelemetryMetric(BaseModel):
     type: str

@@ -19,11 +19,14 @@ router = APIRouter(prefix="/v1/alerts", tags=["Community Alerts"])
 
 def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculate distance between two GPS coordinates in kilometers."""
-    R = 6371.0
+    earth_radius_km = 6371.0
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
-    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
-    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
+    )
+    return earth_radius_km * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
 @router.post("/report", response_model=CommunityAlertRead, status_code=status.HTTP_201_CREATED)
@@ -49,7 +52,7 @@ async def report_disease_alert(
     return alert
 
 
-@router.get("/nearby", response_model=list[CommunityAlertRead])
+@router.get("/nearby")
 async def get_nearby_alerts(
     lat: float = Query(..., ge=-90, le=90),
     lon: float = Query(..., ge=-180, le=180),
@@ -73,13 +76,13 @@ async def get_nearby_alerts(
     # Precise Haversine filter on the reduced candidate set
     nearby = []
     for alert in candidates:
-        distance = _haversine_km(lat, lon, alert.lat, alert.lon)
+        distance = _haversine_km(lat, lon, float(alert.lat), float(alert.lon))
         if distance <= radius:
             nearby.append(alert)
 
     # Sort by created_at descending
     nearby.sort(key=lambda a: a.created_at, reverse=True)
-    return nearby
+    return {"data": nearby, "total": len(nearby)}
 
 
 @router.patch("/{alert_id}/verify", response_model=CommunityAlertRead)
@@ -93,7 +96,9 @@ async def verify_alert(
         raise HTTPException(status_code=403, detail="Only admins and vets can verify alerts")
 
     result = await db.execute(
-        select(CommunityAlert).where(CommunityAlert.id == alert_id, CommunityAlert.deleted_at.is_(None))
+        select(CommunityAlert).where(
+            CommunityAlert.id == alert_id, CommunityAlert.deleted_at.is_(None)
+        )
     )
     alert = result.scalar_one_or_none()
     if alert is None:

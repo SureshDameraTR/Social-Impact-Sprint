@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useList } from "@refinedev/core";
-import { Box, Grid, Typography, Paper, CircularProgress, Alert } from "@mui/material";
+import { useList, useCustom } from "@refinedev/core";
+import { Box, Grid, Typography, Paper, Alert } from "@mui/material";
 import PeopleIcon from "@mui/icons-material/People";
 import PetsIcon from "@mui/icons-material/Pets";
 import LocalDrinkIcon from "@mui/icons-material/LocalDrink";
@@ -99,17 +98,18 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  useEffect(() => {
-    document.title = 'Dashboard — PashuRaksha ERP';
-  }, []);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/v1";
+  const { data: statsData, isLoading: statsLoading, isError: statsError } = useCustom<DashboardStats>({ url: `${API_URL}/admin/stats`, method: "get" });
+  const { data: milkListData, isLoading: milkLoading, isError: milkError } = useCustom<MilkChartPoint[]>({ url: `${API_URL}/milk/daily-summary`, method: "get" });
+  const { data: alertListData, isLoading: alertsLoading, isError: alertsError } = useCustom<MapPoint[]>({ url: `${API_URL}/health/alerts/map`, method: "get" });
 
-  const { data: statsData, isLoading: statsLoading } = useList<DashboardStats>({ resource: "admin/stats" });
-  const { data: milkListData, isLoading: milkLoading } = useList<MilkChartPoint>({ resource: "milk/daily-summary" });
-  const { data: alertListData, isLoading: alertsLoading } = useList<MapPoint>({ resource: "health/alerts/map" });
+  const stats = statsData?.data;
+  const milkResponse = milkListData?.data as unknown as { period_days?: number; data?: MilkChartPoint[] } | undefined;
+  const milkData: MilkChartPoint[] = milkResponse?.data ?? [];
+  const alertResponse = alertListData?.data as unknown as { alert_count?: number; markers?: MapPoint[] } | undefined;
+  const alertPoints: MapPoint[] = alertResponse?.markers ?? [];
 
-  const stats = statsData?.data?.[0];
-  const milkData: MilkChartPoint[] = milkListData?.data ?? [];
-  const alertPoints: MapPoint[] = alertListData?.data ?? [];
+  const hasError = statsError || milkError || alertsError;
 
   return (
     <Box p={3}>
@@ -119,6 +119,11 @@ export default function DashboardPage() {
       <Typography variant="body1" color="text.secondary" mb={3}>
         PashuRaksha ERP overview for Mysuru District
       </Typography>
+      {hasError && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Some dashboard data failed to load. Displayed values may be incomplete.
+        </Alert>
+      )}
 
       {/* Stat Cards - 3x2 grid */}
       <Grid container spacing={2.5} mb={4}>

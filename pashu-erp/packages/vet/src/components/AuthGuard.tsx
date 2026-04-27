@@ -7,7 +7,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }} role="status" aria-label="Checking authentication">
         <CircularProgress />
       </Box>
     );

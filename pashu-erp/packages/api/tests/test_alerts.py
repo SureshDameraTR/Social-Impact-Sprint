@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
 
 from tests.conftest import FARMER_USER_ID
@@ -31,9 +30,7 @@ def _mock_alert() -> MagicMock:
 
 
 class TestReportAlert:
-    async def test_report_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_report_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST with valid data returns 201."""
         resp = await client.post(
             "/v1/alerts/report",
@@ -90,9 +87,7 @@ class TestReportAlert:
 
 
 class TestNearbyAlerts:
-    async def test_nearby_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_nearby_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with valid coords returns 200."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []
@@ -111,9 +106,7 @@ class TestNearbyAlerts:
         resp = await client.get("/v1/alerts/nearby?lat=100&lon=77.1")
         assert resp.status_code == 422
 
-    async def test_nearby_with_radius(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_nearby_with_radius(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with custom radius returns 200."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []
@@ -129,9 +122,7 @@ class TestNearbyAlerts:
 
 
 class TestVerifyAlert:
-    async def test_verify_as_vet(
-        self, client_as_vet: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_verify_as_vet(self, client_as_vet: AsyncClient, mock_db: AsyncMock) -> None:
         """PATCH as vet returns 200."""
         alert = _mock_alert()
         result = MagicMock()
@@ -141,9 +132,7 @@ class TestVerifyAlert:
         resp = await client_as_vet.patch(f"/v1/alerts/{alert.id}/verify")
         assert resp.status_code == 200
 
-    async def test_verify_as_admin(
-        self, client_as_admin: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_verify_as_admin(self, client_as_admin: AsyncClient, mock_db: AsyncMock) -> None:
         """PATCH as admin returns 200."""
         alert = _mock_alert()
         result = MagicMock()
@@ -161,9 +150,7 @@ class TestVerifyAlert:
         resp = await client.patch(f"/v1/alerts/{alert.id}/verify")
         assert resp.status_code == 403
 
-    async def test_verify_not_found(
-        self, client_as_admin: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_verify_not_found(self, client_as_admin: AsyncClient, mock_db: AsyncMock) -> None:
         """PATCH on nonexistent alert returns 404."""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None

@@ -1,11 +1,8 @@
 """Unit tests for Admin dashboard endpoints — /v1/admin."""
 
-import uuid
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
-
 
 # ---------------------------------------------------------------------------
 # GET /v1/admin/stats — Dashboard stats
@@ -13,9 +10,7 @@ from httpx import AsyncClient
 
 
 class TestDashboardStats:
-    async def test_stats_as_admin(
-        self, client_as_admin: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_stats_as_admin(self, client_as_admin: AsyncClient, mock_db: AsyncMock) -> None:
         """GET as admin returns 200 with all stat fields."""
         # Stats endpoint makes many sequential DB calls
         scalar_result = MagicMock()
@@ -39,9 +34,7 @@ class TestDashboardStats:
         resp = await client_no_auth.get("/v1/admin/stats")
         assert resp.status_code in (401, 403)
 
-    async def test_stats_as_farmer_forbidden(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_stats_as_farmer_forbidden(self, client: AsyncClient) -> None:
         """GET as farmer returns 403 (admin only)."""
         resp = await client.get("/v1/admin/stats")
         assert resp.status_code == 403

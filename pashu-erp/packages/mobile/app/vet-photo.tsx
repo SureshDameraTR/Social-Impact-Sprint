@@ -37,7 +37,7 @@ export default function VetPhotoScreen() {
   const fetchAnimals = useCallback(() => {
     setLoading(true);
     setError(null);
-    api.get<AnimalOption[]>('/animals?species=all')
+    api.get<AnimalOption[]>('/animals')
       .then(res => setAnimals(Array.isArray(res) ? res : (res as any).data ?? []))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));

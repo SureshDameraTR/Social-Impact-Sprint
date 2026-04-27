@@ -4,7 +4,6 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
 
 from tests.conftest import FARMER_USER_ID
@@ -47,9 +46,7 @@ def _mock_administration() -> MagicMock:
 
 
 class TestListMedicines:
-    async def test_list_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []
@@ -65,9 +62,7 @@ class TestListMedicines:
 
 
 class TestAdministerMedicine:
-    async def test_administer_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_administer_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST with valid data returns 201."""
         animal = _mock_animal()
         medicine = _mock_medicine()
@@ -77,9 +72,7 @@ class TestAdministerMedicine:
         med_result = MagicMock()
         med_result.scalar_one_or_none.return_value = medicine
 
-        mock_db.execute = AsyncMock(
-            side_effect=[animal_result, med_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[animal_result, med_result])
 
         resp = await client.post(
             "/v1/medicines/administer",
@@ -120,9 +113,7 @@ class TestAdministerMedicine:
         med_result = MagicMock()
         med_result.scalar_one_or_none.return_value = None
 
-        mock_db.execute = AsyncMock(
-            side_effect=[animal_result, med_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[animal_result, med_result])
 
         resp = await client.post(
             "/v1/medicines/administer",
@@ -133,9 +124,7 @@ class TestAdministerMedicine:
         )
         assert resp.status_code == 404
 
-    async def test_administer_forbidden(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_administer_forbidden(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST on another user's animal returns 403."""
         animal = _mock_animal(user_id=str(uuid.uuid4()))
         result = MagicMock()
@@ -177,17 +166,22 @@ class TestAdministerMedicine:
 
 
 class TestWithdrawalStatus:
-    async def test_status_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_status_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with withdrawal data."""
-        result = MagicMock()
-        result.scalars.return_value.all.return_value = []
-        mock_db.execute = AsyncMock(return_value=result)
+        # The endpoint checks animal ownership first, so mock an animal owned by the test user
+        animal_id = uuid.uuid4()
+        animal = _mock_animal()
+        animal.id = animal_id
 
-        resp = await client.get(
-            f"/v1/medicines/withdrawal-status/{uuid.uuid4()}"
-        )
+        animal_result = MagicMock()
+        animal_result.scalar_one_or_none.return_value = animal
+
+        admin_result = MagicMock()
+        admin_result.scalars.return_value.all.return_value = []
+
+        mock_db.execute = AsyncMock(side_effect=[animal_result, admin_result])
+
+        resp = await client.get(f"/v1/medicines/withdrawal-status/{animal_id}")
         assert resp.status_code == 200
         body = resp.json()
         assert "milk_safe" in body

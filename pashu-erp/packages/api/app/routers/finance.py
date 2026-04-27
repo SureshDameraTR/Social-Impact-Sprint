@@ -2,7 +2,6 @@
 
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import func, select
@@ -12,41 +11,15 @@ from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.finance import Transaction
 from app.models.user import User
+from app.schemas.finance import TransactionCreate, TransactionRead
 
 router = APIRouter(prefix="/v1/finance", tags=["Finance"])
 
 
 # ---------------------------------------------------------------------------
-# Pydantic schemas (inline — light enough to keep here)
-# ---------------------------------------------------------------------------
-from pydantic import BaseModel, Field
-
-
-class TransactionCreate(BaseModel):
-    type: str = Field(..., description="income or expense")
-    amount: Decimal = Field(..., gt=0, le=99_999_999.99, max_digits=10, decimal_places=2)
-    category: str = Field(..., max_length=50)
-    description: str | None = Field(None, max_length=500)
-    reference_id: UUID | None = None
-
-
-class TransactionRead(BaseModel):
-    id: UUID
-    user_id: UUID
-    type: str
-    amount: Decimal = Field(..., max_digits=10, decimal_places=2)
-    category: str
-    description: str | None = None
-    reference_id: UUID | None = None
-    status: str
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
-# ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+
 
 @router.post("/transaction", response_model=TransactionRead, status_code=status.HTTP_201_CREATED)
 async def record_transaction(

@@ -4,7 +4,6 @@ import uuid
 from datetime import date, datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
 
 from tests.conftest import FARMER_USER_ID
@@ -50,35 +49,30 @@ def _mock_premium_row() -> MagicMock:
 
 
 class TestGetUserPolicies:
-    async def test_policies_own_user(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_policies_own_user(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET own policies returns 200."""
         animal_result = MagicMock()
         animal_result.all.return_value = [(uuid.uuid4(),)]
 
+        count_result = MagicMock()
+        count_result.scalar.return_value = 0
+
         policy_result = MagicMock()
         policy_result.scalars.return_value.all.return_value = []
 
-        mock_db.execute = AsyncMock(
-            side_effect=[animal_result, policy_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[animal_result, count_result, policy_result])
 
         resp = await client.get(f"/v1/insurance/policies/{FARMER_USER_ID}")
         assert resp.status_code == 200
 
-    async def test_policies_other_user_forbidden(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_policies_other_user_forbidden(self, client: AsyncClient) -> None:
         """GET another user's policies returns 403."""
         resp = await client.get(f"/v1/insurance/policies/{uuid.uuid4()}")
         assert resp.status_code == 403
 
     async def test_policies_no_auth(self, client_no_auth: AsyncClient) -> None:
         """GET without auth returns 401/403."""
-        resp = await client_no_auth.get(
-            f"/v1/insurance/policies/{uuid.uuid4()}"
-        )
+        resp = await client_no_auth.get(f"/v1/insurance/policies/{uuid.uuid4()}")
         assert resp.status_code in (401, 403)
 
 
@@ -88,9 +82,7 @@ class TestGetUserPolicies:
 
 
 class TestFileClaim:
-    async def test_file_claim_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_file_claim_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST with valid data returns 201."""
         policy = _mock_policy()
         animal = _mock_animal()
@@ -101,9 +93,7 @@ class TestFileClaim:
         animal_result = MagicMock()
         animal_result.scalar_one_or_none.return_value = animal
 
-        mock_db.execute = AsyncMock(
-            side_effect=[policy_result, animal_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[policy_result, animal_result])
 
         resp = await client.post(
             "/v1/insurance/claims",
@@ -148,9 +138,7 @@ class TestFileClaim:
 
 
 class TestPremiumEstimate:
-    async def test_estimate_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_estimate_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with premium estimate."""
         animal = _mock_animal()
         animal_result = MagicMock()
@@ -160,9 +148,7 @@ class TestPremiumEstimate:
         premium_result = MagicMock()
         premium_result.scalar_one_or_none.return_value = premium_row
 
-        mock_db.execute = AsyncMock(
-            side_effect=[animal_result, premium_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[animal_result, premium_result])
 
         resp = await client.get(f"/v1/insurance/premium-estimate/{animal.id}")
         assert resp.status_code == 200
@@ -170,15 +156,41 @@ class TestPremiumEstimate:
         assert "estimated_premium" in body
         assert "coverage_amount" in body
 
-    async def test_estimate_animal_not_found(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_estimate_animal_not_found(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with nonexistent animal returns 404."""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
         mock_db.execute = AsyncMock(return_value=result)
 
-        resp = await client.get(
-            f"/v1/insurance/premium-estimate/{uuid.uuid4()}"
-        )
+        resp = await client.get(f"/v1/insurance/premium-estimate/{uuid.uuid4()}")
         assert resp.status_code == 404
+
+    async def test_estimate_forbidden_not_owner(
+        self, client: AsyncClient, mock_db: AsyncMock
+    ) -> None:
+        """GET returns 403 when animal belongs to another user (non-admin)."""
+        animal = _mock_animal(user_id=str(uuid.uuid4()))
+        animal_result = MagicMock()
+        animal_result.scalar_one_or_none.return_value = animal
+        mock_db.execute = AsyncMock(return_value=animal_result)
+
+        resp = await client.get(f"/v1/insurance/premium-estimate/{animal.id}")
+        assert resp.status_code == 403
+
+    async def test_estimate_admin_any_animal(
+        self, client_as_admin: AsyncClient, mock_db: AsyncMock
+    ) -> None:
+        """Admin may estimate premium for any animal."""
+        animal = _mock_animal(user_id=str(uuid.uuid4()))
+        animal_result = MagicMock()
+        animal_result.scalar_one_or_none.return_value = animal
+
+        premium_row = _mock_premium_row()
+        premium_result = MagicMock()
+        premium_result.scalar_one_or_none.return_value = premium_row
+
+        mock_db.execute = AsyncMock(side_effect=[animal_result, premium_result])
+
+        resp = await client_as_admin.get(f"/v1/insurance/premium-estimate/{animal.id}")
+        assert resp.status_code == 200
+        assert "estimated_premium" in resp.json()

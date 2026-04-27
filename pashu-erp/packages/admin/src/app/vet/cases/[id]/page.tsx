@@ -128,14 +128,14 @@ function calcAge(dob: string | null): string {
 const priorityConfig: Record<string, { bg: string; color: string }> = {
   emergency: { bg: colors.errorLight, color: colors.accentRed },
   urgent: { bg: colors.warningLight, color: colors.accentAmber },
-  routine: { bg: "#f0f0f0", color: "#666" },
+  routine: { bg: colors.surfaceAlt, color: colors.textDim },
 };
 
 const statusConfig: Record<string, { bg: string; color: string }> = {
   pending: { bg: colors.warningLight, color: colors.accentAmber },
   in_review: { bg: colors.infoLight, color: colors.accentBlue },
   diagnosed: { bg: colors.successLight, color: colors.accentGreen },
-  closed: { bg: "#f0f0f0", color: "#666" },
+  closed: { bg: colors.surfaceAlt, color: colors.textDim },
 };
 
 const channelConfig: Record<string, { bg: string; color: string }> = {
@@ -149,7 +149,7 @@ const eventTypeConfig: Record<string, { bg: string; color: string }> = {
   treatment: { bg: colors.infoLight, color: colors.accentBlue },
   diagnosis: { bg: colors.successLight, color: colors.accentGreen },
   vaccination: { bg: colors.primaryLight, color: colors.primary },
-  checkup: { bg: "#f0f0f0", color: "#666" },
+  checkup: { bg: colors.surfaceAlt, color: colors.textDim },
 };
 
 // ---------------------------------------------------------------------------
@@ -161,9 +161,6 @@ export default function VetCaseDetailPage() {
   const router = useRouter();
   const caseId = params?.id as string;
 
-  useEffect(() => {
-    document.title = "Case Detail \u2014 PashuRaksha ERP";
-  }, []);
 
   // State
   const [vetCase, setVetCase] = useState<VetCaseDetail | null>(null);
@@ -273,7 +270,7 @@ export default function VetCaseDetailPage() {
   // Loading / error states
   if (isLoading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", p: 8 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", p: 8 }} role="status" aria-label="Loading case details">
         <CircularProgress />
       </Box>
     );
@@ -291,9 +288,10 @@ export default function VetCaseDetailPage() {
   const owner = animal?.owner ?? vetCase.farmer;
   const healthEvents = animal?.health_events ?? [];
   const vaccinations = animal?.vaccinations ?? [];
-  const photos: string[] = Array.isArray(vetCase.photo_urls)
+  const photos: string[] = (Array.isArray(vetCase.photo_urls)
     ? vetCase.photo_urls
-    : [];
+    : []
+  ).filter((u) => u.startsWith("/") || u.startsWith("https://"));
   const isClaimed = vetCase.vet_id != null;
   const isClosed = vetCase.status === "closed";
 
@@ -311,8 +309,8 @@ export default function VetCaseDetailPage() {
           label={vetCase.status.replace(/_/g, " ")}
           size="small"
           sx={{
-            bgcolor: statusConfig[vetCase.status]?.bg ?? "#f0f0f0",
-            color: statusConfig[vetCase.status]?.color ?? "#666",
+            bgcolor: statusConfig[vetCase.status]?.bg ?? colors.surfaceAlt,
+            color: statusConfig[vetCase.status]?.color ?? colors.textDim,
             fontWeight: 600,
             fontSize: "11px",
             textTransform: "capitalize",
@@ -323,8 +321,8 @@ export default function VetCaseDetailPage() {
           label={vetCase.priority}
           size="small"
           sx={{
-            bgcolor: priorityConfig[vetCase.priority]?.bg ?? "#f0f0f0",
-            color: priorityConfig[vetCase.priority]?.color ?? "#666",
+            bgcolor: priorityConfig[vetCase.priority]?.bg ?? colors.surfaceAlt,
+            color: priorityConfig[vetCase.priority]?.color ?? colors.textDim,
             fontWeight: 600,
             fontSize: "11px",
             textTransform: "capitalize",
@@ -592,8 +590,8 @@ export default function VetCaseDetailPage() {
                               label={event.event_type}
                               size="small"
                               sx={{
-                                bgcolor: eventTypeConfig[event.event_type]?.bg ?? "#f0f0f0",
-                                color: eventTypeConfig[event.event_type]?.color ?? "#666",
+                                bgcolor: eventTypeConfig[event.event_type]?.bg ?? colors.surfaceAlt,
+                                color: eventTypeConfig[event.event_type]?.color ?? colors.textDim,
                                 fontWeight: 600,
                                 fontSize: "10px",
                                 textTransform: "capitalize",
@@ -693,7 +691,7 @@ export default function VetCaseDetailPage() {
             disabled={actionLoading === "claim"}
             sx={{
               bgcolor: colors.primary,
-              "&:hover": { bgcolor: "#094d3f" },
+              "&:hover": { bgcolor: "primary.dark" },
               px: 5,
               py: 1.5,
             }}
@@ -767,7 +765,7 @@ export default function VetCaseDetailPage() {
                 disabled={!diagnosis.trim() || actionLoading === "diagnose"}
                 sx={{
                   bgcolor: colors.primary,
-                  "&:hover": { bgcolor: "#094d3f" },
+                  "&:hover": { bgcolor: "primary.dark" },
                   py: 1.25,
                 }}
               >
@@ -804,7 +802,7 @@ export default function VetCaseDetailPage() {
                 disabled={!videoCallUrl.trim() || actionLoading === "video-link"}
                 sx={{
                   bgcolor: colors.accentBlue,
-                  "&:hover": { bgcolor: "#025e8c" },
+                  "&:hover": { bgcolor: "info.dark" },
                   py: 1.25,
                 }}
               >
@@ -826,7 +824,7 @@ export default function VetCaseDetailPage() {
                 sx={{
                   borderColor: colors.textDim,
                   color: colors.textDim,
-                  "&:hover": { bgcolor: "#f5f5f5", borderColor: colors.text },
+                  "&:hover": { bgcolor: colors.surfaceAlt, borderColor: colors.text },
                 }}
               >
                 {actionLoading === "close" ? (
@@ -902,7 +900,7 @@ export default function VetCaseDetailPage() {
               top: 8,
               right: 8,
               bgcolor: "rgba(0,0,0,0.5)",
-              color: "#fff",
+              color: "common.white",
               "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
             }}
           >

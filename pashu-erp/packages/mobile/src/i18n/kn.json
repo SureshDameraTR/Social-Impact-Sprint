@@ -34,7 +34,15 @@
     "listen": "ಕೇಳಿ",
     "english": "English",
     "hindi": "हिन्दी",
-    "kannada": "ಕನ್ನಡ"
+    "kannada": "ಕನ್ನಡ",
+    "updateAvailable": "ಹೊಸ ಆವೃತ್ತಿ ಲಭ್ಯವಿದೆ",
+    "updateRestart": "ಅಪ್‌ಡೇಟ್ ಅನ್ವಯಿಸಲು ಮರುಪ್ರಾರಂಭಿಸಿ",
+    "restart": "ಮರುಪ್ರಾರಂಭಿಸಿ",
+    "offlineBanner": "ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕವಿಲ್ಲ — ಹಳೆಯ ಮಾಹಿತಿ ತೋರಿಸಲಾಗುತ್ತಿದೆ",
+    "syncingBanner": "{{count}} ಬದಲಾವಣೆಗಳನ್ನು ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ...",
+    "syncComplete": "ಎಲ್ಲಾ ಬದಲಾವಣೆಗಳು ಕಳುಹಿಸಲಾಗಿದೆ",
+    "savedOffline": "ಆಫ್‌ಲೈನ್ ಉಳಿಸಲಾಗಿದೆ — ಸಂಪರ್ಕ ಬಂದಾಗ ಕಳುಹಿಸಲಾಗುವುದು",
+    "pendingChanges": "ಬಾಕಿ"
   },
   "auth": {
     "enterPhone": "ಫೋನ್ ನಂಬರ್ ನಮೂದಿಸಿ",
@@ -45,6 +53,13 @@
     "phoneLabel": "ಮೊಬೈಲ್ ನಂಬರ್",
     "otpSent": "OTP ಕಳುಹಿಸಲಾಗಿದೆ",
     "welcome": "ಪಶುರಕ್ಷಾಗೆ ಸ್ವಾಗತ"
+  },
+  "login": {
+    "invalidPhone": "ಸರಿಯಾದ 10 ಅಂಕಿಯ ಮೊಬೈಲ್ ನಂಬರ್ ನಮೂದಿಸಿ",
+    "otpFailed": "OTP ಕಳುಹಿಸಲು ವಿಫಲವಾಯಿತು",
+    "verificationFailed": "ಪರಿಶೀಲನೆ ವಿಫಲವಾಯಿತು",
+    "resendOtpIn": "OTP ಮರುಕಳುಹಿಸಿ {{seconds}}s ನಲ್ಲಿ",
+    "resendOtp": "OTP ಮರುಕಳುಹಿಸಿ"
   },
   "home": {
     "greeting": "ನಮಸ್ಕಾರ, ಲಕ್ಷ್ಮಮ್ಮ",
@@ -83,7 +98,10 @@
     "healthStatus": "ಆರೋಗ್ಯ ಸ್ಥಿತಿ",
     "healthy": "ಆರೋಗ್ಯಕರ",
     "sick": "ಅನಾರೋಗ್ಯ",
-    "totalAnimals": "ಒಟ್ಟು ಪ್ರಾಣಿಗಳು"
+    "totalAnimals": "ಒಟ್ಟು ಪ್ರಾಣಿಗಳು",
+    "deleteTitle": "ಪ್ರಾಣಿ ಅಳಿಸಿ",
+    "deleteConfirm": "ನೀವು ಖಚಿತವೇ? ಇದನ್ನು ರದ್ದುಗೊಳಿಸಲಾಗುವುದಿಲ್ಲ.",
+    "saveFailed": "ಉಳಿಸಲು ವಿಫಲವಾಯಿತು"
   },
   "milk": {
     "recordMilk": "ಹಾಲು ದಾಖಲಿಸಿ",
@@ -96,7 +114,8 @@
     "selectAnimal": "ಪ್ರಾಣಿ ಆಯ್ಕೆಮಾಡಿ",
     "session": "ಅವಧಿ",
     "quantity": "ಪ್ರಮಾಣ",
-    "recorded": "ಹಾಲು ದಾಖಲಾಯಿತು"
+    "recorded": "ಹಾಲು ದಾಖಲಾಯಿತು",
+    "recordFailed": "ಹಾಲು ದಾಖಲಿಸಲು ವಿಫಲವಾಯಿತು. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
   },
   "sell": {
     "sellProducts": "ಉತ್ಪನ್ನಗಳನ್ನು ಮಾರಿ",
@@ -110,7 +129,8 @@
     "recordSale": "ಮಾರಾಟ ದಾಖಲಿಸಿ",
     "recentSales": "ಇತ್ತೀಚಿನ ಮಾರಾಟ",
     "buyer": "ಖರೀದಿದಾರ",
-    "saleRecorded": "ಮಾರಾಟ ದಾಖಲಾಯಿತು"
+    "saleRecorded": "ಮಾರಾಟ ದಾಖಲಾಯಿತು",
+    "createFailed": "ಪಟ್ಟಿ ರಚಿಸಲು ವಿಫಲವಾಯಿತು. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
   },
   "health": {
     "healthCheck": "ಆರೋಗ್ಯ ತಪಾಸಣೆ",
@@ -162,7 +182,8 @@
     "kisanCreditCardLabel": "ಕಿಸಾನ್ ಕ್ರೆಡಿಟ್ ಕಾರ್ಡ್ — ಕಡಿಮೆ ಬಡ್ಡಿ",
     "kisanCredit": "ಕಿಸಾನ್ ಕ್ರೆಡಿಟ್ ಕಾರ್ಡ್ - ಕಡಿಮೆ ಬಡ್ಡಿ",
     "apply": "ಅರ್ಜಿ ಸಲ್ಲಿಸಿ",
-    "applyNow": "ಈಗ ಅರ್ಜಿ ಸಲ್ಲಿಸಿ"
+    "applyNow": "ಈಗ ಅರ್ಜಿ ಸಲ್ಲಿಸಿ",
+    "downloadComingSoon": "ಡೌನ್‌ಲೋಡ್ ವೈಶಿಷ್ಟ್ಯ ಶೀಘ್ರದಲ್ಲಿ ಬರಲಿದೆ"
   },
   "onboarding": {
     "welcomeSubtitle": "ನಿಮ್ಮ ಪಶುಗಳ ಆರೈಕೆಗೆ ಸಂಪೂರ್ಣ ಸಹಾಯಕ",
@@ -191,7 +212,8 @@
     "tutorialSellDesc": "ನಿಮ್ಮ ಎಲ್ಲಾ ಮಾರಾಟವನ್ನು ಒಂದೇ ಕಡೆ ಟ್ರ್ಯಾಕ್ ಮಾಡಿ",
     "skip": "ಬಿಟ್ಟು ಮುಂದೆ",
     "next": "ಮುಂದೆ",
-    "getStarted": "ಪ್ರಾರಂಭಿಸಿ"
+    "getStarted": "ಪ್ರಾರಂಭಿಸಿ",
+    "saveFailed": "ಉಳಿಸಲು ವಿಫಲವಾಯಿತು. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
   },
   "weather": {
     "title": "ಹವಾಮಾನ",
@@ -206,7 +228,8 @@
     },
     "fiveDayForecast": "5 ದಿನಗಳ ಮುನ್ಸೂಚನೆ",
     "rainfallAlert": "ಈ ವಾರ ಮಳೆ ನಿರೀಕ್ಷಿತ — ಪ್ರಾಣಿಗಳನ್ನು ನೆರಳಿನಲ್ಲಿಡಿ",
-    "voiceSummary": "ಧ್ವನಿ ಸಾರಾಂಶ"
+    "voiceSummary": "ಧ್ವನಿ ಸಾರಾಂಶ",
+    "ttsError": "ಹವಾಮಾನ ಸಾರಾಂಶ ಪ್ಲೇ ಮಾಡಲಾಗಲಿಲ್ಲ"
   },
   "advisory": {
     "title": "ಸಲಹೆ ಮತ್ತು ಮಾರ್ಗದರ್ಶನ",
@@ -214,7 +237,8 @@
     "breeding": "ತಳಿ ಸಂವರ್ಧನೆ",
     "government": "ಸರ್ಕಾರಿ ಯೋಜನೆ",
     "governmentScheme": "ಸರ್ಕಾರಿ ಯೋಜನೆ",
-    "applyNow": "ಈಗ ಅರ್ಜಿ ಸಲ್ಲಿಸಿ"
+    "applyNow": "ಈಗ ಅರ್ಜಿ ಸಲ್ಲಿಸಿ",
+    "downloadComingSoon": "ಡೌನ್‌ಲೋಡ್ ವೈಶಿಷ್ಟ್ಯ ಶೀಘ್ರದಲ್ಲಿ ಬರಲಿದೆ"
   },
   "insurance": {
     "title": "ವಿಮೆ",
@@ -230,7 +254,18 @@
     "addPhoto": "ಫೋಟೋ ಸೇರಿಸಿ",
     "premiumCalculator": "ಪ್ರೀಮಿಯಂ ಕ್ಯಾಲ್ಕುಲೇಟರ್",
     "calculate": "ಲೆಕ್ಕ ಹಾಕಿ",
-    "estimatedPremium": "ಅಂದಾಜು ಪ್ರೀಮಿಯಂ"
+    "estimatedPremium": "ಅಂದಾಜು ಪ್ರೀಮಿಯಂ",
+    "changePhoto": "ಫೋಟೋ ಬದಲಾಯಿಸಿ",
+    "photoAttached": "ಫೋಟೋ ಲಗತ್ತಿಸಲಾಗಿದೆ",
+    "photoFailed": "ಫೋಟೋ ತೆಗೆಯಲು ವಿಫಲವಾಯಿತು",
+    "cameraPermissionRequired": "ಫೋಟೋ ತೆಗೆಯಲು ಕ್ಯಾಮೆರಾ ಅನುಮತಿ ಅಗತ್ಯ",
+    "galleryPermissionRequired": "ಫೋಟೋ ಆಯ್ಕೆ ಮಾಡಲು ಗ್ಯಾಲರಿ ಅನುಮತಿ ಅಗತ್ಯ",
+    "photoSourcePrompt": "ಫೋಟೋ ಮೂಲ ಆಯ್ಕೆಮಾಡಿ",
+    "takePhoto": "ಫೋಟೋ ತೆಗೆಯಿರಿ",
+    "chooseFromGallery": "ಗ್ಯಾಲರಿಯಿಂದ ಆಯ್ಕೆಮಾಡಿ",
+    "claimSubmitted": "ಕ್ಲೈಮ್ ಯಶಸ್ವಿಯಾಗಿ ಸಲ್ಲಿಸಲಾಯಿತು",
+    "claimFailed": "ಕ್ಲೈಮ್ ಸಲ್ಲಿಸಲು ವಿಫಲವಾಯಿತು. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+    "perYear": "ವರ್ಷಕ್ಕೆ"
   },
   "feed": {
     "title": "ಆಹಾರ ಲೆಕ್ಕಾಚಾರ",
@@ -290,7 +325,8 @@
     "dueToday": "ಇಂದು ಬಾಕಿ",
     "overdue": "ಅವಧಿ ಮೀರಿದೆ",
     "completed": "ಪೂರ್ಣ",
-    "markDone": "ಪೂರ್ಣ ಎಂದು ಗುರುತಿಸಿ"
+    "markDone": "ಪೂರ್ಣ ಎಂದು ಗುರುತಿಸಿ",
+    "markDoneFailed": "ಲಸಿಕೆ ಪೂರ್ಣ ಎಂದು ಗುರುತಿಸಲು ವಿಫಲವಾಯಿತು. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
   },
   "medicineLog": {
     "title": "ಔಷಧ ದಾಖಲೆ",
@@ -312,18 +348,39 @@
     "noMilkRecords": "ಹಾಲಿನ ದಾಖಲೆಗಳಿಲ್ಲ",
     "noSales": "ಮಾರಾಟದ ದಾಖಲೆಗಳಿಲ್ಲ",
     "noHealthEvents": "ಆರೋಗ್ಯ ದಾಖಲೆಗಳಿಲ್ಲ",
+    "noVaccinations": "ಲಸಿಕೆ ನಿಗದಿಯಾಗಿಲ್ಲ",
     "noIncome": "ಆದಾಯದ ದಾಖಲೆಗಳಿಲ್ಲ",
-    "startSelling": "ಆದಾಯವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಮಾರಾಟ ಪ್ರಾರಂಭಿಸಿ"
+    "startSelling": "ಆದಾಯವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಮಾರಾಟ ಪ್ರಾರಂಭಿಸಿ",
+    "noAlerts": "ಹತ್ತಿರದಲ್ಲಿ ರೋಗ ಎಚ್ಚರಿಕೆಗಳಿಲ್ಲ"
   },
   "errors": {
     "networkError": "ನೆಟ್\u200Cವರ್ಕ್ ದೋಷ — ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ",
     "serverError": "ಸರ್ವರ್ ದೋಷ",
     "unauthorized": "ದಯವಿಟ್ಟು ಮತ್ತೆ ಲಾಗಿನ್ ಮಾಡಿ",
-    "voiceFailed": "ಧ್ವನಿ ಗುರುತಿಸಲಾಗಲಿಲ್ಲ — ಕೈಯಿಂದ ನಮೂದಿಸಿ"
+    "voiceFailed": "ಧ್ವನಿ ಗುರುತಿಸಲಾಗಲಿಲ್ಲ — ಕೈಯಿಂದ ನಮೂದಿಸಿ",
+    "invalidField": "ಸರಿಯಾದ {{field}} ನಮೂದಿಸಿ",
+    "minimumValue": "ಕನಿಷ್ಠ {{min}}",
+    "maximumValue": "ಗರಿಷ್ಠ {{max}}",
+    "invalidQuantity": "ಸರಿಯಾದ ಪ್ರಮಾಣ ನಮೂದಿಸಿ",
+    "minimumQuantity": "ಕನಿಷ್ಠ {{min}} L",
+    "maximumQuantity": "ಗರಿಷ್ಠ {{max}} L"
+  },
+  "medicinelog": {
+    "saveFailed": "ಔಷಧಿ ದಾಖಲೆ ಉಳಿಸಲು ವಿಫಲವಾಯಿತು. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+  },
+  "a11y": {
+    "closeClaimForm": "ಕ್ಲೈಮ್ ಫಾರ್ಮ್ ಮುಚ್ಚಿ",
+    "deleteDigit": "ಅಳಿಸಿ",
+    "smartFarmLabel": "ಸ್ಮಾರ್ಟ್ ಫಾರ್ಮ್",
+    "notificationsLabel": "ಅಧಿಸೂಚನೆಗಳು",
+    "profileLabel": "ಪ್ರೊಫೈಲ್",
+    "speciesSelect": "{{species}} ಜಾತಿ ಆಯ್ಕೆಮಾಡಿ"
   },
   "profile": {
     "farmDetails": "ಕೃಷಿ ವಿವರಗಳು",
     "farmSize": "ಜಮೀನಿನ ಗಾತ್ರ",
+    "village": "ಗ್ರಾಮ",
+    "role": "ಪಾತ್ರ",
     "memberSince": "ಸದಸ್ಯತ್ವ ಆರಂಭ",
     "logout": "ಲಾಗ್ ಔಟ್"
   },
@@ -336,7 +393,10 @@
     "comingSoon": "ಹಂತ 2 - IoT ಏಕೀಕರಣ ಶೀಘ್ರದಲ್ಲೇ",
     "gpsTracking": "GPS ಪ್ರಾಣಿ ಟ್ರ್ಯಾಕಿಂಗ್",
     "gpsDescription": "GPS ಕಾಲರ್\u200Cಗಳಿಂದ ಪ್ರಾಣಿ ಸ್ಥಳಗಳನ್ನು ನೇರ ನಕ್ಷೆ ತೋರಿಸುತ್ತದೆ",
-    "iotDevices": "IoT ಸಾಧನಗಳು"
+    "iotDevices": "IoT ಸಾಧನಗಳು",
+    "smartAlerts": "ಸ್ಮಾರ್ಟ್ ಎಚ್ಚರಿಕೆಗಳು",
+    "deviceOffline": "{{name}} ಆಫ್‌ಲೈನ್ ಆಗಿದೆ - {{battery}} ಬ್ಯಾಟರಿ",
+    "allDevicesNormal": "ಎಲ್ಲಾ ಸಾಧನಗಳು ಸಾಮಾನ್ಯವಾಗಿ ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತಿವೆ"
   },
   "vetPhoto": {
     "title": "ಪಶುವೈದ್ಯರಿಗೆ ಫೋಟೋ ಕಳುಹಿಸಿ",

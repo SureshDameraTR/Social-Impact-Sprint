@@ -1,4 +1,4 @@
-import type { DataProvider } from "@refinedev/core";
+import type { BaseRecord, DataProvider } from "@refinedev/core";
 import { getCsrfToken } from "@/providers/auth-provider";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -11,7 +11,7 @@ const MUTATING_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const method = (options.method || "GET").toUpperCase();
   const headers: HeadersInit = {
-    "Content-Type": "application/json",
+    ...(MUTATING_METHODS.has(method) || options.body ? { "Content-Type": "application/json" } : {}),
     ...(MUTATING_METHODS.has(method) ? { "X-CSRF-Token": getCsrfToken() } : {}),
     ...(options.headers || {}),
   };
@@ -25,6 +25,11 @@ export const restDataProvider: DataProvider = {
     if (pagination?.current && pagination?.pageSize) {
       params.set("offset", String((pagination.current - 1) * pagination.pageSize));
       params.set("limit", String(pagination.pageSize));
+    }
+
+    if (sorters && sorters.length > 0) {
+      params.set("sort_by", sorters[0].field);
+      params.set("sort_order", sorters[0].order);
     }
 
     if (meta?.params) {
@@ -99,14 +104,23 @@ export const restDataProvider: DataProvider = {
     return { data: await res.json() };
   },
 
-  // @ts-expect-error -- Refine's deleteOne is generic over TData which cannot
-  // be satisfied by a concrete data-provider; this is a known Refine limitation.
-  deleteOne: async ({ resource, id }) => {
+  deleteOne: (async ({ resource, id }) => {
     const res = await fetchWithAuth(`${API_URL}/${resource}/${id}`, {
       method: "DELETE",
     });
     if (!res.ok) throw new Error(`API error ${res.status}`);
-    return { data: { id } };
+    return { data: { id: String(id) } };
+  }) as DataProvider["deleteOne"],
+
+  custom: async ({ url, method, headers: customHeaders, payload }) => {
+    const res = await fetchWithAuth(url, {
+      method: method.toUpperCase(),
+      ...(payload ? { body: JSON.stringify(payload) } : {}),
+      ...(customHeaders ? { headers: customHeaders as HeadersInit } : {}),
+    });
+    if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    return { data };
   },
 
   getApiUrl: () => API_URL!,

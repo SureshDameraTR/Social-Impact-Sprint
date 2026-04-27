@@ -3,7 +3,7 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, Card, Banner, Chip, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '../src/components/EmptyState';
-import { SPACING, CARD_BORDER_RADIUS, colors } from '../src/config/theme';
+import { SPACING, CARD_BORDER_RADIUS, colors, statusColors, accentColors } from '../src/config/theme';
 import { api } from '../src/config/api';
 
 interface IoTDevice {
@@ -23,8 +23,8 @@ export default function SmartFarmScreen() {
   const fetchDevices = useCallback(() => {
     setLoading(true);
     setError(null);
-    api.get<IoTDevice[]>('/iot/devices')
-      .then(res => setDevices(res))
+    api.get<any>('/iot/devices')
+      .then(res => setDevices(Array.isArray(res) ? res : res.data ?? []))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -36,7 +36,7 @@ export default function SmartFarmScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#2E7D32" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -103,7 +103,7 @@ export default function SmartFarmScreen() {
       )}
 
       {devices.map((device) => (
-        <Card key={device.id} style={styles.deviceCard} accessibilityLabel={`${device.name}, ${device.animal}, status ${device.status}, battery ${device.battery}`}>
+        <Card key={device.id} style={styles.deviceCard} accessible={true} accessibilityLabel={`${device.name}, ${device.animal}, ${device.status}, ${device.battery}`}>
           <Card.Content style={styles.deviceContent}>
             <View style={styles.deviceInfo}>
               <Text variant="titleSmall">{device.name}</Text>
@@ -116,10 +116,10 @@ export default function SmartFarmScreen() {
                 mode="flat"
                 style={[
                   styles.statusChip,
-                  { backgroundColor: device.status === 'online' ? '#C8E6C9' : '#FFCDD2' },
+                  { backgroundColor: device.status === 'online' ? statusColors.healthyBg : statusColors.urgentBg },
                 ]}
                 textStyle={{
-                  color: device.status === 'online' ? '#2E7D32' : '#D32F2F',
+                  color: device.status === 'online' ? statusColors.healthy : statusColors.urgent,
                   fontSize: 12,
                 }}
               >
@@ -137,13 +137,13 @@ export default function SmartFarmScreen() {
       {(offlineDevices.length > 0 || onlineDevices.length > 0) && (
         <>
           <Text variant="titleMedium" style={styles.sectionTitle}>
-            Smart Alerts
+            {t('smartFarm.smartAlerts')}
           </Text>
           {offlineDevices.map((device) => (
             <Card key={`alert-${device.id}`} style={styles.alertCard}>
               <Card.Content>
                 <Text variant="bodyLarge">
-                  {'\u26A0\uFE0F'} {device.name} is offline - {device.battery} battery
+                  {'\u26A0\uFE0F'} {t('smartFarm.deviceOffline', { name: device.name, battery: device.battery })}
                 </Text>
               </Card.Content>
             </Card>
@@ -152,7 +152,7 @@ export default function SmartFarmScreen() {
             <Card style={styles.alertCardGreen}>
               <Card.Content>
                 <Text variant="bodyLarge">
-                  {'\u2705'} All devices reporting normally
+                  {'\u2705'} {t('smartFarm.allDevicesNormal')}
                 </Text>
               </Card.Content>
             </Card>
@@ -166,28 +166,28 @@ export default function SmartFarmScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surface,
   },
   scroll: {
     padding: SPACING.md,
     paddingBottom: 40,
   },
   banner: {
-    backgroundColor: '#FFF3E0',
+    backgroundColor: accentColors.amberLight,
     borderRadius: 12,
     marginBottom: SPACING.md,
   },
   bannerText: {
-    color: '#E65100',
+    color: accentColors.amber,
   },
   heading: {
     fontWeight: 'bold',
-    color: '#2E7D32',
+    color: colors.primary,
     marginBottom: SPACING.md,
   },
   mapCard: {
     borderRadius: CARD_BORDER_RADIUS,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: statusColors.healthyBg,
     marginBottom: SPACING.lg,
   },
   mapContent: {
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   mapSubtitle: {
-    color: '#616161',
+    color: colors.onSurfaceVariant,
     textAlign: 'center',
     marginBottom: SPACING.md,
   },
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   deviceCard: {
     marginBottom: SPACING.sm,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.onPrimary,
   },
   deviceContent: {
     flexDirection: 'row',
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   deviceAnimal: {
-    color: '#9E9E9E',
+    color: colors.outline,
     marginTop: 2,
   },
   deviceMeta: {
@@ -236,16 +236,16 @@ const styles = StyleSheet.create({
     height: 28,
   },
   battery: {
-    color: '#616161',
+    color: colors.onSurfaceVariant,
   },
   alertCard: {
     marginBottom: SPACING.sm,
     borderRadius: 12,
-    backgroundColor: '#FFF3E0',
+    backgroundColor: statusColors.watchBg,
   },
   alertCardGreen: {
     marginBottom: SPACING.sm,
     borderRadius: 12,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: statusColors.healthyBg,
   },
 });

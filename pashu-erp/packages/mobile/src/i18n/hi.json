@@ -34,7 +34,15 @@
     "listen": "सुनें",
     "english": "English",
     "kannada": "ಕನ್ನಡ",
-    "hindi": "हिन्दी"
+    "hindi": "हिन्दी",
+    "updateAvailable": "नया संस्करण उपलब्ध है",
+    "updateRestart": "अपडेट लागू करने के लिए रीस्टार्ट करें",
+    "restart": "रीस्टार्ट",
+    "offlineBanner": "इंटरनेट कनेक्शन नहीं — पुराना डेटा दिखाया जा रहा है",
+    "syncingBanner": "{{count}} बदलाव भेजे जा रहे हैं...",
+    "syncComplete": "सभी बदलाव भेज दिए गए",
+    "savedOffline": "ऑफ़लाइन सहेजा गया — कनेक्ट होने पर भेजा जाएगा",
+    "pendingChanges": "बाक़ी"
   },
   "auth": {
     "enterPhone": "फ़ोन नंबर दर्ज करें",
@@ -45,6 +53,13 @@
     "phoneLabel": "मोबाइल नंबर",
     "otpSent": "OTP भेजा गया",
     "welcome": "पशुरक्षा में आपका स्वागत है"
+  },
+  "login": {
+    "invalidPhone": "सही 10 अंकों का मोबाइल नंबर दर्ज करें",
+    "otpFailed": "OTP भेजने में विफल",
+    "verificationFailed": "सत्यापन विफल",
+    "resendOtpIn": "OTP दोबारा भेजें {{seconds}}s में",
+    "resendOtp": "OTP दोबारा भेजें"
   },
   "home": {
     "greeting": "नमस्ते, लक्ष्मम्मा",
@@ -83,7 +98,10 @@
     "healthStatus": "स्वास्थ्य स्थिति",
     "healthy": "स्वस्थ",
     "sick": "बीमार",
-    "totalAnimals": "कुल पशु"
+    "totalAnimals": "कुल पशु",
+    "deleteTitle": "पशु हटाएँ",
+    "deleteConfirm": "क्या आप निश्चित हैं? इसे वापस नहीं किया जा सकता।",
+    "saveFailed": "सहेजने में विफल"
   },
   "milk": {
     "recordMilk": "दूध दर्ज करें",
@@ -96,7 +114,8 @@
     "selectAnimal": "पशु चुनें",
     "session": "समय",
     "quantity": "मात्रा",
-    "recorded": "दूध दर्ज हो गया"
+    "recorded": "दूध दर्ज हो गया",
+    "recordFailed": "दूध दर्ज करने में विफल। कृपया फिर से कोशिश करें।"
   },
   "sell": {
     "sellProducts": "उत्पाद बेचें",
@@ -110,7 +129,8 @@
     "recordSale": "बिक्री दर्ज करें",
     "recentSales": "हाल की बिक्री",
     "buyer": "खरीदार",
-    "saleRecorded": "बिक्री दर्ज हो गई"
+    "saleRecorded": "बिक्री दर्ज हो गई",
+    "createFailed": "सूची बनाने में विफल। कृपया फिर से कोशिश करें।"
   },
   "health": {
     "healthCheck": "स्वास्थ्य जाँच",
@@ -162,7 +182,8 @@
     "kisanCreditCardLabel": "किसान क्रेडिट कार्ड — कम ब्याज",
     "kisanCredit": "किसान क्रेडिट कार्ड - कम ब्याज",
     "apply": "आवेदन करें",
-    "applyNow": "अभी आवेदन करें"
+    "applyNow": "अभी आवेदन करें",
+    "downloadComingSoon": "डाउनलोड सुविधा जल्द आ रही है"
   },
   "onboarding": {
     "welcomeSubtitle": "आपके पशुओं की देखभाल का पूरा साथी",
@@ -191,7 +212,8 @@
     "tutorialSellDesc": "अपनी सारी बिक्री एक जगह पर देखें",
     "skip": "छोड़ें",
     "next": "अगला",
-    "getStarted": "शुरू करें"
+    "getStarted": "शुरू करें",
+    "saveFailed": "सहेजने में विफल। कृपया फिर से कोशिश करें।"
   },
   "weather": {
     "title": "मौसम",
@@ -206,7 +228,8 @@
     },
     "fiveDayForecast": "5 दिन का पूर्वानुमान",
     "rainfallAlert": "इस सप्ताह बारिश की संभावना — पशुओं को छत के नीचे रखें",
-    "voiceSummary": "आवाज़ से सारांश"
+    "voiceSummary": "आवाज़ से सारांश",
+    "ttsError": "मौसम सारांश चलाने में विफल"
   },
   "advisory": {
     "title": "सलाह और सुझाव",
@@ -230,7 +253,18 @@
     "addPhoto": "फ़ोटो जोड़ें",
     "premiumCalculator": "प्रीमियम कैल्कुलेटर",
     "calculate": "गणना करें",
-    "estimatedPremium": "अनुमानित प्रीमियम"
+    "estimatedPremium": "अनुमानित प्रीमियम",
+    "changePhoto": "फ़ोटो बदलें",
+    "photoAttached": "फ़ोटो जोड़ी गई",
+    "photoFailed": "फ़ोटो लेने में विफल",
+    "cameraPermissionRequired": "फ़ोटो लेने के लिए कैमरा अनुमति ज़रूरी है",
+    "galleryPermissionRequired": "फ़ोटो चुनने के लिए गैलरी अनुमति ज़रूरी है",
+    "photoSourcePrompt": "फ़ोटो स्रोत चुनें",
+    "takePhoto": "फ़ोटो लें",
+    "chooseFromGallery": "गैलरी से चुनें",
+    "claimSubmitted": "दावा सफलतापूर्वक जमा हो गया",
+    "claimFailed": "दावा जमा करने में विफल। कृपया फिर से कोशिश करें।",
+    "perYear": "प्रति वर्ष"
   },
   "feed": {
     "title": "चारा कैल्कुलेटर",
@@ -290,7 +324,8 @@
     "dueToday": "आज बाक़ी है",
     "overdue": "समय बीत चुका",
     "completed": "पूरा हुआ",
-    "markDone": "पूरा हुआ चिह्नित करें"
+    "markDone": "पूरा हुआ चिह्नित करें",
+    "markDoneFailed": "टीकाकरण पूर्ण चिह्नित करने में विफल। कृपया फिर से कोशिश करें।"
   },
   "medicineLog": {
     "title": "दवाई का रिकॉर्ड",
@@ -312,18 +347,39 @@
     "noMilkRecords": "दूध का कोई रिकॉर्ड नहीं",
     "noSales": "बिक्री का कोई रिकॉर्ड नहीं",
     "noHealthEvents": "स्वास्थ्य का कोई रिकॉर्ड नहीं",
+    "noVaccinations": "कोई टीकाकरण निर्धारित नहीं",
     "noIncome": "आय का कोई रिकॉर्ड नहीं",
-    "startSelling": "आय देखने के लिए बिक्री शुरू करें"
+    "startSelling": "आय देखने के लिए बिक्री शुरू करें",
+    "noAlerts": "आस-पास कोई रोग चेतावनी नहीं"
   },
   "errors": {
     "networkError": "नेटवर्क त्रुटि — कृपया फिर से कोशिश करें",
     "serverError": "सर्वर त्रुटि",
     "unauthorized": "कृपया फिर से लॉगिन करें",
-    "voiceFailed": "आवाज़ पहचान नहीं हुई — हाथ से दर्ज करें"
+    "voiceFailed": "आवाज़ पहचान नहीं हुई — हाथ से दर्ज करें",
+    "invalidField": "सही {{field}} दर्ज करें",
+    "minimumValue": "न्यूनतम {{min}}",
+    "maximumValue": "अधिकतम {{max}}",
+    "invalidQuantity": "सही मात्रा दर्ज करें",
+    "minimumQuantity": "न्यूनतम {{min}} L",
+    "maximumQuantity": "अधिकतम {{max}} L"
+  },
+  "medicinelog": {
+    "saveFailed": "दवाई रिकॉर्ड सहेजने में विफल। कृपया फिर से कोशिश करें।"
+  },
+  "a11y": {
+    "closeClaimForm": "दावा फ़ॉर्म बंद करें",
+    "deleteDigit": "मिटाएँ",
+    "smartFarmLabel": "स्मार्ट फ़ार्म",
+    "notificationsLabel": "सूचनाएँ",
+    "profileLabel": "प्रोफ़ाइल",
+    "speciesSelect": "{{species}} प्रजाति चुनें"
   },
   "profile": {
     "farmDetails": "खेत का विवरण",
     "farmSize": "खेत का आकार",
+    "village": "गाँव",
+    "role": "भूमिका",
     "memberSince": "सदस्यता शुरू",
     "logout": "लॉग आउट"
   },
@@ -336,7 +392,10 @@
     "comingSoon": "चरण 2 — IoT जुड़ाव जल्द आ रहा है",
     "gpsTracking": "GPS पशु ट्रैकिंग",
     "gpsDescription": "GPS कॉलर से पशुओं की लाइव लोकेशन नक़्शे पर दिखेगी",
-    "iotDevices": "IoT उपकरण"
+    "iotDevices": "IoT उपकरण",
+    "smartAlerts": "स्मार्ट अलर्ट",
+    "deviceOffline": "{{name}} ऑफ़लाइन है - {{battery}} बैटरी",
+    "allDevicesNormal": "सभी उपकरण सामान्य रूप से काम कर रहे हैं"
   },
   "vetPhoto": {
     "title": "पशु चिकित्सक को फ़ोटो भेजें",

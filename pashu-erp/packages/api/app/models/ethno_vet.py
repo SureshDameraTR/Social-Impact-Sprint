@@ -1,11 +1,10 @@
 import enum
-from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, String, Text, func, text
+from sqlalchemy import Enum, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import AuditMixin, Base, SoftDeleteMixin
+from app.models.base import AuditMixin, Base, SoftDeleteMixin, TimestampMixin
 
 
 class EvidenceRating(str, enum.Enum):
@@ -14,7 +13,7 @@ class EvidenceRating(str, enum.Enum):
     icar_validated = "icar_validated"
 
 
-class TraditionalRemedy(AuditMixin, SoftDeleteMixin, Base):
+class TraditionalRemedy(TimestampMixin, AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "traditional_remedies"
 
     id: Mapped[str] = mapped_column(
@@ -33,4 +32,3 @@ class TraditionalRemedy(AuditMixin, SoftDeleteMixin, Base):
     )
     safety_warnings: Mapped[str | None] = mapped_column(Text, nullable=True)
     source_reference: Mapped[str | None] = mapped_column(String(300), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

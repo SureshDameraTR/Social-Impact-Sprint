@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
 
 from tests.conftest import FARMER_USER_ID
@@ -61,9 +60,7 @@ class TestRecordTransaction:
         )
         assert resp.status_code == 422
 
-    async def test_create_transaction_negative_amount(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_create_transaction_negative_amount(self, client: AsyncClient) -> None:
         """POST with negative amount returns 422."""
         resp = await client.post(
             "/v1/finance/transaction",
@@ -71,9 +68,7 @@ class TestRecordTransaction:
         )
         assert resp.status_code == 422
 
-    async def test_create_transaction_no_auth(
-        self, client_no_auth: AsyncClient
-    ) -> None:
+    async def test_create_transaction_no_auth(self, client_no_auth: AsyncClient) -> None:
         """POST without auth returns 401/403."""
         resp = await client_no_auth.post(
             "/v1/finance/transaction",
@@ -88,9 +83,7 @@ class TestRecordTransaction:
 
 
 class TestFinancialSummary:
-    async def test_summary_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_summary_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with summary data."""
         txn = _mock_transaction()
         result = MagicMock()

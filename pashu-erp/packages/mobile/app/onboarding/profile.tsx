@@ -5,13 +5,16 @@ import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import * as Storage from '../../src/config/storage';
 import { api } from '../../src/config/api';
-import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../../src/config/theme';
+import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors } from '../../src/config/theme';
 
 const KARNATAKA_DISTRICTS = [
-  'Mysore', 'Mandya', 'Bangalore Rural', 'Hassan', 'Tumkur',
-  'Shimoga', 'Belgaum', 'Dharwad', 'Raichur', 'Bellary',
-  'Chitradurga', 'Davanagere', 'Haveri', 'Gadag', 'Kolar',
-  'Chikmagalur', 'Udupi', 'Dakshina Kannada',
+  'Bagalkote', 'Ballari', 'Belagavi', 'Bengaluru Rural', 'Bengaluru Urban',
+  'Bidar', 'Chamarajanagara', 'Chikballapura', 'Chikkamagaluru', 'Chitradurga',
+  'Dakshina Kannada', 'Davanagere', 'Dharwad', 'Gadag', 'Hassan',
+  'Haveri', 'Kalaburagi', 'Kodagu', 'Kolar', 'Koppal',
+  'Mandya', 'Mysuru', 'Raichur', 'Ramanagara', 'Shivamogga',
+  'Tumakuru', 'Udupi', 'Uttara Kannada', 'Vijayapura', 'Vijayanagara',
+  'Yadgir',
 ];
 
 export default function ProfileScreen() {
@@ -44,8 +47,8 @@ export default function ProfileScreen() {
         onChangeText={setName}
         mode="outlined"
         style={styles.input}
-        outlineColor="#BDBDBD"
-        activeOutlineColor="#2E7D32"
+        outlineColor={colors.outlineVariant}
+        activeOutlineColor={colors.primary}
         left={<TextInput.Icon icon="account" />}
       />
 
@@ -55,7 +58,7 @@ export default function ProfileScreen() {
         mode="outlined"
         style={styles.input}
         disabled
-        outlineColor="#BDBDBD"
+        outlineColor={colors.outlineVariant}
         left={<TextInput.Icon icon="phone" />}
       />
 
@@ -94,8 +97,8 @@ export default function ProfileScreen() {
         onChangeText={setVillage}
         mode="outlined"
         style={styles.input}
-        outlineColor="#BDBDBD"
-        activeOutlineColor="#2E7D32"
+        outlineColor={colors.outlineVariant}
+        activeOutlineColor={colors.primary}
         left={<TextInput.Icon icon="home-group" />}
       />
 
@@ -107,7 +110,7 @@ export default function ProfileScreen() {
             await api.post('/onboarding/profile', { name, district, village });
             router.push('/onboarding/first-animal');
           } catch (e) {
-            Alert.alert(t('common.error'), t('onboarding.saveFailed') ?? 'Failed to save profile. Please try again.');
+            Alert.alert(t('common.error'), t('onboarding.saveFailed'));
           } finally {
             setSaving(false);
           }
@@ -127,43 +130,43 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surface,
   },
   content: {
     padding: SPACING.lg,
     paddingBottom: 100,
   },
   heading: {
-    color: '#2E7D32',
+    color: colors.primary,
     fontWeight: 'bold',
     marginBottom: SPACING.xs,
   },
   subheading: {
-    color: '#616161',
+    color: colors.onSurfaceVariant,
     marginBottom: SPACING.lg,
   },
   input: {
     marginBottom: SPACING.md,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.onPrimary,
   },
   dropdownButton: {
     marginBottom: SPACING.md,
     borderRadius: CARD_BORDER_RADIUS,
-    borderColor: '#BDBDBD',
+    borderColor: colors.outlineVariant,
   },
   dropdownContent: {
     minHeight: TOUCH_TARGET_MIN + 8,
     justifyContent: 'flex-start',
   },
   menuContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.onPrimary,
     maxHeight: 300,
   },
   menuItem: {
     minHeight: TOUCH_TARGET_MIN,
   },
   saveButton: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: colors.primary,
     borderRadius: CARD_BORDER_RADIUS,
     marginTop: SPACING.lg,
   },

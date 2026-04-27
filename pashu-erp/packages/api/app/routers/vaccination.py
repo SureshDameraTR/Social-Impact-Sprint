@@ -11,7 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user, require_admin
 from app.models.animal import Animal
 from app.models.health import Vaccination
 from app.models.user import User
@@ -33,6 +33,7 @@ router = APIRouter(prefix="/v1/vaccinations", tags=["Vaccinations"])
 # CRUD
 # ---------------------------------------------------------------------------
 
+
 @router.post("", response_model=VaccinationRead, status_code=status.HTTP_201_CREATED)
 async def record_vaccination(
     body: VaccinationCreate,
@@ -40,7 +41,9 @@ async def record_vaccination(
     db: AsyncSession = Depends(get_db),
 ):
     """Record a vaccination for an animal."""
-    result = await db.execute(select(Animal).where(Animal.id == body.animal_id, Animal.deleted_at.is_(None)))
+    result = await db.execute(
+        select(Animal).where(Animal.id == body.animal_id, Animal.deleted_at.is_(None))
+    )
     animal = result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
@@ -62,7 +65,7 @@ async def record_vaccination(
 
 
 # IMPORTANT: All static paths must come BEFORE /{animal_id} to avoid being captured as a UUID
-@router.get("/due", response_model=list[VaccinationRead])
+@router.get("/due")
 async def get_due_vaccinations_for_user(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -75,7 +78,7 @@ async def get_due_vaccinations_for_user(
     animal_ids = [row[0] for row in animal_result.all()]
 
     if not animal_ids:
-        return []
+        return {"data": [], "total": 0}
 
     result = await db.execute(
         select(Vaccination)
@@ -87,15 +90,16 @@ async def get_due_vaccinations_for_user(
         )
         .order_by(Vaccination.next_due.asc())
     )
-    return result.scalars().all()
+    items = result.scalars().all()
+    return {"data": items, "total": len(items)}
 
 
 @router.get("/species-breakdown", response_model=SpeciesBreakdownResponse)
 async def get_species_breakdown(
-    current_user: User = Depends(get_current_user),
+    _admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Vaccination counts broken down by species (admin dashboard)."""
+    """Vaccination counts broken down by species (admin dashboard only)."""
     result = await db.execute(
         select(
             Animal.species,
@@ -108,21 +112,25 @@ async def get_species_breakdown(
     )
     breakdown = []
     for row in result.all():
-        breakdown.append({
-            "species": row.species,
-            "vaccination_count": row.vaccination_count,
-            "animal_count": row.animal_count,
-        })
+        breakdown.append(
+            {
+                "species": row.species,
+                "vaccination_count": row.vaccination_count,
+                "animal_count": row.animal_count,
+            }
+        )
     return {"breakdown": breakdown}
 
 
 @router.get("/village-coverage", response_model=VillageCoverageResponse)
 async def get_village_coverage_admin(
-    village_code: str | None = Query(None, description="Village code to check coverage for (omit for all villages)"),
-    current_user: User = Depends(get_current_user),
+    village_code: str | None = Query(
+        None, description="Village code to check coverage for (omit for all villages)"
+    ),
+    _admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get vaccination coverage for a village or all villages (admin dashboard)."""
+    """Get vaccination coverage for a village or all villages (admin dashboard only)."""
     if village_code:
         total_result = await db.execute(
             select(func.count())
@@ -132,7 +140,17 @@ async def get_village_coverage_admin(
         )
         total_animals = total_result.scalar() or 0
         if total_animals == 0:
-            return {"data": [{"village_code": village_code, "total_animals": 0, "coverage_pct": {}, "vaccine_counts": {}}], "total": 1}
+            return {
+                "data": [
+                    {
+                        "village_code": village_code,
+                        "total_animals": 0,
+                        "coverage_pct": {},
+                        "vaccine_counts": {},
+                    }
+                ],
+                "total": 1,
+            }
         vaccine_counts_result = await db.execute(
             select(
                 Vaccination.vaccine_name,
@@ -149,7 +167,17 @@ async def get_village_coverage_admin(
         for row in vaccine_rows:
             vaccine_counts[row.vaccine_name] = row.count
             coverage_pct[row.vaccine_name] = round((row.count / total_animals) * 100, 1)
-        return {"data": [{"village_code": village_code, "total_animals": total_animals, "vaccine_counts": vaccine_counts, "coverage_pct": coverage_pct}], "total": 1}
+        return {
+            "data": [
+                {
+                    "village_code": village_code,
+                    "total_animals": total_animals,
+                    "vaccine_counts": vaccine_counts,
+                    "coverage_pct": coverage_pct,
+                }
+            ],
+            "total": 1,
+        }
 
     # No village_code: aggregate across all villages
     village_result = await db.execute(
@@ -166,12 +194,18 @@ async def get_village_coverage_admin(
     )
     data = []
     for row in village_result.all():
-        pct = round((row.vaccinated_count / row.total_animals) * 100, 1) if row.total_animals > 0 else 0
-        data.append({
-            "village_code": row.village_code,
-            "total_animals": row.total_animals,
-            "coverage_pct": pct,
-        })
+        pct = (
+            round((row.vaccinated_count / row.total_animals) * 100, 1)
+            if row.total_animals > 0
+            else 0
+        )
+        data.append(
+            {
+                "village_code": row.village_code,
+                "total_animals": row.total_animals,
+                "coverage_pct": pct,
+            }
+        )
     return {"data": data, "total": len(data)}
 
 
@@ -187,14 +221,16 @@ async def get_all_schedules(current_user: User = Depends(get_current_user)):
     return {"data": all_schedules, "total": len(all_schedules)}
 
 
-@router.get("/{animal_id}", response_model=list[VaccinationRead])
+@router.get("/{animal_id}")
 async def get_vaccinations(
     animal_id: UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get vaccination records for an animal."""
-    animal_result = await db.execute(select(Animal).where(Animal.id == animal_id, Animal.deleted_at.is_(None)))
+    animal_result = await db.execute(
+        select(Animal).where(Animal.id == animal_id, Animal.deleted_at.is_(None))
+    )
     animal = animal_result.scalar_one_or_none()
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
@@ -206,12 +242,14 @@ async def get_vaccinations(
         .where(Vaccination.animal_id == animal_id, Vaccination.deleted_at.is_(None))
         .order_by(Vaccination.administered_on.desc())
     )
-    return result.scalars().all()
+    items = result.scalars().all()
+    return {"data": items, "total": len(items)}
 
 
 # ---------------------------------------------------------------------------
 # Scheduling & Coverage
 # ---------------------------------------------------------------------------
+
 
 @router.get("/schedule/{species}", response_model=SpeciesScheduleResponse)
 async def get_species_schedule(species: str, current_user: User = Depends(get_current_user)):
@@ -343,7 +381,9 @@ async def update_vaccination(
 ):
     """Mark a vaccination as administered (update administered_on to today)."""
     result = await db.execute(
-        select(Vaccination).where(Vaccination.id == vaccination_id, Vaccination.deleted_at.is_(None))
+        select(Vaccination).where(
+            Vaccination.id == vaccination_id, Vaccination.deleted_at.is_(None)
+        )
     )
     vaccination = result.scalar_one_or_none()
     if vaccination is None:

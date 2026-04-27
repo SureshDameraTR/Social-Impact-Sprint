@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { Card, Chip, Text, Button, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '../src/components/EmptyState';
@@ -46,8 +46,8 @@ export default function AdvisoryScreen() {
   const fetchAdvisories = useCallback(() => {
     setLoading(true);
     setError(null);
-    api.get<Advisory[]>('/advisory')
-      .then(res => setAdvisories(res))
+    api.get<any>('/advisory/tips')
+      .then(res => setAdvisories(Array.isArray(res) ? res : res.data ?? []))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -151,14 +151,16 @@ export default function AdvisoryScreen() {
                 {lang === 'kn' ? advisory.bodyKn : advisory.bodyEn}
               </Text>
               <View style={styles.cardFooter}>
-                <TouchableOpacity
+                <Pressable
                   onPress={() => toggleCardLang(advisory.id)}
                   style={styles.langToggle}
+                  accessibilityLabel={lang === 'kn' ? t('common.english') : t('common.kannada')}
+                  accessibilityRole="button"
                 >
                   <Text style={styles.langToggleText}>
-                    {lang === 'kn' ? 'English' : '\u0C95\u0CA8\u0CCD\u0CA8\u0CA1'} \u21C6
+                    {lang === 'kn' ? t('common.english') : t('common.kannada')} \u21C6
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
                 {advisory.isScheme && (
                   <Button mode="contained" compact style={styles.applyButton} accessibilityLabel={`Apply now for ${lang === 'kn' ? advisory.titleKn : advisory.titleEn}`}>
                     {t('advisory.applyNow')}
@@ -176,7 +178,7 @@ export default function AdvisoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surface,
   },
   content: {
     padding: SPACING.md,

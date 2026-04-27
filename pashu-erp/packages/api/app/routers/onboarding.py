@@ -1,6 +1,7 @@
 """User onboarding endpoints."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -29,18 +30,25 @@ async def complete_onboarding(
         "onboarding_complete": True,
     }
 
+    # Re-load the user within the current session to avoid detached-instance errors
+    # (current_user may be served from the auth cache, bound to a different session)
+    result = await db.execute(select(User).where(User.id == current_user.id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
     # Persist preferences on the user record
-    current_user.preferences = preferences
-    current_user.location_district = body.district
-    current_user.lang_pref = body.preferred_language
+    user.preferences = preferences
+    user.location_district = body.district
+    user.lang_pref = body.preferred_language
     if body.village_code is not None:
-        current_user.village_code = body.village_code
+        user.village_code = body.village_code
 
     await db.commit()
-    await db.refresh(current_user)
+    await db.refresh(user)
 
     return {
-        "user_id": str(current_user.id),
+        "user_id": str(user.id),
         "onboarding_complete": True,
         "preferences": preferences,
         "message": "Onboarding completed successfully. Welcome to PashuRaksha!",

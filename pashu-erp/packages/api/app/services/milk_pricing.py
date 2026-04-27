@@ -44,7 +44,7 @@ def calculate_rate(fat_pct: float, snf_pct: float) -> Decimal:
     """Calculate milk rate per liter based on FAT and SNF percentages.
 
     Uses KMF slab-based pricing:
-        Total rate = (FAT_rate * FAT%) + (SNF_rate * SNF%) / 2
+        Total rate = (FAT_rate * FAT%) + (SNF_rate * SNF%)
 
     Args:
         fat_pct: Fat percentage (typically 3.0 - 7.0 for cow, 6.0 - 10.0 for buffalo)
@@ -59,6 +59,6 @@ def calculate_rate(fat_pct: float, snf_pct: float) -> Decimal:
     fat_rate = _get_slab_rate(fat_d, FAT_SLABS)
     snf_rate = _get_slab_rate(snf_d, SNF_SLABS)
 
-    rate_per_liter = (fat_d * fat_rate + snf_d * snf_rate) / Decimal("2")
+    rate_per_liter = fat_d * fat_rate + snf_d * snf_rate
 
     return rate_per_liter.quantize(TWO_PLACES, rounding=ROUND_HALF_UP)

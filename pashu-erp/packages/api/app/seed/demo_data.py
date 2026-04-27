@@ -41,7 +41,7 @@ from app.models import (
     YieldLog,
 )
 from app.models.advisory import AdvisoryCategory, AdvisorySource
-from app.models.alerts import AlertSeverity as CommunityAlertSeverity
+from app.models.alerts import CommunityAlertSeverity
 from app.models.animal import AnimalSex, BreedType, Species
 from app.models.ethno_vet import EvidenceRating
 from app.models.feed import FeedCategory
@@ -57,7 +57,7 @@ from app.models.vet import (
     ConsultationStatus,
     VetConsultation,
 )
-from app.models.weather import AlertSeverity as WeatherAlertSeverity
+from app.models.weather import WeatherAlertSeverity
 
 # Fixed seed for reproducibility across runs
 random.seed(42)
@@ -113,6 +113,15 @@ async def seed_users(session: AsyncSession) -> dict:
             "name": "Dr. Ramesh",
             "phone": "+919900000005",
             "role": "vet",
+            "district": "Mysore",
+            "village_code": "KA-MYS-001",
+            "gender": "male",
+        },
+        {
+            "key": "milk_center_mgr",
+            "name": "Suresh Kumar",
+            "phone": "+919900000006",
+            "role": "milk_center",
             "district": "Mysore",
             "village_code": "KA-MYS-001",
             "gender": "male",
@@ -275,9 +284,7 @@ async def seed_animals(session: AsyncSession, users: dict) -> dict:
     animals: dict[str, Animal] = {}
     for spec in animal_specs:
         existing = (
-            await session.execute(
-                select(Animal).where(Animal.pashu_aadhaar_id == spec["pashu_id"])
-            )
+            await session.execute(select(Animal).where(Animal.pashu_aadhaar_id == spec["pashu_id"]))
         ).scalar_one_or_none()
         if existing:
             animals[spec["key"]] = existing
@@ -313,9 +320,7 @@ async def seed_milk_center(session: AsyncSession, users: dict) -> dict:
     """Create 1 milk collection center."""
     code = "KMF-MYS-001"
     existing = (
-        await session.execute(
-            select(MilkCollectionCenter).where(MilkCollectionCenter.code == code)
-        )
+        await session.execute(select(MilkCollectionCenter).where(MilkCollectionCenter.code == code))
     ).scalar_one_or_none()
     if existing:
         print("  Milk center already exists, skipping.")
@@ -326,7 +331,7 @@ async def seed_milk_center(session: AsyncSession, users: dict) -> dict:
         code=code,
         district="Mysore",
         village_code="KA-MYS-001",
-        manager_user_id=users["admin"].id,
+        manager_user_id=users["milk_center_mgr"].id,
         is_active=True,
     )
     session.add(center)
@@ -396,9 +401,7 @@ async def seed_yield_logs(session: AsyncSession, users: dict, animals: dict) -> 
 # ---------------------------------------------------------------------------
 # 5. Milk Collection Records (30 days)
 # ---------------------------------------------------------------------------
-async def seed_milk_collections(
-    session: AsyncSession, users: dict, centers: dict
-) -> int:
+async def seed_milk_collections(session: AsyncSession, users: dict, centers: dict) -> int:
     """Create 30 days of milk collection records at the center."""
     count_result = await session.execute(select(MilkCollectionRecord))
     if count_result.first() is not None:
@@ -449,9 +452,7 @@ async def seed_milk_collections(
 # ---------------------------------------------------------------------------
 # 6. Health Events
 # ---------------------------------------------------------------------------
-async def seed_health_events(
-    session: AsyncSession, users: dict, animals: dict
-) -> int:
+async def seed_health_events(session: AsyncSession, users: dict, animals: dict) -> int:
     """Create 6 health events: 1 high-risk, 2 medium, 3 routine."""
     count_result = await session.execute(select(HealthEvent))
     if count_result.first() is not None:
@@ -556,7 +557,9 @@ async def seed_health_events(
             (TODAY - timedelta(days=ev["days_ago"])).year,
             (TODAY - timedelta(days=ev["days_ago"])).month,
             (TODAY - timedelta(days=ev["days_ago"])).day,
-            10, 0, tzinfo=UTC,
+            10,
+            0,
+            tzinfo=UTC,
         )
         health_event = HealthEvent(
             animal_id=animals[ev["animal_key"]].id,
@@ -580,9 +583,7 @@ async def seed_health_events(
 # ---------------------------------------------------------------------------
 # 7. Vaccinations
 # ---------------------------------------------------------------------------
-async def seed_vaccinations(
-    session: AsyncSession, users: dict, animals: dict
-) -> int:
+async def seed_vaccinations(session: AsyncSession, users: dict, animals: dict) -> int:
     """Create vaccination records: FMD, PPR, Newcastle, Brucella."""
     count_result = await session.execute(select(Vaccination))
     if count_result.first() is not None:
@@ -596,20 +597,86 @@ async def seed_vaccinations(
 
     vacc_specs = [
         # FMD for all cattle
-        ("lakshmi_cow", "FMD Vaccine (Foot and Mouth Disease)", administered_date, fmd_next, "FMD-B-2026-001"),
-        ("gowri", "FMD Vaccine (Foot and Mouth Disease)", administered_date, fmd_next, "FMD-B-2026-001"),
-        ("nandini", "FMD Vaccine (Foot and Mouth Disease)", administered_date, fmd_next, "FMD-B-2026-002"),
-        ("kaveri", "FMD Vaccine (Foot and Mouth Disease)", administered_date, fmd_next, "FMD-B-2026-002"),
+        (
+            "lakshmi_cow",
+            "FMD Vaccine (Foot and Mouth Disease)",
+            administered_date,
+            fmd_next,
+            "FMD-B-2026-001",
+        ),
+        (
+            "gowri",
+            "FMD Vaccine (Foot and Mouth Disease)",
+            administered_date,
+            fmd_next,
+            "FMD-B-2026-001",
+        ),
+        (
+            "nandini",
+            "FMD Vaccine (Foot and Mouth Disease)",
+            administered_date,
+            fmd_next,
+            "FMD-B-2026-002",
+        ),
+        (
+            "kaveri",
+            "FMD Vaccine (Foot and Mouth Disease)",
+            administered_date,
+            fmd_next,
+            "FMD-B-2026-002",
+        ),
         # Brucella for cattle
-        ("lakshmi_cow", "Brucella abortus S19", administered_date - timedelta(days=30), brucella_next, "BRU-B-2025-044"),
-        ("gowri", "Brucella abortus S19", administered_date - timedelta(days=30), brucella_next, "BRU-B-2025-044"),
-        ("nandini", "Brucella abortus S19", administered_date - timedelta(days=30), brucella_next, "BRU-B-2025-045"),
-        ("kaveri", "Brucella abortus S19", administered_date - timedelta(days=30), brucella_next, "BRU-B-2025-045"),
+        (
+            "lakshmi_cow",
+            "Brucella abortus S19",
+            administered_date - timedelta(days=30),
+            brucella_next,
+            "BRU-B-2025-044",
+        ),
+        (
+            "gowri",
+            "Brucella abortus S19",
+            administered_date - timedelta(days=30),
+            brucella_next,
+            "BRU-B-2025-044",
+        ),
+        (
+            "nandini",
+            "Brucella abortus S19",
+            administered_date - timedelta(days=30),
+            brucella_next,
+            "BRU-B-2025-045",
+        ),
+        (
+            "kaveri",
+            "Brucella abortus S19",
+            administered_date - timedelta(days=30),
+            brucella_next,
+            "BRU-B-2025-045",
+        ),
         # PPR for goats
-        ("gauri_goat", "PPR Vaccine (Peste des Petits Ruminants)", administered_date - timedelta(days=10), administered_date + timedelta(days=355), "PPR-B-2026-011"),
+        (
+            "gauri_goat",
+            "PPR Vaccine (Peste des Petits Ruminants)",
+            administered_date - timedelta(days=10),
+            administered_date + timedelta(days=355),
+            "PPR-B-2026-011",
+        ),
         # Newcastle for poultry
-        ("kolugalu", "Newcastle Disease Vaccine (Lasota)", administered_date - timedelta(days=20), administered_date + timedelta(days=70), "NDV-B-2026-033"),
-        ("natikoli", "Newcastle Disease Vaccine (Lasota)", administered_date - timedelta(days=20), administered_date + timedelta(days=70), "NDV-B-2026-033"),
+        (
+            "kolugalu",
+            "Newcastle Disease Vaccine (Lasota)",
+            administered_date - timedelta(days=20),
+            administered_date + timedelta(days=70),
+            "NDV-B-2026-033",
+        ),
+        (
+            "natikoli",
+            "Newcastle Disease Vaccine (Lasota)",
+            administered_date - timedelta(days=20),
+            administered_date + timedelta(days=70),
+            "NDV-B-2026-033",
+        ),
     ]
 
     count = 0
@@ -755,9 +822,7 @@ async def seed_sell_records(session: AsyncSession, users: dict) -> list:
 # ---------------------------------------------------------------------------
 # 9. Financial Transactions (from sell records)
 # ---------------------------------------------------------------------------
-async def seed_transactions(
-    session: AsyncSession, sell_records: list[SellRecord]
-) -> int:
+async def seed_transactions(session: AsyncSession, sell_records: list[SellRecord]) -> int:
     """Create income transactions corresponding to sell records."""
     count_result = await session.execute(select(Transaction))
     if count_result.first() is not None:
@@ -770,7 +835,9 @@ async def seed_transactions(
             user_id=rec.user_id,
             type=TransactionType.income,
             amount=rec.total_amount,
-            category=rec.product_type if isinstance(rec.product_type, str) else rec.product_type.value,
+            category=rec.product_type
+            if isinstance(rec.product_type, str)
+            else rec.product_type.value,
             reference_id=str(rec.id),
             description=f"Sale of {rec.product_type if isinstance(rec.product_type, str) else rec.product_type.value}: {rec.quantity} {rec.unit} to {rec.buyer_name or 'buyer'}",
             status=TransactionStatus.completed,
@@ -859,7 +926,12 @@ async def seed_govt_schemes(session: AsyncSession) -> int:
             "ministry": "Ministry of Fisheries, Animal Husbandry and Dairying",
             "description": "Development and conservation of indigenous bovine breeds. Focuses on breed improvement through genomic selection and artificial insemination.",
             "eligibility_criteria": "Farmers owning indigenous cattle breeds. Must have valid Pashu Aadhaar for each animal.",
-            "required_documents": ["Pashu Aadhaar card", "Land ownership proof", "Aadhaar card", "Bank passbook"],
+            "required_documents": [
+                "Pashu Aadhaar card",
+                "Land ownership proof",
+                "Aadhaar card",
+                "Bank passbook",
+            ],
             "max_subsidy_amount": Decimal("50000.00"),
             "subsidy_percentage": 50.0,
             "is_active": True,
@@ -872,7 +944,12 @@ async def seed_govt_schemes(session: AsyncSession) -> int:
             "ministry": "Ministry of Fisheries, Animal Husbandry and Dairying",
             "description": "Sustainable development of the livestock sector. Covers entrepreneurship development, breed improvement, and feed/fodder development for all species.",
             "eligibility_criteria": "All livestock farmers. Priority to women farmers and SC/ST beneficiaries.",
-            "required_documents": ["Aadhaar card", "Bank passbook", "Caste certificate (if applicable)", "BPL card (if applicable)"],
+            "required_documents": [
+                "Aadhaar card",
+                "Bank passbook",
+                "Caste certificate (if applicable)",
+                "BPL card (if applicable)",
+            ],
             "max_subsidy_amount": Decimal("100000.00"),
             "subsidy_percentage": 50.0,
             "is_active": True,
@@ -885,7 +962,12 @@ async def seed_govt_schemes(session: AsyncSession) -> int:
             "ministry": "Karnataka Milk Federation",
             "description": "Karnataka state scheme for dairy infrastructure development. Provides subsidies for milking machines, bulk coolers, and dairy sheds.",
             "eligibility_criteria": "Karnataka resident dairy farmers with minimum 2 milch animals. Must be KMF member.",
-            "required_documents": ["KMF membership card", "Pashu Aadhaar card", "Aadhaar card", "Land record (RTC)"],
+            "required_documents": [
+                "KMF membership card",
+                "Pashu Aadhaar card",
+                "Aadhaar card",
+                "Land record (RTC)",
+            ],
             "max_subsidy_amount": Decimal("200000.00"),
             "subsidy_percentage": 33.33,
             "is_active": True,
@@ -898,7 +980,12 @@ async def seed_govt_schemes(session: AsyncSession) -> int:
             "ministry": "NABARD",
             "description": "Back-ended capital subsidy for setting up modern dairy farms, heifer rearing units, and milk processing facilities.",
             "eligibility_criteria": "Individuals, SHGs, NGOs, cooperatives. No prior default on institutional loans.",
-            "required_documents": ["Project report", "Bank loan sanction letter", "Aadhaar card", "IT returns (if applicable)"],
+            "required_documents": [
+                "Project report",
+                "Bank loan sanction letter",
+                "Aadhaar card",
+                "IT returns (if applicable)",
+            ],
             "max_subsidy_amount": Decimal("700000.00"),
             "subsidy_percentage": 25.0,
             "is_active": True,
@@ -911,7 +998,12 @@ async def seed_govt_schemes(session: AsyncSession) -> int:
             "ministry": "Ministry of Agriculture and Farmers Welfare",
             "description": "Comprehensive crop and livestock insurance scheme. Covers natural calamities, pests, and diseases at subsidized premiums.",
             "eligibility_criteria": "All farmers including sharecroppers and tenant farmers. Both loanee and non-loanee farmers eligible.",
-            "required_documents": ["Aadhaar card", "Bank passbook", "Land records / lease agreement", "Sowing certificate"],
+            "required_documents": [
+                "Aadhaar card",
+                "Bank passbook",
+                "Land records / lease agreement",
+                "Sowing certificate",
+            ],
             "max_subsidy_amount": Decimal("200000.00"),
             "subsidy_percentage": 50.0,
             "is_active": True,
@@ -1015,28 +1107,136 @@ async def seed_feed_ingredients(session: AsyncSession) -> dict:
         ("Maize Fodder", "ಮೆಕ್ಕೆಜೋಳ ಮೇವು", FeedCategory.roughage, 8.5, 2000, 5.00, "Jun-Sep", True),
         ("Sorghum Fodder", "ಜೋಳದ ಮೇವು", FeedCategory.roughage, 7.0, 1900, 4.50, "Jun-Oct", True),
         # --- Concentrates ---
-        ("Groundnut Cake", "ಕಡಲೆಕಾಯಿ ಹಿಂಡಿ", FeedCategory.concentrate, 42.0, 2750, 35.00, "Year-round", True),
-        ("Coconut Cake", "ತೆಂಗಿನ ಹಿಂಡಿ", FeedCategory.concentrate, 22.0, 2600, 28.00, "Year-round", True),
-        ("Cottonseed Cake", "ಹತ್ತಿ ಬೀಜ ಹಿಂಡಿ", FeedCategory.concentrate, 24.0, 2500, 25.00, "Oct-Mar", True),
+        (
+            "Groundnut Cake",
+            "ಕಡಲೆಕಾಯಿ ಹಿಂಡಿ",
+            FeedCategory.concentrate,
+            42.0,
+            2750,
+            35.00,
+            "Year-round",
+            True,
+        ),
+        (
+            "Coconut Cake",
+            "ತೆಂಗಿನ ಹಿಂಡಿ",
+            FeedCategory.concentrate,
+            22.0,
+            2600,
+            28.00,
+            "Year-round",
+            True,
+        ),
+        (
+            "Cottonseed Cake",
+            "ಹತ್ತಿ ಬೀಜ ಹಿಂಡಿ",
+            FeedCategory.concentrate,
+            24.0,
+            2500,
+            25.00,
+            "Oct-Mar",
+            True,
+        ),
         ("Rice Bran", "ಅಕ್ಕಿ ತೌಡು", FeedCategory.concentrate, 12.0, 2300, 15.00, "Year-round", True),
         ("Wheat Bran", "ಗೋಧಿ ತೌಡು", FeedCategory.concentrate, 15.0, 2400, 18.00, "Year-round", True),
-        ("Maize Grain", "ಮೆಕ್ಕೆಜೋಳ ಕಾಳು", FeedCategory.concentrate, 9.0, 3300, 20.00, "Year-round", True),
-        ("Rice Polish", "ಅಕ್ಕಿ ಪಾಲಿಶ್", FeedCategory.concentrate, 11.5, 2800, 16.00, "Year-round", True),
-        ("Soybean Meal", "ಸೋಯಾಬೀನ್ ಹಿಟ್ಟು", FeedCategory.concentrate, 45.0, 2900, 40.00, "Year-round", True),
-        ("Sunflower Cake", "ಸೂರ್ಯಕಾಂತಿ ಹಿಂಡಿ", FeedCategory.concentrate, 30.0, 2550, 22.00, "Oct-Mar", True),
-        ("Til Cake (Sesame)", "ಎಳ್ಳಿನ ಹಿಂಡಿ", FeedCategory.concentrate, 35.0, 2700, 30.00, "Nov-Feb", True),
+        (
+            "Maize Grain",
+            "ಮೆಕ್ಕೆಜೋಳ ಕಾಳು",
+            FeedCategory.concentrate,
+            9.0,
+            3300,
+            20.00,
+            "Year-round",
+            True,
+        ),
+        (
+            "Rice Polish",
+            "ಅಕ್ಕಿ ಪಾಲಿಶ್",
+            FeedCategory.concentrate,
+            11.5,
+            2800,
+            16.00,
+            "Year-round",
+            True,
+        ),
+        (
+            "Soybean Meal",
+            "ಸೋಯಾಬೀನ್ ಹಿಟ್ಟು",
+            FeedCategory.concentrate,
+            45.0,
+            2900,
+            40.00,
+            "Year-round",
+            True,
+        ),
+        (
+            "Sunflower Cake",
+            "ಸೂರ್ಯಕಾಂತಿ ಹಿಂಡಿ",
+            FeedCategory.concentrate,
+            30.0,
+            2550,
+            22.00,
+            "Oct-Mar",
+            True,
+        ),
+        (
+            "Til Cake (Sesame)",
+            "ಎಳ್ಳಿನ ಹಿಂಡಿ",
+            FeedCategory.concentrate,
+            35.0,
+            2700,
+            30.00,
+            "Nov-Feb",
+            True,
+        ),
         # --- Supplements ---
         ("Mineral Mixture", "ಖನಿಜ ಮಿಶ್ರಣ", FeedCategory.supplement, 0.0, 0, 80.00, "Year-round", True),
         ("Common Salt", "ಉಪ್ಪು", FeedCategory.supplement, 0.0, 0, 12.00, "Year-round", True),
         ("Calcite Powder", "ಕ್ಯಾಲ್ಸೈಟ್ ಪುಡಿ", FeedCategory.supplement, 0.0, 0, 8.00, "Year-round", True),
-        ("Urea", "ಯೂರಿಯಾ", FeedCategory.supplement, 287.0, 0, 10.00, "Year-round", True),
+        ("Urea", "ಯೂರಿಯಾ", FeedCategory.supplement, 46.0, 0, 10.00, "Year-round", True),
         ("Molasses", "ಬೆಲ್ಲದ ಪಾಕ", FeedCategory.supplement, 3.0, 2700, 12.00, "Dec-May", True),
         # --- Additional regional ingredients ---
         ("Horse Gram Husk", "ಹುರುಳಿ ಸಿಪ್ಪೆ", FeedCategory.roughage, 6.5, 1750, 5.00, "Oct-Jan", True),
-        ("Tamarind Seed Powder", "ಹುಣಸೆ ಬೀಜದ ಪುಡಿ", FeedCategory.concentrate, 15.0, 2600, 18.00, "Year-round", True),
-        ("Neem Seed Cake", "ಬೇವಿನ ಬೀಜ ಹಿಂಡಿ", FeedCategory.concentrate, 18.0, 2200, 12.00, "Apr-Jul", True),
-        ("Banana Pseudo-stem", "ಬಾಳೆ ದಿಂಡು", FeedCategory.roughage, 2.5, 1400, 1.50, "Year-round", True),
-        ("Dried Brewers Grain", "ಒಣ ಬ್ರೂವರ್ಸ್ ಧಾನ್ಯ", FeedCategory.concentrate, 25.0, 2400, 14.00, "Year-round", True),
+        (
+            "Tamarind Seed Powder",
+            "ಹುಣಸೆ ಬೀಜದ ಪುಡಿ",
+            FeedCategory.concentrate,
+            15.0,
+            2600,
+            18.00,
+            "Year-round",
+            True,
+        ),
+        (
+            "Neem Seed Cake",
+            "ಬೇವಿನ ಬೀಜ ಹಿಂಡಿ",
+            FeedCategory.concentrate,
+            18.0,
+            2200,
+            12.00,
+            "Apr-Jul",
+            True,
+        ),
+        (
+            "Banana Pseudo-stem",
+            "ಬಾಳೆ ದಿಂಡು",
+            FeedCategory.roughage,
+            2.5,
+            1400,
+            1.50,
+            "Year-round",
+            True,
+        ),
+        (
+            "Dried Brewers Grain",
+            "ಒಣ ಬ್ರೂವರ್ಸ್ ಧಾನ್ಯ",
+            FeedCategory.concentrate,
+            25.0,
+            2400,
+            14.00,
+            "Year-round",
+            True,
+        ),
     ]
 
     ingredients: dict[str, FeedIngredient] = {}
@@ -1075,7 +1275,12 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ಅರಿಶಿನ ಲೇಪನ",
             "plant_ingredient": "Turmeric (Curcuma longa)",
             "preparation_method": "Mix 50g turmeric powder with coconut oil to form thick paste. Clean wound thoroughly with warm water before applying. Cover with clean cloth.",
-            "dosage_by_species": {"cattle": "50g paste", "goat": "20g paste", "sheep": "20g paste", "poultry": "5g paste"},
+            "dosage_by_species": {
+                "cattle": "50g paste",
+                "goat": "20g paste",
+                "sheep": "20g paste",
+                "poultry": "5g paste",
+            },
             "conditions_treated": ["wounds", "skin infections", "cuts", "abrasions"],
             "evidence_rating": EvidenceRating.icar_validated,
             "safety_warnings": "Avoid applying on deep puncture wounds. Seek veterinary care if wound shows signs of infection after 48 hours.",
@@ -1097,7 +1302,10 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ಓಮ ಮತ್ತು ಬೆಲ್ಲ",
             "plant_ingredient": "Carom seeds (Trachyspermum ammi) + Jaggery",
             "preparation_method": "Crush 50g ajwain seeds. Mix with 100g jaggery and 500ml warm water. Administer orally as drench. Massage abdomen gently.",
-            "dosage_by_species": {"cattle": "50g ajwain + 100g jaggery", "buffalo": "60g ajwain + 120g jaggery"},
+            "dosage_by_species": {
+                "cattle": "50g ajwain + 100g jaggery",
+                "buffalo": "60g ajwain + 120g jaggery",
+            },
             "conditions_treated": ["bloat", "indigestion", "gas", "tympany"],
             "evidence_rating": EvidenceRating.icar_validated,
             "safety_warnings": "For mild to moderate bloat only. Severe bloat with respiratory distress requires immediate veterinary intervention with trocar.",
@@ -1108,7 +1316,12 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ಲೋಳೆಸರ ಲೇಪ",
             "plant_ingredient": "Aloe vera (Aloe barbadensis)",
             "preparation_method": "Split fresh aloe vera leaf. Scoop out gel and apply directly to burn area. Reapply every 6 hours.",
-            "dosage_by_species": {"cattle": "Apply liberally", "goat": "Apply liberally", "sheep": "Apply liberally", "poultry": "Thin layer"},
+            "dosage_by_species": {
+                "cattle": "Apply liberally",
+                "goat": "Apply liberally",
+                "sheep": "Apply liberally",
+                "poultry": "Thin layer",
+            },
             "conditions_treated": ["burns", "scalds", "sunburn", "skin irritation"],
             "evidence_rating": EvidenceRating.traditional,
             "safety_warnings": "For superficial burns only. Deep or extensive burns require veterinary treatment.",
@@ -1119,7 +1332,10 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ಬೆಳ್ಳುಳ್ಳಿ ಲೇಪ",
             "plant_ingredient": "Garlic (Allium sativum)",
             "preparation_method": "Crush 100g garlic cloves into paste. Mix with 50ml mustard oil. Apply on affected udder quarter. Also give 50g garlic orally with feed.",
-            "dosage_by_species": {"cattle": "100g paste external + 50g oral", "goat": "30g paste external + 15g oral"},
+            "dosage_by_species": {
+                "cattle": "100g paste external + 50g oral",
+                "goat": "30g paste external + 15g oral",
+            },
             "conditions_treated": ["mastitis", "udder inflammation", "subclinical mastitis"],
             "evidence_rating": EvidenceRating.studied,
             "safety_warnings": "May cause temporary increase in garlic odor in milk. Not a substitute for antibiotic therapy in severe clinical mastitis.",
@@ -1141,7 +1357,12 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ಹರಳೆಣ್ಣೆ",
             "plant_ingredient": "Castor (Ricinus communis)",
             "preparation_method": "Administer castor oil orally as drench. Mix with equal volume of warm water. Give on empty stomach.",
-            "dosage_by_species": {"cattle": "200-300ml", "goat": "30-50ml", "sheep": "30-50ml", "poultry": "5ml"},
+            "dosage_by_species": {
+                "cattle": "200-300ml",
+                "goat": "30-50ml",
+                "sheep": "30-50ml",
+                "poultry": "5ml",
+            },
             "conditions_treated": ["constipation", "impaction", "digestive sluggishness"],
             "evidence_rating": EvidenceRating.icar_validated,
             "safety_warnings": "Do not administer to pregnant animals. Ensure animal is hydrated before and after administration.",
@@ -1152,7 +1373,10 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ವೀಳ್ಯದೆಲೆ ಮತ್ತು ಮೆಣಸು",
             "plant_ingredient": "Betel leaf (Piper betle) + Black pepper (Piper nigrum)",
             "preparation_method": "Crush 10 betel leaves with 10g black pepper and 20g jaggery. Make into bolus. Administer orally twice daily for 3 days.",
-            "dosage_by_species": {"cattle": "10 leaves + 10g pepper", "buffalo": "12 leaves + 12g pepper"},
+            "dosage_by_species": {
+                "cattle": "10 leaves + 10g pepper",
+                "buffalo": "12 leaves + 12g pepper",
+            },
             "conditions_treated": ["cold", "nasal discharge", "mild respiratory infection"],
             "evidence_rating": EvidenceRating.traditional,
             "safety_warnings": "For mild respiratory symptoms only. Persistent cough or labored breathing needs veterinary attention.",
@@ -1163,7 +1387,10 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ಶುಂಠಿ ಮತ್ತು ಜೇನುತುಪ್ಪ",
             "plant_ingredient": "Ginger (Zingiber officinale) + Honey",
             "preparation_method": "Grate 50g fresh ginger. Mix with 100g honey and 200ml warm water. Administer orally twice daily.",
-            "dosage_by_species": {"goat": "25g ginger + 50g honey", "sheep": "25g ginger + 50g honey"},
+            "dosage_by_species": {
+                "goat": "25g ginger + 50g honey",
+                "sheep": "25g ginger + 50g honey",
+            },
             "conditions_treated": ["cough", "sore throat", "mild bronchitis"],
             "evidence_rating": EvidenceRating.studied,
             "safety_warnings": "If cough persists beyond 5 days or is accompanied by fever, seek veterinary care.",
@@ -1174,8 +1401,17 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ನುಗ್ಗೆ ಸೊಪ್ಪು",
             "plant_ingredient": "Moringa (Moringa oleifera)",
             "preparation_method": "Dry moringa leaves in shade. Crush to powder. Mix with regular feed at 2-5% inclusion rate.",
-            "dosage_by_species": {"poultry": "5g per bird per day", "cattle": "100g per day", "goat": "30g per day"},
-            "conditions_treated": ["nutritional deficiency", "low immunity", "poor growth", "low egg production"],
+            "dosage_by_species": {
+                "poultry": "5g per bird per day",
+                "cattle": "100g per day",
+                "goat": "30g per day",
+            },
+            "conditions_treated": [
+                "nutritional deficiency",
+                "low immunity",
+                "poor growth",
+                "low egg production",
+            ],
             "evidence_rating": EvidenceRating.traditional,
             "safety_warnings": "No known adverse effects at recommended dosage. Rich in vitamins A, C, and iron.",
             "source_reference": "ICAR Research Complex for NEH Region, Technical Bulletin",
@@ -1208,7 +1444,11 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ಮೆಂತ್ಯ ಕಾಳು",
             "plant_ingredient": "Fenugreek (Trigonella foenum-graecum)",
             "preparation_method": "Soak 100g fenugreek seeds overnight. Grind to paste. Mix with feed. Give daily for 15 days.",
-            "dosage_by_species": {"cattle": "100g daily", "goat": "30g daily", "buffalo": "120g daily"},
+            "dosage_by_species": {
+                "cattle": "100g daily",
+                "goat": "30g daily",
+                "buffalo": "120g daily",
+            },
             "conditions_treated": ["low milk yield", "poor lactation", "post-partum weakness"],
             "evidence_rating": EvidenceRating.studied,
             "safety_warnings": "May cause slight change in milk flavor. Start with half dose and increase gradually.",
@@ -1219,7 +1459,10 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ಅರಿಶಿನ-ನಿಂಬೆ ಲೇಪ",
             "plant_ingredient": "Turmeric + Lime (Citrus aurantiifolia)",
             "preparation_method": "Mix 50g turmeric powder with juice of 3 limes. Apply thick paste between hooves. Bandage loosely. Replace daily.",
-            "dosage_by_species": {"cattle": "50g turmeric + 3 limes", "goat": "20g turmeric + 1 lime"},
+            "dosage_by_species": {
+                "cattle": "50g turmeric + 3 limes",
+                "goat": "20g turmeric + 1 lime",
+            },
             "conditions_treated": ["foot rot", "hoof infection", "interdigital dermatitis"],
             "evidence_rating": EvidenceRating.icar_validated,
             "safety_warnings": "Keep animal on dry surface after application. If condition worsens, switch to veterinary treatment.",
@@ -1230,7 +1473,12 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ಕುಂಬಳಕಾಯಿ ಬೀಜ",
             "plant_ingredient": "Pumpkin (Cucurbita maxima)",
             "preparation_method": "Dry and grind pumpkin seeds to powder. Mix with jaggery water. Administer orally on empty stomach.",
-            "dosage_by_species": {"cattle": "200g powder", "goat": "50g powder", "sheep": "50g powder", "poultry": "10g powder"},
+            "dosage_by_species": {
+                "cattle": "200g powder",
+                "goat": "50g powder",
+                "sheep": "50g powder",
+                "poultry": "10g powder",
+            },
             "conditions_treated": ["tapeworm", "roundworm", "intestinal parasites"],
             "evidence_rating": EvidenceRating.studied,
             "safety_warnings": "Less effective than conventional dewormers for heavy infestations. Best used as preventive measure.",
@@ -1241,7 +1489,11 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ತೆಂಗಿನ ಎಣ್ಣೆ ಲೇಪ",
             "plant_ingredient": "Coconut (Cocos nucifera)",
             "preparation_method": "Warm virgin coconut oil slightly. Apply generously on affected skin areas. Massage gently. Repeat twice daily.",
-            "dosage_by_species": {"cattle": "Apply liberally", "goat": "Apply liberally", "poultry": "Thin layer on comb/wattle"},
+            "dosage_by_species": {
+                "cattle": "Apply liberally",
+                "goat": "Apply liberally",
+                "poultry": "Thin layer on comb/wattle",
+            },
             "conditions_treated": ["dry skin", "mange", "minor dermatitis", "cracked teats"],
             "evidence_rating": EvidenceRating.traditional,
             "safety_warnings": "For mild skin conditions only. Mange requires additional treatment with acaricides.",
@@ -1252,8 +1504,17 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ನೆಲ್ಲಿಕಾಯಿ",
             "plant_ingredient": "Amla (Emblica officinalis)",
             "preparation_method": "Dry and powder amla fruits. Mix 50g powder with feed daily. Can also give fresh fruits directly.",
-            "dosage_by_species": {"cattle": "50g powder daily", "goat": "15g powder daily", "poultry": "5g powder per bird"},
-            "conditions_treated": ["low immunity", "vitamin C deficiency", "convalescence", "heat stress"],
+            "dosage_by_species": {
+                "cattle": "50g powder daily",
+                "goat": "15g powder daily",
+                "poultry": "5g powder per bird",
+            },
+            "conditions_treated": [
+                "low immunity",
+                "vitamin C deficiency",
+                "convalescence",
+                "heat stress",
+            ],
             "evidence_rating": EvidenceRating.studied,
             "safety_warnings": "Safe for long-term use. No known interactions with conventional medicines.",
             "source_reference": "Indian Journal of Animal Sciences, Vol 85(4), 2015",
@@ -1264,7 +1525,11 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "plant_ingredient": "Linseed (Linum usitatissimum)",
             "preparation_method": "Boil 500g crushed linseed in 5 liters water until mucilaginous. Cool to lukewarm. Give as drench.",
             "dosage_by_species": {"cattle": "3-5 liters gruel", "buffalo": "4-6 liters gruel"},
-            "conditions_treated": ["retained placenta", "post-partum recovery", "constipation after calving"],
+            "conditions_treated": [
+                "retained placenta",
+                "post-partum recovery",
+                "constipation after calving",
+            ],
             "evidence_rating": EvidenceRating.icar_validated,
             "safety_warnings": "Administer within 12 hours of calving for best effect. If placenta not expelled within 24 hours, call veterinarian.",
             "source_reference": "ICAR Ethno-Veterinary Practices, Publication No. 2019/034",
@@ -1274,7 +1539,10 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ಸೀತಾಫಲ ಬೀಜ ಲೇಪ",
             "plant_ingredient": "Custard Apple (Annona squamosa)",
             "preparation_method": "Dry and powder custard apple seeds. Mix with coconut oil to form paste. Apply on affected areas.",
-            "dosage_by_species": {"cattle": "Apply on infested areas", "goat": "Apply on infested areas"},
+            "dosage_by_species": {
+                "cattle": "Apply on infested areas",
+                "goat": "Apply on infested areas",
+            },
             "conditions_treated": ["lice", "fleas", "ectoparasites"],
             "evidence_rating": EvidenceRating.traditional,
             "safety_warnings": "EXTERNAL USE ONLY. Seeds are toxic if ingested. Avoid application near eyes and mouth.",
@@ -1285,8 +1553,18 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ಬೆಲ್ಲ-ಉಪ್ಪು ದ್ರಾವಣ",
             "plant_ingredient": "Jaggery + Common salt",
             "preparation_method": "Dissolve 200g jaggery and 10g salt in 2 liters clean water. Administer orally in small quantities repeatedly.",
-            "dosage_by_species": {"cattle": "2-3 liters", "goat": "500ml-1 liter", "sheep": "500ml-1 liter", "poultry": "50ml per bird"},
-            "conditions_treated": ["dehydration", "diarrhea recovery", "heat exhaustion", "post-transport stress"],
+            "dosage_by_species": {
+                "cattle": "2-3 liters",
+                "goat": "500ml-1 liter",
+                "sheep": "500ml-1 liter",
+                "poultry": "50ml per bird",
+            },
+            "conditions_treated": [
+                "dehydration",
+                "diarrhea recovery",
+                "heat exhaustion",
+                "post-transport stress",
+            ],
             "evidence_rating": EvidenceRating.icar_validated,
             "safety_warnings": "Not a substitute for IV fluids in severe dehydration. Monitor urine output.",
             "source_reference": "ICAR Ethno-Veterinary Practices, Publication No. 2019/034",
@@ -1318,8 +1596,17 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "name_kn": "ಕರಿಬೇವಿನ ಸೊಪ್ಪು",
             "plant_ingredient": "Curry leaves (Murraya koenigii)",
             "preparation_method": "Mix 100g fresh curry leaves with feed daily. Alternatively, make decoction by boiling in 1 liter water.",
-            "dosage_by_species": {"cattle": "100g leaves or 300ml decoction", "goat": "30g leaves or 100ml decoction", "poultry": "5g per bird"},
-            "conditions_treated": ["indigestion", "poor appetite", "diarrhea", "nutritional supplement"],
+            "dosage_by_species": {
+                "cattle": "100g leaves or 300ml decoction",
+                "goat": "30g leaves or 100ml decoction",
+                "poultry": "5g per bird",
+            },
+            "conditions_treated": [
+                "indigestion",
+                "poor appetite",
+                "diarrhea",
+                "nutritional supplement",
+            ],
             "evidence_rating": EvidenceRating.traditional,
             "safety_warnings": "Safe for regular use. Rich in iron and calcium.",
             "source_reference": "Traditional knowledge, South Indian veterinary practice",
@@ -1341,7 +1628,12 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
             "plant_ingredient": "Tamarind (Tamarindus indica)",
             "preparation_method": "Soak 200g tamarind pulp in 2 liters water. Strain. Add 50g jaggery and 5g salt. Give as oral drench. Also apply cold water on body.",
             "dosage_by_species": {"cattle": "2 liters", "goat": "500ml", "sheep": "500ml"},
-            "conditions_treated": ["heat stroke", "heat stress", "hyperthermia", "summer exhaustion"],
+            "conditions_treated": [
+                "heat stroke",
+                "heat stress",
+                "hyperthermia",
+                "summer exhaustion",
+            ],
             "evidence_rating": EvidenceRating.traditional,
             "safety_warnings": "Move animal to shade immediately. If body temperature exceeds 106°F, pour cold water on body and call veterinarian.",
             "source_reference": "Traditional knowledge, Mysore Veterinary College documentation",
@@ -1359,9 +1651,7 @@ async def seed_ethno_vet_remedies(session: AsyncSession) -> int:
 # ---------------------------------------------------------------------------
 # 15. Insurance Policies & Claims
 # ---------------------------------------------------------------------------
-async def seed_insurance_policies(
-    session: AsyncSession, users: dict, animals: dict
-) -> dict:
+async def seed_insurance_policies(session: AsyncSession, users: dict, animals: dict) -> dict:
     """Create 3 insurance policies and 1 claim. Returns {key: InsurancePolicy}."""
     count_result = await session.execute(select(InsurancePolicy))
     if count_result.first() is not None:
@@ -1498,36 +1788,63 @@ async def seed_medicines(session: AsyncSession) -> dict:
 
     # (name_en, name_kn, type, withdrawal_milk_days, withdrawal_meat_days, species_applicable)
     medicine_specs = [
-        ("Oxytetracycline", "ಆಕ್ಸಿಟೆಟ್ರಾಸೈಕ್ಲಿನ್", "Antibiotic", 7, 28,
-         ["cattle", "buffalo", "goat", "sheep"]),
-        ("Penicillin", "ಪೆನಿಸಿಲಿನ್", "Antibiotic", 3, 14,
-         ["cattle", "buffalo", "goat", "sheep"]),
-        ("Enrofloxacin", "ಎನ್ರೋಫ್ಲಾಕ್ಸಾಸಿನ್", "Antibiotic", 5, 14,
-         ["cattle", "buffalo", "goat", "sheep", "poultry"]),
-        ("Ivermectin", "ಐವರ್ಮೆಕ್ಟಿನ್", "Antiparasitic", 28, 35,
-         ["cattle", "buffalo", "goat", "sheep"]),
-        ("Albendazole", "ಆಲ್ಬೆಂಡಜೋಲ್", "Anthelmintic", 5, 14,
-         ["cattle", "buffalo", "goat", "sheep"]),
-        ("Fenbendazole", "ಫೆನ್ಬೆಂಡಜೋಲ್", "Anthelmintic", 4, 14,
-         ["cattle", "buffalo", "goat", "sheep"]),
-        ("Ceftiofur", "ಸೆಫ್ಟಿಯೋಫರ್", "Antibiotic", 0, 3,
-         ["cattle", "buffalo"]),
-        ("Gentamicin", "ಜೆಂಟಾಮೈಸಿನ್", "Antibiotic", 4, 40,
-         ["cattle", "buffalo", "goat"]),
-        ("Amoxicillin", "ಅಮಾಕ್ಸಿಸಿಲಿನ್", "Antibiotic", 2, 25,
-         ["cattle", "buffalo", "goat", "sheep", "poultry"]),
-        ("Sulfonamides", "ಸಲ್ಫೋನಮೈಡ್ಸ್", "Antibiotic", 4, 10,
-         ["cattle", "buffalo", "goat", "sheep", "poultry"]),
-        ("Dexamethasone", "ಡೆಕ್ಸಾಮೆಥಾಸೋನ್", "Anti-inflammatory", 0, 0,
-         ["cattle", "buffalo", "goat", "sheep"]),
-        ("Flunixin", "ಫ್ಲುನಿಕ್ಸಿನ್", "NSAID", 4, 4,
-         ["cattle", "buffalo"]),
-        ("Meloxicam", "ಮೆಲಾಕ್ಸಿಕ್ಯಾಮ್", "NSAID", 5, 15,
-         ["cattle", "buffalo", "goat"]),
-        ("Trimethoprim", "ಟ್ರೈಮೆಥೋಪ್ರಿಮ್", "Antibiotic", 4, 10,
-         ["cattle", "buffalo", "goat", "sheep", "poultry"]),
-        ("Tylosin", "ಟೈಲೋಸಿನ್", "Antibiotic", 4, 21,
-         ["cattle", "buffalo", "goat", "sheep", "poultry"]),
+        (
+            "Oxytetracycline",
+            "ಆಕ್ಸಿಟೆಟ್ರಾಸೈಕ್ಲಿನ್",
+            "Antibiotic",
+            7,
+            28,
+            ["cattle", "buffalo", "goat", "sheep"],
+        ),
+        ("Penicillin", "ಪೆನಿಸಿಲಿನ್", "Antibiotic", 3, 14, ["cattle", "buffalo", "goat", "sheep"]),
+        (
+            "Enrofloxacin",
+            "ಎನ್ರೋಫ್ಲಾಕ್ಸಾಸಿನ್",
+            "Antibiotic",
+            5,
+            14,
+            ["cattle", "buffalo", "goat", "sheep", "poultry"],
+        ),
+        ("Ivermectin", "ಐವರ್ಮೆಕ್ಟಿನ್", "Antiparasitic", 28, 35, ["cattle", "buffalo", "goat", "sheep"]),
+        ("Albendazole", "ಆಲ್ಬೆಂಡಜೋಲ್", "Anthelmintic", 5, 14, ["cattle", "buffalo", "goat", "sheep"]),
+        ("Fenbendazole", "ಫೆನ್ಬೆಂಡಜೋಲ್", "Anthelmintic", 4, 14, ["cattle", "buffalo", "goat", "sheep"]),
+        ("Ceftiofur", "ಸೆಫ್ಟಿಯೋಫರ್", "Antibiotic", 0, 3, ["cattle", "buffalo"]),
+        ("Gentamicin", "ಜೆಂಟಾಮೈಸಿನ್", "Antibiotic", 4, 40, ["cattle", "buffalo", "goat"]),
+        (
+            "Amoxicillin",
+            "ಅಮಾಕ್ಸಿಸಿಲಿನ್",
+            "Antibiotic",
+            2,
+            25,
+            ["cattle", "buffalo", "goat", "sheep", "poultry"],
+        ),
+        (
+            "Sulfonamides",
+            "ಸಲ್ಫೋನಮೈಡ್ಸ್",
+            "Antibiotic",
+            4,
+            10,
+            ["cattle", "buffalo", "goat", "sheep", "poultry"],
+        ),
+        (
+            "Dexamethasone",
+            "ಡೆಕ್ಸಾಮೆಥಾಸೋನ್",
+            "Anti-inflammatory",
+            0,
+            0,
+            ["cattle", "buffalo", "goat", "sheep"],
+        ),
+        ("Flunixin", "ಫ್ಲುನಿಕ್ಸಿನ್", "NSAID", 4, 4, ["cattle", "buffalo"]),
+        ("Meloxicam", "ಮೆಲಾಕ್ಸಿಕ್ಯಾಮ್", "NSAID", 5, 15, ["cattle", "buffalo", "goat"]),
+        (
+            "Trimethoprim",
+            "ಟ್ರೈಮೆಥೋಪ್ರಿಮ್",
+            "Antibiotic",
+            4,
+            10,
+            ["cattle", "buffalo", "goat", "sheep", "poultry"],
+        ),
+        ("Tylosin", "ಟೈಲೋಸಿನ್", "Antibiotic", 4, 21, ["cattle", "buffalo", "goat", "sheep", "poultry"]),
     ]
 
     medicines: dict[str, Medicine] = {}
@@ -1795,16 +2112,13 @@ async def seed_medicine_administrations(
 # ---------------------------------------------------------------------------
 # 20. Vet Consultations
 # ---------------------------------------------------------------------------
-async def seed_vet_consultations(
-    session: AsyncSession, users: dict, animals: dict
-) -> int:
+async def seed_vet_consultations(session: AsyncSession, users: dict, animals: dict) -> int:
     """Create 3 sample VetConsultation records: pending, diagnosed, and one with video_call_url."""
     count_result = await session.execute(select(VetConsultation))
     if count_result.first() is not None:
         print("  Vet consultations already exist, skipping.")
         return 0
 
-    now = datetime.now(UTC)
     vet_id = str(users["vet_ramesh"].id)
 
     consultation_specs = [
@@ -1866,7 +2180,6 @@ async def seed_vet_consultations(
 
     count = 0
     for spec in consultation_specs:
-        created_at = now - timedelta(days=spec["days_ago"])
         consultation = VetConsultation(
             animal_id=str(animals[spec["animal_key"]].id),
             farmer_id=str(users[spec["farmer_key"]].id),

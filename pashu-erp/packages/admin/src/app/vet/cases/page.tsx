@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useList } from "@refinedev/core";
 import {
   Box,
   Typography,
@@ -23,8 +24,6 @@ import SpeciesChip from "@/components/SpeciesChip";
 import { colors, sxCodeCell } from "@/theme/theme";
 import { fmtDate } from "@/utils/format";
 import EmptyState from "@/components/EmptyState";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface VetCaseAnimal {
   id: string;
@@ -77,58 +76,33 @@ const channelConfig: Record<string, { bg: string; color: string }> = {
 const priorityConfig: Record<string, { bg: string; color: string }> = {
   emergency: { bg: colors.errorLight, color: colors.accentRed },
   urgent: { bg: colors.warningLight, color: colors.accentAmber },
-  routine: { bg: "#f0f0f0", color: "#666" },
+  routine: { bg: colors.surfaceAlt, color: colors.textDim },
 };
 
 const statusConfig: Record<string, { bg: string; color: string }> = {
   pending: { bg: colors.warningLight, color: colors.accentAmber },
   in_review: { bg: colors.infoLight, color: colors.accentBlue },
   diagnosed: { bg: colors.successLight, color: colors.accentGreen },
-  closed: { bg: "#f0f0f0", color: "#666" },
+  closed: { bg: colors.surfaceAlt, color: colors.textDim },
 };
 
 export default function VetCasesListPage() {
   const router = useRouter();
 
-  useEffect(() => {
-    document.title = "Vet Cases \u2014 PashuRaksha ERP";
-  }, []);
-
   const [tabIndex, setTabIndex] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
-  const [cases, setCases] = useState<VetCase[]>([]);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const currentStatus = STATUS_TABS[tabIndex].value;
 
-  const fetchCases = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const skip = page * rowsPerPage;
-      const res = await fetch(
-        `${API_URL}/vet/cases?status=${currentStatus}&skip=${skip}&limit=${rowsPerPage}`,
-        { credentials: "include" }
-      );
-      if (!res.ok) throw new Error(`API error ${res.status}`);
-      const body = await res.json();
-      const data = Array.isArray(body) ? body : body.data ?? [];
-      setCases(data);
-      setTotal(body.total ?? data.length);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load cases");
-      setCases([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentStatus, page, rowsPerPage]);
+  const { data: listData, isLoading, isError } = useList<VetCase>({
+    resource: "vet/cases",
+    pagination: { current: page + 1, pageSize: rowsPerPage },
+    meta: { params: { status: currentStatus } },
+  });
 
-  useEffect(() => {
-    fetchCases();
-  }, [fetchCases]);
+  const cases = listData?.data ?? [];
+  const total = listData?.total ?? cases.length;
 
   const handleTabChange = useCallback((_: React.SyntheticEvent, newIndex: number) => {
     setTabIndex(newIndex);
@@ -176,17 +150,17 @@ export default function VetCasesListPage() {
         </Box>
 
         {isLoading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", p: 8 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", p: 8 }} role="status" aria-label="Loading vet cases">
             <CircularProgress />
           </Box>
-        ) : error ? (
+        ) : isError ? (
           <Box sx={{ p: 4 }}>
-            <Alert severity="error">{error}</Alert>
+            <Alert severity="error">Failed to load cases</Alert>
           </Box>
         ) : (
           <>
             <TableContainer>
-              <Table>
+              <Table aria-label="Veterinary cases">
                 <TableHead>
                   <TableRow>
                     <TableCell>Farmer</TableCell>
@@ -246,8 +220,8 @@ export default function VetCasesListPage() {
                             label={c.priority}
                             size="small"
                             sx={{
-                              bgcolor: priorityConfig[c.priority]?.bg ?? "#f0f0f0",
-                              color: priorityConfig[c.priority]?.color ?? "#666",
+                              bgcolor: priorityConfig[c.priority]?.bg ?? colors.surfaceAlt,
+                              color: priorityConfig[c.priority]?.color ?? colors.textDim,
                               fontWeight: 600,
                               fontSize: "11px",
                               textTransform: "capitalize",
@@ -263,8 +237,8 @@ export default function VetCasesListPage() {
                             label={c.status.replace(/_/g, " ")}
                             size="small"
                             sx={{
-                              bgcolor: statusConfig[c.status]?.bg ?? "#f0f0f0",
-                              color: statusConfig[c.status]?.color ?? "#666",
+                              bgcolor: statusConfig[c.status]?.bg ?? colors.surfaceAlt,
+                              color: statusConfig[c.status]?.color ?? colors.textDim,
                               fontWeight: 600,
                               fontSize: "11px",
                               textTransform: "capitalize",

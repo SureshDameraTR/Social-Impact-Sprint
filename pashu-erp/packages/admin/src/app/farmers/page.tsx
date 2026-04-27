@@ -56,10 +56,6 @@ function getInitials(name: string) {
 type SortKey = "name" | "district" | "animals_count" | "registered_date";
 
 export default function FarmersPage() {
-  useEffect(() => {
-    document.title = 'Farmers — PashuRaksha ERP';
-  }, []);
-
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -69,6 +65,7 @@ export default function FarmersPage() {
   const { data, isLoading, isError } = useList<Farmer>({
     resource: "farmers",
     pagination: { current: page + 1, pageSize: rowsPerPage },
+    sorters: sortBy ? [{ field: sortBy, order: sortDir }] : [],
   });
 
   const farmers = data?.data ?? [];
@@ -83,6 +80,7 @@ export default function FarmersPage() {
       setSortDir("asc");
       return key;
     });
+    setPage(0);
   }, []);
 
   const filtered = useMemo(
@@ -94,18 +92,6 @@ export default function FarmersPage() {
       ),
     [farmers, search]
   );
-
-  const sortedRows = useMemo(() => {
-    if (!sortBy) return filtered;
-    const sorted = [...filtered];
-    sorted.sort((a, b) => {
-      const aVal = a[sortBy];
-      const bVal = b[sortBy];
-      const cmp = typeof aVal === "string" ? aVal.localeCompare(bVal as string) : (aVal as number) - (bVal as number);
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-    return sorted;
-  }, [filtered, sortBy, sortDir]);
 
   if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }} role="status" aria-label="Loading"><CircularProgress /></Box>;
   if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
@@ -166,14 +152,14 @@ export default function FarmersPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedRows.length === 0 ? (
+              {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} sx={{ border: 0 }}>
                     <EmptyState />
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedRows.map((farmer) => (
+                filtered.map((farmer) => (
                     <TableRow key={farmer.id}>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -239,7 +225,7 @@ export default function FarmersPage() {
         </TableContainer>
         <TablePagination
           component="div"
-          count={search ? sortedRows.length : serverTotal}
+          count={search ? filtered.length : serverTotal}
           page={page}
           onPageChange={(_, p) => setPage(p)}
           rowsPerPage={rowsPerPage}

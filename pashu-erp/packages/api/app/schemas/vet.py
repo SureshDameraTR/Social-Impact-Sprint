@@ -9,6 +9,7 @@ from pydantic import BaseModel
 # Enums (mirror model enums for schema-level validation)
 # ---------------------------------------------------------------------------
 
+
 class ConsultationStatus(str, Enum):
     pending = "pending"
     in_review = "in_review"
@@ -32,6 +33,7 @@ class ConsultationChannel(str, Enum):
 # Request bodies
 # ---------------------------------------------------------------------------
 
+
 class DiagnoseBody(BaseModel):
     diagnosis: str
     prescription: str | None = None
@@ -45,6 +47,7 @@ class VideoLinkBody(BaseModel):
 # ---------------------------------------------------------------------------
 # Nested read schemas
 # ---------------------------------------------------------------------------
+
 
 class OwnerBrief(BaseModel):
     id: str
@@ -71,19 +74,20 @@ class FarmerBrief(BaseModel):
 # Read schemas
 # ---------------------------------------------------------------------------
 
+
 class VetCaseRead(BaseModel):
     id: str
     animal_id: str
     farmer_id: str
     vet_id: str | None = None
-    status: str
-    priority: str
-    channel: str
+    status: ConsultationStatus
+    priority: ConsultationPriority
+    channel: ConsultationChannel
     farmer_notes: str | None = None
     photo_urls: list[str] | None = None
     diagnosis: str | None = None
     prescription: str | None = None
-    follow_up_date: str | None = None
+    follow_up_date: date | None = None
     video_call_url: str | None = None
     district: str
     created_at: str | None = None
@@ -94,17 +98,20 @@ class VetCaseRead(BaseModel):
 
 class VetCaseListResponse(BaseModel):
     data: list[VetCaseRead]
-    skip: int
+    total: int
+    offset: int
     limit: int
 
 
 class VetMyCasesResponse(BaseModel):
     data: list[VetCaseRead]
+    total: int
 
 
 # ---------------------------------------------------------------------------
 # Dashboard schemas
 # ---------------------------------------------------------------------------
+
 
 class VetDashboardStats(BaseModel):
     pending_cases: int
@@ -113,6 +120,27 @@ class VetDashboardStats(BaseModel):
     active_alerts: int
 
 
+class CommunityAlertRead(BaseModel):
+    id: str
+    disease_name: str
+    severity: str
+    alert_type: str = "community"
+    latitude: float | None = None
+    longitude: float | None = None
+    location_name: str | None = None
+    status: str = "active"
+    created_at: str | None = None
+
+
+class HealthEventRead(BaseModel):
+    id: str
+    animal_id: str
+    event_type: str
+    symptoms: str | None = None
+    ai_risk_score: float | None = None
+    created_at: str | None = None
+
+
 class VetDashboardAlertsResponse(BaseModel):
-    community_alerts: list[dict[str, object]]
-    health_events: list[dict[str, object]]
+    community_alerts: list[CommunityAlertRead]
+    health_events: list[HealthEventRead]

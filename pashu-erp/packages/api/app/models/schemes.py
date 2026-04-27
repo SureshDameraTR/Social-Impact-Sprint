@@ -1,15 +1,25 @@
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, DateTime, Numeric, String, Text, func, text
+from sqlalchemy import Boolean, CheckConstraint, Date, Numeric, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import AuditMixin, Base, SoftDeleteMixin
+from app.models.base import AuditMixin, Base, SoftDeleteMixin, TimestampMixin
 
 
-class GovtScheme(AuditMixin, SoftDeleteMixin, Base):
+class GovtScheme(TimestampMixin, AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "govt_schemes"
+    __table_args__ = (
+        CheckConstraint(
+            "max_subsidy_amount IS NULL OR max_subsidy_amount > 0",
+            name="ck_govt_schemes_subsidy_amount_positive",
+        ),
+        CheckConstraint(
+            "subsidy_percentage IS NULL OR subsidy_percentage BETWEEN 0 AND 100",
+            name="ck_govt_schemes_subsidy_pct_range",
+        ),
+    )
 
     id: Mapped[str] = mapped_column(
         UUID(as_uuid=True),
@@ -27,4 +37,3 @@ class GovtScheme(AuditMixin, SoftDeleteMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     valid_from: Mapped[date] = mapped_column(Date, nullable=False)
     valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

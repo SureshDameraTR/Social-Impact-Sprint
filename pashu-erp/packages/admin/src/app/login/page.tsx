@@ -109,8 +109,12 @@ export default function LoginPage() {
   }, [isOtpComplete, phoneWithPrefix, otpString, rememberMe]);
 
   const handleOtpChange = (value: string, index: number) => {
-    if (value.length > 1) {
-      const digits = value.replace(/\D/g, "").slice(0, OTP_LENGTH).split("");
+    const cleaned = value.replace(/\D/g, "");
+    if (!cleaned) return;
+
+    // Multi-digit paste: distribute digits across boxes starting at index
+    if (cleaned.length > 1) {
+      const digits = cleaned.slice(0, OTP_LENGTH).split("");
       const newOtp = [...otp];
       digits.forEach((d, i) => {
         if (index + i < OTP_LENGTH) newOtp[index + i] = d;
@@ -121,10 +125,13 @@ export default function LoginPage() {
       return;
     }
 
+    // Single digit: take the last character to handle MUI controlled-input
+    // re-firing onChange with oldChar+newChar when maxLength=1 is bypassed
+    const digit = cleaned.slice(-1);
     const newOtp = [...otp];
-    newOtp[index] = value.replace(/\D/g, "");
+    newOtp[index] = digit;
     setOtp(newOtp);
-    if (value && index < OTP_LENGTH - 1) {
+    if (digit && index < OTP_LENGTH - 1) {
       otpRefs.current[index + 1]?.focus();
     }
   };
@@ -154,7 +161,7 @@ export default function LoginPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        bgcolor: "#f0f4f3",
+        bgcolor: "background.default",
         p: 2,
       }}
     >
@@ -162,8 +169,8 @@ export default function LoginPage() {
         {/* Header */}
         <Box
           sx={{
-            bgcolor: "#0f6b42",
-            color: "#fff",
+            bgcolor: "primary.dark",
+            color: "common.white",
             textAlign: "center",
             py: 4,
             borderRadius: "12px 12px 0 0",
@@ -175,7 +182,7 @@ export default function LoginPage() {
           <Typography variant="h5" fontWeight={700}>
             PashuRaksha
           </Typography>
-          <Typography variant="body2" sx={{ color: "#a8f5c8", mt: 0.5 }}>
+          <Typography variant="body2" sx={{ color: "primary.light", mt: 0.5 }}>
             Admin Portal
           </Typography>
         </Box>
@@ -222,8 +229,8 @@ export default function LoginPage() {
                 onClick={handleSendOtp}
                 disabled={!isPhoneValid || loading}
                 sx={{
-                  bgcolor: "#0f6b42",
-                  "&:hover": { bgcolor: "#0a5534" },
+                  bgcolor: "primary.dark",
+                  "&:hover": { bgcolor: "primary.main" },
                   textTransform: "none",
                   fontWeight: 700,
                   fontSize: 16,
@@ -244,7 +251,7 @@ export default function LoginPage() {
                   component="button"
                   variant="body2"
                   onClick={handleChangePhone}
-                  sx={{ color: "#0f6b42" }}
+                  sx={{ color: "primary.dark" }}
                 >
                   Change
                 </Link>
@@ -275,7 +282,7 @@ export default function LoginPage() {
                   <Checkbox
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    sx={{ color: "#0f6b42", "&.Mui-checked": { color: "#0f6b42" } }}
+                    sx={{ color: "primary.dark", "&.Mui-checked": { color: "primary.dark" } }}
                   />
                 }
                 label="Remember this device (7 days)"
@@ -289,8 +296,8 @@ export default function LoginPage() {
                 onClick={handleVerifyOtp}
                 disabled={!isOtpComplete || loading}
                 sx={{
-                  bgcolor: "#0f6b42",
-                  "&:hover": { bgcolor: "#0a5534" },
+                  bgcolor: "primary.dark",
+                  "&:hover": { bgcolor: "primary.main" },
                   textTransform: "none",
                   fontWeight: 700,
                   fontSize: 16,
@@ -313,7 +320,7 @@ export default function LoginPage() {
                     variant="body2"
                     onClick={handleResend}
                     disabled={loading}
-                    sx={{ color: "#0f6b42" }}
+                    sx={{ color: "primary.dark" }}
                   >
                     Resend OTP
                   </Link>

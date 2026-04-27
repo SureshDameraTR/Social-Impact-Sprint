@@ -21,6 +21,15 @@
         "backgroundColor": "#1B6B4A"
       }
     },
+    "supportsRTL": true,
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 5000
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "web": {
       "bundler": "metro",
       "output": "single"

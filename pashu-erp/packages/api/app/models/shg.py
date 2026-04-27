@@ -1,23 +1,22 @@
 import enum
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Date,
-    DateTime,
     Enum,
     ForeignKey,
     Integer,
     Numeric,
     String,
-    func,
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import AuditMixin, Base, SoftDeleteMixin
+from app.models.base import AuditMixin, Base, SoftDeleteMixin, TimestampMixin
 
 
 class SHGGrading(str, enum.Enum):
@@ -27,8 +26,12 @@ class SHGGrading(str, enum.Enum):
     ungraded = "ungraded"
 
 
-class SHGGroup(AuditMixin, SoftDeleteMixin, Base):
+class SHGGroup(TimestampMixin, AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "shg_groups"
+    __table_args__ = (
+        CheckConstraint("member_count >= 0", name="ck_shg_groups_member_count_non_negative"),
+        CheckConstraint("total_savings >= 0", name="ck_shg_groups_savings_non_negative"),
+    )
 
     id: Mapped[str] = mapped_column(
         UUID(as_uuid=True),
@@ -45,16 +48,13 @@ class SHGGroup(AuditMixin, SoftDeleteMixin, Base):
     member_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     women_only: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     formation_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    total_savings: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=0, server_default="0"
-    )
+    total_savings: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, server_default="0")
     grading: Mapped[str] = mapped_column(
         Enum(SHGGrading, name="shg_grading"),
         default=SHGGrading.ungraded,
         server_default="ungraded",
     )
     panchsutra_compliance: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     admin = relationship("User", foreign_keys=[admin_user_id], lazy="noload")

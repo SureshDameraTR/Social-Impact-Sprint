@@ -1,11 +1,22 @@
 import enum
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Numeric, String, Text, func, text
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+    String,
+    Text,
+    func,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import AuditMixin, Base, SoftDeleteMixin
+from app.models.base import AuditMixin, Base, SoftDeleteMixin, TimestampMixin
 
 
 class HealthEventType(str, enum.Enum):
@@ -15,8 +26,14 @@ class HealthEventType(str, enum.Enum):
     emergency = "emergency"
 
 
-class HealthEvent(AuditMixin, SoftDeleteMixin, Base):
+class HealthEvent(TimestampMixin, AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "health_events"
+    __table_args__ = (
+        CheckConstraint(
+            "ai_risk_score IS NULL OR ai_risk_score BETWEEN 0 AND 1",
+            name="ck_health_events_risk_score_range",
+        ),
+    )
 
     id: Mapped[str] = mapped_column(
         UUID(as_uuid=True),
@@ -37,19 +54,19 @@ class HealthEvent(AuditMixin, SoftDeleteMixin, Base):
     recorded_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True
     )
-    event_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    event_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships — lazy="noload" to prevent automatic eager loading
     animal = relationship(
-        "Animal", back_populates="health_events",
-        foreign_keys=[animal_id], lazy="noload",
+        "Animal",
+        back_populates="health_events",
+        foreign_keys=[animal_id],
+        lazy="noload",
     )
     recorder = relationship("User", foreign_keys=[recorded_by], lazy="noload")
 
 
-class Vaccination(AuditMixin, SoftDeleteMixin, Base):
+class Vaccination(TimestampMixin, AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "vaccinations"
 
     id: Mapped[str] = mapped_column(
@@ -67,13 +84,12 @@ class Vaccination(AuditMixin, SoftDeleteMixin, Base):
     recorded_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(),
-    )
 
     # Relationships — lazy="noload" to prevent automatic eager loading
     animal = relationship(
-        "Animal", back_populates="vaccinations",
-        foreign_keys=[animal_id], lazy="noload",
+        "Animal",
+        back_populates="vaccinations",
+        foreign_keys=[animal_id],
+        lazy="noload",
     )
     recorder = relationship("User", foreign_keys=[recorded_by], lazy="noload")

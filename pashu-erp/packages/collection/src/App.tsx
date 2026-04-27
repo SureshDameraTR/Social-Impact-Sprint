@@ -27,8 +27,27 @@ function CentreGuard({ children }: { children: React.ReactNode }) {
 function ProtectedLayout({ children, requireCentre = false }: { children: React.ReactNode; requireCentre?: boolean }) {
   return (
     <AuthGuard>
+      <Box
+        component="a"
+        href="#main-content"
+        sx={{
+          position: 'absolute',
+          left: '-9999px',
+          top: 'auto',
+          zIndex: 9999,
+          bgcolor: '#0d6b58',
+          color: '#fff',
+          p: '8px 16px',
+          textDecoration: 'none',
+          fontWeight: 600,
+          fontSize: 14,
+          '&:focus': { position: 'static', display: 'block' },
+        }}
+      >
+        Skip to main content
+      </Box>
       <NavBar />
-      <Box component="main">
+      <Box component="main" id="main-content">
         {requireCentre ? <CentreGuard>{children}</CentreGuard> : children}
       </Box>
     </AuthGuard>

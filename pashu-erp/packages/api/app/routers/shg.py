@@ -1,11 +1,8 @@
 """SHG (Self Help Group) CRUD + Panchsutra compliance endpoints."""
 
-from datetime import date, datetime
-from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,60 +10,18 @@ from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.shg import SHGGroup
 from app.models.user import User
+from app.schemas.shg import SHGGroupCreate as SHGCreate
+from app.schemas.shg import SHGGroupListResponse
+from app.schemas.shg import SHGGroupRead as SHGRead
+from app.schemas.shg import SHGGroupUpdate as SHGUpdate
 
 router = APIRouter(prefix="/v1/shg", tags=["SHG Groups"])
 
 
 # ---------------------------------------------------------------------------
-# Schemas
-# ---------------------------------------------------------------------------
-
-class SHGCreate(BaseModel):
-    name: str = Field(..., max_length=200)
-    registration_number: str | None = Field(None, max_length=50)
-    district: str | None = Field(None, max_length=100)
-    village_code: str | None = Field(None, max_length=20)
-    member_count: int = 0
-    women_only: bool = True
-    formation_date: date | None = None
-    total_savings: Decimal = Field(default=Decimal("0"), max_digits=10, decimal_places=2)
-    grading: str = "ungraded"
-    panchsutra_compliance: dict | None = None
-
-
-class SHGUpdate(BaseModel):
-    name: str | None = Field(None, max_length=200)
-    registration_number: str | None = Field(None, max_length=50)
-    district: str | None = None
-    village_code: str | None = None
-    member_count: int | None = None
-    women_only: bool | None = None
-    total_savings: Decimal | None = Field(None, max_digits=10, decimal_places=2)
-    grading: str | None = None
-    panchsutra_compliance: dict | None = None
-
-
-class SHGRead(BaseModel):
-    id: UUID
-    name: str
-    registration_number: str | None = None
-    district: str | None = None
-    village_code: str | None = None
-    admin_user_id: UUID
-    member_count: int
-    women_only: bool
-    formation_date: date | None = None
-    total_savings: Decimal = Field(..., max_digits=10, decimal_places=2)
-    grading: str
-    panchsutra_compliance: dict | None = None
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
-# ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+
 
 @router.post("", response_model=SHGRead, status_code=status.HTTP_201_CREATED)
 async def create_shg(
@@ -94,9 +49,9 @@ async def create_shg(
     return group
 
 
-@router.get("")
+@router.get("", response_model=SHGGroupListResponse)
 async def list_shg(
-    skip: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -104,16 +59,14 @@ async def list_shg(
     """List SHG groups the current user administers."""
     base_filter = [SHGGroup.admin_user_id == current_user.id, SHGGroup.deleted_at.is_(None)]
 
-    count_result = await db.execute(
-        select(func.count()).select_from(SHGGroup).where(*base_filter)
-    )
+    count_result = await db.execute(select(func.count()).select_from(SHGGroup).where(*base_filter))
     total = count_result.scalar() or 0
 
     result = await db.execute(
         select(SHGGroup)
         .where(*base_filter)
         .order_by(SHGGroup.created_at.desc())
-        .offset(skip)
+        .offset(offset)
         .limit(limit)
     )
     return {"data": result.scalars().all(), "total": total}
@@ -126,10 +79,14 @@ async def get_shg(
     db: AsyncSession = Depends(get_db),
 ):
     """Get an SHG group by ID."""
-    result = await db.execute(select(SHGGroup).where(SHGGroup.id == shg_id, SHGGroup.deleted_at.is_(None)))
+    result = await db.execute(
+        select(SHGGroup).where(SHGGroup.id == shg_id, SHGGroup.deleted_at.is_(None))
+    )
     group = result.scalar_one_or_none()
     if group is None:
         raise HTTPException(status_code=404, detail="SHG group not found")
+    if current_user.role != "admin" and str(group.admin_user_id) != str(current_user.id):
+        raise HTTPException(status_code=403, detail="Access denied")
     return group
 
 
@@ -141,7 +98,9 @@ async def update_shg(
     db: AsyncSession = Depends(get_db),
 ):
     """Update an SHG group."""
-    result = await db.execute(select(SHGGroup).where(SHGGroup.id == shg_id, SHGGroup.deleted_at.is_(None)))
+    result = await db.execute(
+        select(SHGGroup).where(SHGGroup.id == shg_id, SHGGroup.deleted_at.is_(None))
+    )
     group = result.scalar_one_or_none()
     if group is None:
         raise HTTPException(status_code=404, detail="SHG group not found")
@@ -173,10 +132,14 @@ async def get_panchsutra_compliance(
     4. Regular repayment
     5. Up-to-date bookkeeping
     """
-    result = await db.execute(select(SHGGroup).where(SHGGroup.id == shg_id, SHGGroup.deleted_at.is_(None)))
+    result = await db.execute(
+        select(SHGGroup).where(SHGGroup.id == shg_id, SHGGroup.deleted_at.is_(None))
+    )
     group = result.scalar_one_or_none()
     if group is None:
         raise HTTPException(status_code=404, detail="SHG group not found")
+    if current_user.role != "admin" and str(group.admin_user_id) != str(current_user.id):
+        raise HTTPException(status_code=403, detail="Access denied")
 
     compliance = group.panchsutra_compliance or {}
 
@@ -199,5 +162,7 @@ async def get_panchsutra_compliance(
         "score": score,
         "total": total,
         "percentage": round((score / total) * 100, 1),
-        "grading": "A" if score >= 4 else ("B" if score >= 3 else ("C" if score >= 2 else "ungraded")),
+        "grading": "A"
+        if score >= 4
+        else ("B" if score >= 3 else ("C" if score >= 2 else "ungraded")),
     }

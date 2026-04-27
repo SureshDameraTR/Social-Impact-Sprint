@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useList } from "@refinedev/core";
 import dynamic from "next/dynamic";
 import { Box, Typography, Paper, Grid, Skeleton, CircularProgress, Alert } from "@mui/material";
@@ -123,10 +123,6 @@ const IncomeChartsLazy = dynamic(() => Promise.resolve(IncomeCharts), {
 });
 
 export default function IncomePage() {
-  useEffect(() => {
-    document.title = 'Income Analytics — PashuRaksha ERP';
-  }, []);
-
   const { data: categoryData, isLoading: catLoading, isError: catError } = useList<IncomeCategoryRaw>({ resource: "income/by-category" });
   const { data: monthlyData, isLoading: monthLoading, isError: monthError } = useList<MonthlyIncome>({ resource: "income/monthly" });
 
@@ -154,7 +150,7 @@ export default function IncomePage() {
     return { totalIncome: total, avgPerFarmer: count > 0 ? Math.round(total / count) : 0 };
   }, [incomeByCategory]);
 
-  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress /></Box>;
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }} role="status" aria-label="Loading income data"><CircularProgress /></Box>;
   if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
 
   return (

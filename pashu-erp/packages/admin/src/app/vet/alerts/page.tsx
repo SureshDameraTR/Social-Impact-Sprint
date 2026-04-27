@@ -94,10 +94,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 /* ---------- Component ---------- */
 
 export default function DistrictAlertsPage() {
-  useEffect(() => {
-    document.title = "District Alerts — PashuRaksha ERP";
-  }, []);
-
   const [severityFilter, setSeverityFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
   const [page, setPage] = useState(0);
@@ -250,7 +246,7 @@ export default function DistrictAlertsPage() {
   /* ---- Loading / error states ---- */
   if (isLoading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", p: 8 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", p: 8 }} role="status" aria-label="Loading district alerts">
         <CircularProgress />
       </Box>
     );
@@ -310,7 +306,7 @@ export default function DistrictAlertsPage() {
           {[
             { color: colors.accentRed, label: "Critical" },
             { color: colors.accentAmber, label: "High" },
-            { color: "#fbc02d", label: "Medium" },
+            { color: colors.accentAmber, label: "Medium" },
             { color: colors.accentGreen, label: "Low" },
           ].map((item) => (
             <Box key={item.label} display="flex" alignItems="center" gap={1}>
@@ -370,7 +366,7 @@ export default function DistrictAlertsPage() {
         </Box>
 
         <TableContainer>
-          <Table>
+          <Table aria-label="District alerts">
             <TableHead>
               <TableRow>
                 <TableCell>Type</TableCell>

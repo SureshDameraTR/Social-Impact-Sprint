@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, FlatList, StyleSheet, StatusBar, Linking, Platform, Alert } from 'react-native';
 import { Text, Button, Card, Divider, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { EarningsHero } from '../../src/components/EarningsHero';
 import { EmptyState } from '../../src/components/EmptyState';
-import { SPACING, CARD_BORDER_RADIUS, colors } from '../../src/config/theme';
+import { SPACING, CARD_BORDER_RADIUS, colors, accentColors } from '../../src/config/theme';
 import { api } from '../../src/config/api';
+
+const LOCALE_MAP: Record<string, string> = { en: 'en-IN', hi: 'hi-IN', kn: 'kn-IN', gu: 'gu-IN', ta: 'ta-IN', te: 'te-IN' };
 
 interface IncomeSummary {
   total: number;
@@ -25,7 +27,9 @@ interface Transaction {
 type Period = 'weekly' | 'monthly' | 'yearly';
 
 export default function IncomeScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const numLocale = LOCALE_MAP[i18n.language] || 'en-IN';
+  const fmtNum = useCallback((n: number) => n.toLocaleString(numLocale), [numLocale]);
   const [period, setPeriod] = useState<Period>('monthly');
   const [summary, setSummary] = useState<IncomeSummary | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -51,7 +55,7 @@ export default function IncomeScreen() {
           id: tx.id ?? String(idx),
           desc: tx.description ?? tx.category ?? '',
           amount: Math.abs(tx.amount ?? 0),
-          date: tx.date ? new Date(tx.date).toLocaleDateString('en-IN') : (tx.created_at ? new Date(tx.created_at).toLocaleDateString('en-IN') : ''),
+          date: tx.date ? new Date(tx.date).toLocaleDateString(numLocale) : (tx.created_at ? new Date(tx.created_at).toLocaleDateString(numLocale) : ''),
           type: tx.type ?? 'income',
           icon: tx.type === 'expense' ? '\uD83D\uDCB8' : '\uD83D\uDCB0',
         })));
@@ -67,6 +71,27 @@ export default function IncomeScreen() {
   const handlePeriodChange = useCallback((p: Period) => {
     setPeriod(p);
   }, []);
+
+  const renderTransaction = useCallback(({ item: tx }: { item: Transaction }) => (
+    <Card
+      style={styles.txCard}
+      accessible={true}
+      accessibilityLabel={`${tx.desc}, ${t('income.earnings')} \u20B9${fmtNum(tx.amount)}, ${tx.date}`}
+    >
+      <Card.Content style={styles.txContent}>
+        <View style={styles.txLeft}>
+          <Text style={styles.txIcon}>{tx.icon}</Text>
+          <View>
+            <Text variant="titleSmall" style={styles.txDesc}>{tx.desc}</Text>
+            <Text variant="bodySmall" style={styles.txDate}>{tx.date}</Text>
+          </View>
+        </View>
+        <Text variant="titleMedium" style={styles.txAmount}>
+          +{'\u20B9'}{fmtNum(tx.amount)}
+        </Text>
+      </Card.Content>
+    </Card>
+  ), [t, fmtNum]);
 
   if (loading) {
     return (
@@ -94,27 +119,6 @@ export default function IncomeScreen() {
   const milkPct = data.total > 0 ? Math.round((data.milk / data.total) * 100) : 0;
   const salePct = data.total > 0 ? 100 - milkPct : 0;
 
-  const renderTransaction = useCallback(({ item: tx }: { item: Transaction }) => (
-    <Card
-      style={styles.txCard}
-      accessible={true}
-      accessibilityLabel={`${tx.desc}, ${t('income.earnings')} \u20B9${tx.amount.toLocaleString('en-IN')}, ${tx.date}`}
-    >
-      <Card.Content style={styles.txContent}>
-        <View style={styles.txLeft}>
-          <Text style={styles.txIcon}>{tx.icon}</Text>
-          <View>
-            <Text variant="titleSmall" style={styles.txDesc}>{tx.desc}</Text>
-            <Text variant="bodySmall" style={styles.txDate}>{tx.date}</Text>
-          </View>
-        </View>
-        <Text variant="titleMedium" style={styles.txAmount}>
-          +{'\u20B9'}{tx.amount.toLocaleString('en-IN')}
-        </Text>
-      </Card.Content>
-    </Card>
-  ), [t]);
-
   return (
     <FlatList
       data={transactions}
@@ -124,7 +128,7 @@ export default function IncomeScreen() {
       contentContainerStyle={styles.scroll}
       ListHeaderComponent={
         <>
-          <StatusBar barStyle="dark-content" backgroundColor="#F5F5F0" />
+          <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
 
           {/* Period selector pills */}
           <View style={styles.periodContainer}>
@@ -136,7 +140,7 @@ export default function IncomeScreen() {
                 style={[styles.periodPill, period === p && styles.periodPillActive]}
                 labelStyle={[styles.periodLabel, period === p && styles.periodLabelActive]}
                 buttonColor={period === p ? colors.primary : undefined}
-                textColor={period === p ? '#FFFFFF' : '#414941'}
+                textColor={period === p ? colors.onPrimary : colors.onSurfaceVariant}
                 compact
                 accessibilityLabel={t(`income.${p}`)}
                 accessibilityRole="radio"
@@ -160,7 +164,7 @@ export default function IncomeScreen() {
                     <View style={styles.breakdownHeader}>
                       <Text variant="bodyMedium" style={styles.breakdownLabel}>{t('income.milkIncome')}</Text>
                       <Text variant="titleSmall" style={styles.breakdownAmount}>
-                        {'\u20B9'}{data.milk.toLocaleString('en-IN')}
+                        {'\u20B9'}{fmtNum(data.milk)}
                       </Text>
                     </View>
                     <View style={styles.barBg}>
@@ -174,11 +178,11 @@ export default function IncomeScreen() {
                     <View style={styles.breakdownHeader}>
                       <Text variant="bodyMedium" style={styles.breakdownLabel}>{t('income.saleIncome')}</Text>
                       <Text variant="titleSmall" style={styles.breakdownAmount}>
-                        {'\u20B9'}{data.sale.toLocaleString('en-IN')}
+                        {'\u20B9'}{fmtNum(data.sale)}
                       </Text>
                     </View>
                     <View style={styles.barBg}>
-                      <View style={[styles.barFill, { width: `${salePct}%`, backgroundColor: '#E65100' }]} />
+                      <View style={[styles.barFill, { width: `${salePct}%`, backgroundColor: accentColors.amber }]} />
                     </View>
                   </View>
                 </View>
@@ -191,7 +195,7 @@ export default function IncomeScreen() {
             <Button
               mode="outlined"
               icon="download"
-              onPress={() => { if (Platform.OS === 'web') { window.alert(t('income.downloadComingSoon') ?? 'Download feature coming soon'); } else { Alert.alert(t('income.downloadRecord'), t('income.downloadComingSoon') ?? 'Download feature coming soon'); } }}
+              onPress={() => { if (Platform.OS === 'web') { window.alert(t('income.downloadComingSoon')); } else { Alert.alert(t('income.downloadRecord'), t('income.downloadComingSoon')); } }}
               style={styles.actionButton}
               contentStyle={styles.actionButtonContent}
               textColor={colors.primary}
@@ -216,11 +220,12 @@ export default function IncomeScreen() {
               <Button
                 mode="contained"
                 onPress={() => Linking.openURL('https://www.pmkisan.gov.in/')}
-                buttonColor="#FFFFFF"
-                textColor="#E65100"
+                buttonColor={colors.onPrimary}
+                textColor={accentColors.amber}
                 compact
                 style={styles.loanButton}
                 accessibilityLabel={t('income.applyNow')}
+                accessibilityRole="button"
               >
                 {t('income.applyNow')}
               </Button>
@@ -248,7 +253,7 @@ export default function IncomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F0',
+    backgroundColor: colors.surface,
   },
   scroll: {
     padding: SPACING.md,
@@ -262,7 +267,7 @@ const styles = StyleSheet.create({
   },
   periodPill: {
     borderRadius: 20,
-    borderColor: '#C1C9BF',
+    borderColor: colors.outlineVariant,
   },
   periodPillActive: {
     borderColor: colors.primary,
@@ -283,7 +288,7 @@ const styles = StyleSheet.create({
   },
   breakdownCard: {
     borderRadius: CARD_BORDER_RADIUS,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.onPrimary,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -311,16 +316,16 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   breakdownLabel: {
-    color: '#414941',
+    color: colors.onSurfaceVariant,
   },
   breakdownAmount: {
-    color: '#1A1A1A',
+    color: colors.onSurface,
     fontWeight: '700',
   },
   barBg: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#DCE5DB',
+    backgroundColor: colors.surfaceVariant,
     overflow: 'hidden',
   },
   barFill: {
@@ -343,8 +348,8 @@ const styles = StyleSheet.create({
   loanCard: {
     marginTop: SPACING.md,
     borderRadius: CARD_BORDER_RADIUS,
-    backgroundColor: '#E65100',
-    shadowColor: '#E65100',
+    backgroundColor: accentColors.amber,
+    shadowColor: accentColors.amber,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -356,7 +361,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loanTitle: {
-    color: '#FFFFFF',
+    color: colors.onPrimary,
     fontWeight: '700',
   },
   loanSubtitle: {
@@ -368,17 +373,17 @@ const styles = StyleSheet.create({
   },
   divider: {
     marginVertical: SPACING.lg,
-    backgroundColor: '#C1C9BF',
+    backgroundColor: colors.outlineVariant,
   },
   sectionTitle: {
     fontWeight: '700',
     marginBottom: SPACING.sm,
-    color: '#1A1A1A',
+    color: colors.onSurface,
   },
   txCard: {
     marginBottom: SPACING.sm + 2,
     borderRadius: CARD_BORDER_RADIUS,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.onPrimary,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
@@ -399,10 +404,10 @@ const styles = StyleSheet.create({
     fontSize: 28,
   },
   txDesc: {
-    color: '#1A1A1A',
+    color: colors.onSurface,
   },
   txDate: {
-    color: '#717971',
+    color: colors.outline,
     marginTop: 2,
   },
   txAmount: {

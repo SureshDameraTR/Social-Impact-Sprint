@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useList } from "@refinedev/core";
 import {
   Box,
@@ -64,7 +64,7 @@ function MilkChart({ data }: { data: DailySummary[] }) {
 const MilkChartLazy = dynamic(() => Promise.resolve(MilkChart), {
   ssr: false,
   loading: () => (
-    <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5', borderRadius: 1 }}>
+    <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'grey.100', borderRadius: 1 }}>
       Loading chart...
     </Box>
   ),
@@ -73,10 +73,6 @@ const MilkChartLazy = dynamic(() => Promise.resolve(MilkChart), {
 type SortKey = "recorded_at" | "quantity_liters" | "session";
 
 export default function MilkPage() {
-  useEffect(() => {
-    document.title = 'Milk Collection — PashuRaksha ERP';
-  }, []);
-
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(0);
@@ -84,9 +80,14 @@ export default function MilkPage() {
   const [sortBy, setSortBy] = useState<SortKey | "">("");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  const { data, isLoading, isError } = useList<MilkRecord>({ resource: "milk" });
+  const { data, isLoading, isError } = useList<MilkRecord>({
+    resource: "milk",
+    pagination: { current: page + 1, pageSize: rowsPerPage },
+    sorters: sortBy ? [{ field: sortBy, order: sortDir }] : [],
+  });
 
   const records = data?.data ?? [];
+  const serverTotal = data?.total ?? 0;
 
   const handleSort = (key: SortKey) => {
     if (sortBy === key) {
@@ -95,6 +96,7 @@ export default function MilkPage() {
       setSortBy(key);
       setSortDir("asc");
     }
+    setPage(0);
   };
 
   const filtered = useMemo(() => {
@@ -106,34 +108,22 @@ export default function MilkPage() {
     });
   }, [records, dateFrom, dateTo]);
 
-  const sortedRows = useMemo(() => {
-    if (!sortBy) return filtered;
-    const sorted = [...filtered];
-    sorted.sort((a, b) => {
-      const aVal = a[sortBy];
-      const bVal = b[sortBy];
-      const cmp = typeof aVal === "string" ? aVal.localeCompare(bVal as string) : (aVal as number) - (bVal as number);
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-    return sorted;
-  }, [filtered, sortBy, sortDir]);
-
   const todayStr = new Date().toISOString().split('T')[0];
   const todayRecords = records.filter((r) => (r.recorded_at?.split("T")[0] ?? "") === todayStr);
-  const totalToday = todayRecords.reduce((sum, r) => sum + r.quantity_liters, 0);
+  const totalToday = todayRecords.reduce((sum, r) => sum + (Number(r.quantity_liters) || 0), 0);
 
   const dailySummary: DailySummary[] = useMemo(() => {
     const map: Record<string, number> = {};
     records.forEach((r) => {
       const d = r.recorded_at?.split("T")[0] ?? "";
-      map[d] = (map[d] || 0) + r.quantity_liters;
+      map[d] = (map[d] || 0) + (Number(r.quantity_liters) || 0);
     });
     return Object.entries(map)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, total]) => ({ date, total: Math.round(total * 10) / 10 }));
   }, [records]);
 
-  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress /></Box>;
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }} role="status" aria-label="Loading milk records"><CircularProgress /></Box>;
   if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
 
   return (
@@ -142,7 +132,7 @@ export default function MilkPage() {
         Milk Collection
       </Typography>
       <Typography variant="body1" color="text.secondary" mb={3}>
-        Today&apos;s total: {totalToday.toFixed(1)} L from{" "}
+        Today&apos;s total: {Number(totalToday || 0).toFixed(1)} L from{" "}
         {todayRecords.length} entries
       </Typography>
 
@@ -176,7 +166,7 @@ export default function MilkPage() {
           </Stack>
         </Box>
         <TableContainer>
-          <Table>
+          <Table aria-label="Milk collection records">
             <TableHead>
               <TableRow>
                 <TableCell>
@@ -199,16 +189,14 @@ export default function MilkPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedRows.length === 0 ? (
+              {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} sx={{ border: 0 }}>
                     <EmptyState />
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedRows
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((rec) => (
+                filtered.map((rec) => (
                     <TableRow key={rec.id}>
                       <TableCell
                         sx={sxCodeCell}
@@ -220,7 +208,7 @@ export default function MilkPage() {
                         align="right"
                         sx={{ ...sxCodeCell, fontWeight: 600, color: colors.text }}
                       >
-                        {rec.quantity_liters.toFixed(1)}
+                        {Number(rec.quantity_liters || 0).toFixed(1)}
                       </TableCell>
                       <TableCell>
                         <Chip
@@ -247,7 +235,7 @@ export default function MilkPage() {
         </TableContainer>
         <TablePagination
           component="div"
-          count={sortedRows.length}
+          count={dateFrom || dateTo ? filtered.length : serverTotal}
           page={page}
           onPageChange={(_, p) => setPage(p)}
           rowsPerPage={rowsPerPage}

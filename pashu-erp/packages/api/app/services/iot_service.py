@@ -4,6 +4,7 @@ Proxies requests to the configured IoT gateway backend.
 """
 
 from app.config import settings
+from app.services.circuit_breakers import iot_breaker
 from app.services.errors import ServiceNotConfiguredError
 from app.services.http_client import get_http_client, retry_on_network
 
@@ -15,6 +16,7 @@ def _base_url() -> str:
     return url.rstrip("/")
 
 
+@iot_breaker
 @retry_on_network
 async def list_devices(
     status: str | None = None,
@@ -34,6 +36,7 @@ async def list_devices(
     return resp.json()
 
 
+@iot_breaker
 @retry_on_network
 async def get_device(device_id: str) -> dict:
     """Get a single IoT device by ID."""
@@ -45,6 +48,7 @@ async def get_device(device_id: str) -> dict:
     return resp.json()
 
 
+@iot_breaker
 @retry_on_network
 async def get_latest_telemetry(device_id: str) -> dict:
     """Get the latest telemetry reading for a device."""
@@ -56,6 +60,7 @@ async def get_latest_telemetry(device_id: str) -> dict:
     return resp.json()
 
 
+@iot_breaker
 @retry_on_network
 async def get_telemetry(
     device_id: str | None = None,

@@ -30,6 +30,13 @@ class YieldLogRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class YieldLogListResponse(BaseModel):
+    data: list[YieldLogRead]
+    total: int
+    limit: int
+    offset: int
+
+
 class MilkHistoryResponse(BaseModel):
     logs: list[YieldLogRead]
     total_liters: Decimal = Field(..., max_digits=10, decimal_places=2)

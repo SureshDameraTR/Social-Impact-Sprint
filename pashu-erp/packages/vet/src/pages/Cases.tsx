@@ -76,9 +76,11 @@ export default function Cases() {
           Cases
         </Typography>
         <Tooltip title="Refresh">
-          <IconButton onClick={load} disabled={loading}>
-            <RefreshIcon />
-          </IconButton>
+          <span>
+            <IconButton onClick={load} disabled={loading}>
+              <RefreshIcon />
+            </IconButton>
+          </span>
         </Tooltip>
       </Box>
 
@@ -100,7 +102,7 @@ export default function Cases() {
         <EmptyState title="No cases found" subtitle={statusFilter ? `No ${statusFilter.replace("_", " ")} cases` : "No cases yet"} />
       ) : (
         <TableContainer component={Paper} variant="outlined">
-          <Table>
+          <Table aria-label="Veterinary cases">
             <TableHead>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700 }}>Animal</TableCell>

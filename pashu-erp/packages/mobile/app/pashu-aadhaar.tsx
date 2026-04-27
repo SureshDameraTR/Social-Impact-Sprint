@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Button, Card, Text, TextInput, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../src/config/theme';
+import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors } from '../src/config/theme';
 import { api } from '../src/config/api';
 
 interface PashuRecord {
@@ -214,7 +214,7 @@ const detailStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surface,
   },
   content: {
     padding: SPACING.md,

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Pressable } from 'react-native';
 import { IconButton, Text } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
+import { Audio } from 'expo-av';
 import { TOUCH_TARGET_MIN } from '../config/theme';
 import { transcribeAudio, VoiceContext } from '../services/voice';
 
@@ -21,6 +22,7 @@ export function MicButton({ onResult, context = 'generic', onTranscript }: MicBu
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [state, setState] = useState<ButtonState>('idle');
   const [statusText, setStatusText] = useState('');
+  const recordingRef = useRef<Audio.Recording | null>(null);
 
   // Pulse animation when recording or processing
   useEffect(() => {
@@ -45,6 +47,16 @@ export function MicButton({ onResult, context = 'generic', onTranscript }: MicBu
     }
   }, [state, pulseAnim]);
 
+  // Cleanup recording on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingRef.current) {
+        recordingRef.current.stopAndUnloadAsync().catch(() => {});
+        recordingRef.current = null;
+      }
+    };
+  }, []);
+
   // Clear status text after display
   useEffect(() => {
     if (statusText) {
@@ -57,15 +69,47 @@ export function MicButton({ onResult, context = 'generic', onTranscript }: MicBu
     if (state === 'recording' || state === 'processing') return;
 
     try {
-      // Phase 1: Simulate recording (2s)
+      // Phase 1: Start real recording
       setState('recording');
       setStatusText('\u0C95\u0CC7\u0CB3\u0CC1\u0CA4\u0CCD\u0CA4\u0CBF\u0CA6\u0CC6...'); // "Listening..." in Kannada
-      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Request microphone permissions
+      const permission = await Audio.requestPermissionsAsync();
+      if (!permission.granted) {
+        setState('error');
+        setStatusText('\u0CAE\u0CC8\u0C95\u0CCD \u0C85\u0CA8\u0CC1\u0CAE\u0CA4\u0CBF \u0CAC\u0CC7\u0C95\u0CC1'); // "Mic permission needed"
+        setTimeout(() => setState('idle'), 3000);
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const recording = new Audio.Recording();
+      await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      await recording.startAsync();
+      recordingRef.current = recording;
+
+      // Record for 3 seconds (sufficient for number input)
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      await recording.stopAndUnloadAsync();
+      recordingRef.current = null;
+
+      const uri = recording.getURI();
+      if (!uri) {
+        setState('error');
+        setStatusText('\u0CAE\u0CA4\u0CCD\u0CA4\u0CC6 \u0CAE\u0CBE\u0CA4\u0CA8\u0CBE\u0CA1\u0CBF'); // "Speak again"
+        setTimeout(() => setState('idle'), 3000);
+        return;
+      }
 
       // Phase 2: Process / transcribe
       setState('processing');
       setStatusText('\u0C97\u0CC1\u0CB0\u0CC1\u0CA4\u0CBF\u0CB8\u0CC1\u0CA4\u0CCD\u0CA4\u0CBF\u0CA6\u0CC6...'); // "Recognizing..." in Kannada
-      const result = await transcribeAudio('mock://recording.wav', context);
+      const result = await transcribeAudio(uri, context);
 
       if (result.parsedNumber != null) {
         setState('idle');
@@ -75,7 +119,7 @@ export function MicButton({ onResult, context = 'generic', onTranscript }: MicBu
       } else {
         setState('error');
         setStatusText('\u0CAE\u0CA4\u0CCD\u0CA4\u0CC6 \u0CAE\u0CBE\u0CA4\u0CA8\u0CBE\u0CA1\u0CBF'); // "Speak again" in Kannada
-        setTimeout(() => setState('idle'), 3000); // give more time (3s was 2s)
+        setTimeout(() => setState('idle'), 3000);
       }
     } catch {
       setState('error');

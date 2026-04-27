@@ -108,8 +108,29 @@ export default function InsuranceScreen() {
   const fetchPolicies = useCallback(() => {
     setLoading(true);
     setError(null);
-    api.get<Policy[]>('/insurance/policies')
-      .then(res => setPolicies(res))
+    api.get<any>('/insurance/policies')
+      .then(res => {
+        const raw = Array.isArray(res) ? res : res.data ?? [];
+        const SPECIES_EMOJI: Record<string, string> = { cattle: '\uD83D\uDC04', goat: '\uD83D\uDC10', sheep: '\uD83D\uDC11', poultry: '\uD83D\uDC14' };
+        const today = new Date();
+        const mapped: Policy[] = raw.map((p: any) => {
+          const validTo = p.valid_to ? new Date(p.valid_to) : null;
+          const daysUntilDue = validTo ? Math.ceil((validTo.getTime() - today.getTime()) / 86400000) : 0;
+          const isActive = p.status === 'active' || (validTo && validTo > today);
+          return {
+            id: p.id,
+            animalName: p.animal_name || `Animal`,
+            species: SPECIES_EMOJI[p.species?.toLowerCase?.()] || '\uD83D\uDC3E',
+            policyNumber: p.policy_number || '',
+            provider: p.provider || '',
+            status: isActive ? 'active' : 'expired',
+            premiumDue: validTo ? validTo.toLocaleDateString('en-IN') : '',
+            daysUntilDue,
+            sumInsured: Number(p.coverage_amount) || 0,
+          };
+        });
+        setPolicies(mapped);
+      })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -149,7 +170,7 @@ export default function InsuranceScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text variant="headlineMedium" style={styles.heading}>
+      <Text variant="headlineMedium" style={styles.heading} accessibilityRole="header">
         {t('insurance.title')}
       </Text>
 
@@ -186,10 +207,10 @@ export default function InsuranceScreen() {
               </View>
               <View style={[
                 styles.statusBadge,
-                { backgroundColor: policy.status === 'active' ? '#E8F5E9' : '#FFEBEE' },
+                { backgroundColor: policy.status === 'active' ? statusColors.healthyBg : statusColors.urgentBg },
               ]}>
                 <Text style={{
-                  color: policy.status === 'active' ? statusColors.healthy : statusColors.urgent,
+                  color: policy.status === 'active' ? statusColors.healthy : colors.error,
                   fontWeight: 'bold',
                   fontSize: 12,
                 }}>
@@ -225,6 +246,8 @@ export default function InsuranceScreen() {
         }}
         style={styles.claimButton}
         contentStyle={styles.claimContent}
+        accessibilityLabel={t('insurance.fileClaim')}
+        accessibilityRole="button"
       >
         {t('insurance.fileClaim')}
       </Button>
@@ -255,8 +278,9 @@ export default function InsuranceScreen() {
             mode="outlined"
             keyboardType="numeric"
             style={styles.calcInput}
-            outlineColor="#BDBDBD"
+            outlineColor={colors.outlineVariant}
             activeOutlineColor={colors.primary}
+            accessibilityLabel={t('animals.age')}
           />
 
           <Button
@@ -264,6 +288,8 @@ export default function InsuranceScreen() {
             onPress={calculatePremium}
             style={styles.calcButton}
             contentStyle={{ minHeight: TOUCH_TARGET_MIN }}
+            accessibilityLabel={t('insurance.calculate')}
+            accessibilityRole="button"
           >
             {t('insurance.calculate')}
           </Button>
@@ -272,7 +298,7 @@ export default function InsuranceScreen() {
             <View style={styles.resultBox}>
               <Text variant="bodyLarge">{t('insurance.estimatedPremium')}</Text>
               <Text variant="headlineMedium" style={styles.resultAmount}>
-                \u20B9{calcResult}/year
+                \u20B9{calcResult}/{t('insurance.perYear')}
               </Text>
             </View>
           )}
@@ -293,7 +319,7 @@ export default function InsuranceScreen() {
               icon="close"
               size={24}
               onPress={() => setClaimVisible(false)}
-              accessibilityLabel="Close claim form"
+              accessibilityLabel={t('a11y.closeClaimForm')}
             />
           </View>
           <TextInput
@@ -304,7 +330,7 @@ export default function InsuranceScreen() {
             multiline
             numberOfLines={4}
             style={styles.calcInput}
-            outlineColor="#BDBDBD"
+            outlineColor={colors.outlineVariant}
             activeOutlineColor={colors.primary}
           />
           <Button
@@ -313,6 +339,8 @@ export default function InsuranceScreen() {
             onPress={showPhotoOptions}
             style={{ marginBottom: SPACING.md, borderColor: colors.primary }}
             contentStyle={{ minHeight: TOUCH_TARGET_MIN }}
+            accessibilityLabel={photoUri ? t('insurance.changePhoto') : t('insurance.addPhoto')}
+            accessibilityRole="button"
           >
             {photoUri ? t('insurance.changePhoto') : t('insurance.addPhoto')}
           </Button>
@@ -325,6 +353,8 @@ export default function InsuranceScreen() {
             mode="contained"
             loading={uploading}
             disabled={uploading}
+            accessibilityLabel={t('common.submit')}
+            accessibilityRole="button"
             onPress={async () => {
               setUploading(true);
               try {
@@ -333,15 +363,15 @@ export default function InsuranceScreen() {
                   await uploadPhoto(photoUri, claimAnimalId);
                 }
                 showSuccess(t('insurance.claimSubmitted'));
+                setClaimVisible(false);
+                setClaimDesc('');
+                setPhotoUri(null);
+                setClaimAnimalId(null);
               } catch (e) {
                 showError(e instanceof Error ? e.message : t('insurance.claimFailed'));
               } finally {
                 setUploading(false);
               }
-              setClaimVisible(false);
-              setClaimDesc('');
-              setPhotoUri(null);
-              setClaimAnimalId(null);
             }}
             style={styles.calcButton}
             contentStyle={{ minHeight: TOUCH_TARGET_MIN }}
@@ -357,7 +387,7 @@ export default function InsuranceScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surface,
   },
   content: {
     padding: SPACING.md,
@@ -449,7 +479,7 @@ const styles = StyleSheet.create({
   resultBox: {
     marginTop: SPACING.md,
     padding: SPACING.md,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: statusColors.healthyBg,
     borderRadius: 12,
     alignItems: 'center',
   },

@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
 
 from tests.conftest import FARMER_USER_ID
@@ -41,9 +40,7 @@ def _mock_animal(user_id: str = FARMER_USER_ID) -> MagicMock:
 
 
 class TestLogHealthEvent:
-    async def test_log_health_event_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_log_health_event_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST with valid symptoms returns 201."""
         animal = _mock_animal()
         result = MagicMock()
@@ -126,9 +123,7 @@ class TestLogHealthEvent:
 
 
 class TestGetHealthHistory:
-    async def test_get_history_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_history_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with paginated data."""
         animal = _mock_animal()
         animal_result = MagicMock()
@@ -141,9 +136,7 @@ class TestGetHealthHistory:
         data_result = MagicMock()
         data_result.scalars.return_value.all.return_value = [event]
 
-        mock_db.execute = AsyncMock(
-            side_effect=[animal_result, count_result, data_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[animal_result, count_result, data_result])
 
         resp = await client.get(f"/v1/health/history/{animal.id}")
         assert resp.status_code == 200
@@ -169,9 +162,7 @@ class TestGetHealthHistory:
 
 
 class TestListHealthEvents:
-    async def test_list_events_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_events_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with paginated data."""
         count_result = MagicMock()
         count_result.scalar.return_value = 0

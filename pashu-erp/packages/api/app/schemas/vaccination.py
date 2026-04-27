@@ -11,6 +11,7 @@ from pydantic import BaseModel
 # Species breakdown
 # ---------------------------------------------------------------------------
 
+
 class SpeciesBreakdownItem(BaseModel):
     species: str
     vaccination_count: int
@@ -24,6 +25,7 @@ class SpeciesBreakdownResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Village coverage
 # ---------------------------------------------------------------------------
+
 
 class VillageCoverageItem(BaseModel):
     village_code: str | None = None
@@ -40,6 +42,7 @@ class VillageCoverageResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Vaccination schedule
 # ---------------------------------------------------------------------------
+
 
 class ScheduleEntry(BaseModel):
     vaccine: str
@@ -64,6 +67,7 @@ class SpeciesScheduleResponse(BaseModel):
 # Due vaccinations
 # ---------------------------------------------------------------------------
 
+
 class DueVaccinationItem(BaseModel):
     vaccine: str | None = None
     due_date: str | None = None
@@ -82,6 +86,7 @@ class DueVaccinationsResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Village coverage (single village)
 # ---------------------------------------------------------------------------
+
 
 class SingleVillageCoverage(BaseModel):
     village_code: str

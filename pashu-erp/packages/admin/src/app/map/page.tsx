@@ -1,32 +1,36 @@
 "use client";
 
-import { useEffect } from "react";
 import { useList } from "@refinedev/core";
 import { Box, Typography, Paper, CircularProgress, Alert } from "@mui/material";
 import GISMap, { MapPoint } from "@/components/GISMap";
 import { colors } from "@/theme/theme";
 
 export default function MapPage() {
-  useEffect(() => {
-    document.title = 'Map View — PashuRaksha ERP';
-  }, []);
+  // API may return extra fields (lon, risk_score, village_code, disease_name)
+  interface RawMapPoint extends Omit<MapPoint, 'type'> {
+    type?: string;
+    lon?: number;
+    risk_score?: number;
+    village_code?: string;
+    disease_name?: string;
+  }
 
-  const { data, isLoading, isError } = useList<MapPoint>({ resource: "map/points" });
+  const { data, isLoading, isError } = useList<RawMapPoint>({ resource: "map/points" });
 
-  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress /></Box>;
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }} role="status" aria-label="Loading map data"><CircularProgress /></Box>;
   if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
 
   // Map API response format to GISMap MapPoint format
   const rawPoints = data?.data ?? [];
   const allPoints: MapPoint[] = rawPoints
-    .filter((p: Record<string, unknown>) => p.lat != null && (p.lng != null || p.lon != null))
-    .map((p: Record<string, unknown>) => ({
-      id: String(p.id ?? p.village_code ?? Math.random()),
+    .filter((p) => p.lat != null && (p.lng != null || p.lon != null))
+    .map((p, idx) => ({
+      id: String(p.id ?? p.village_code ?? `point-${p.lat}-${p.lng}-${idx}`),
       lat: Number(p.lat),
       lng: Number(p.lng ?? p.lon),
       label: String(p.label ?? p.disease_name ?? ""),
       details: p.details ? String(p.details) : undefined,
-      severity: p.severity as MapPoint["severity"] ?? (p.risk_score != null ? (Number(p.risk_score) >= 0.8 ? "critical" : Number(p.risk_score) >= 0.6 ? "high" : "medium") : undefined),
+      severity: p.severity ?? (p.risk_score != null ? (p.risk_score >= 0.8 ? "critical" : p.risk_score >= 0.6 ? "high" : "medium") : undefined),
       type: p.type === "health_alert" || p.type === "community_alert" ? "alert" as const
         : p.type === "milk_center" ? "center" as const
         : p.type === "farmer_cluster" ? "farmer" as const
@@ -65,7 +69,7 @@ export default function MapPage() {
           {[
             { color: colors.accentRed, label: "Critical Alert" },
             { color: colors.accentAmber, label: "High Alert" },
-            { color: "#fbc02d", label: "Medium Alert" },
+            { color: colors.accentAmber, label: "Medium Alert" },
             { color: colors.accentBlue, label: "Milk Center" },
             { color: colors.accentGreen, label: "Farmer Location" },
           ].map((item) => (

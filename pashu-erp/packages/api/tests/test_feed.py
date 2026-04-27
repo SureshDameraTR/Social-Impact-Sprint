@@ -3,7 +3,6 @@
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from httpx import AsyncClient
 
 
@@ -26,9 +25,7 @@ def _mock_ingredient() -> MagicMock:
 
 
 class TestListIngredients:
-    async def test_list_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with ingredient list."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []
@@ -51,19 +48,20 @@ class TestListIngredients:
 class TestCalculateRation:
     async def test_calculate_success(self, client: AsyncClient) -> None:
         """POST with valid data returns 200."""
-        mock_result = MagicMock()
-        mock_result.model_dump = MagicMock
+        from app.schemas.feed import RationIngredient, RationResult
+
+        mock_result = RationResult(
+            ingredients=[
+                RationIngredient(name="Green Fodder (Napier)", daily_qty_kg=15.0),
+                RationIngredient(name="Concentrate Mix", daily_qty_kg=3.9),
+            ],
+            total_cost_per_day=131.80,
+            protein_balance="Balanced",
+            energy_balance="Adequate",
+        )
         with patch(
             "app.routers.feed.calculate_ration",
-            return_value=MagicMock(
-                species="cattle",
-                weight_kg=400,
-                daily_dm_kg=10.0,
-                daily_cp_kg=1.2,
-                daily_tdn_kg=6.0,
-                ration=[],
-                notes=[],
-            ),
+            return_value=mock_result,
         ):
             resp = await client.post(
                 "/v1/feed/calculate-ration",

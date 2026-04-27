@@ -94,7 +94,7 @@ export default function AnimalDetailScreen() {
         <Text variant="headlineMedium" style={styles.name}>{animal.name}</Text>
         <View style={[
           styles.healthBadge,
-          { backgroundColor: animal.healthStatus === 'healthy' ? '#C8E6C9' : '#FFCDD2' },
+          { backgroundColor: animal.healthStatus === 'healthy' ? colors.primaryContainer : colors.errorContainer },
         ]}>
           <Text style={[
             styles.healthText,
@@ -152,19 +152,19 @@ export default function AnimalDetailScreen() {
           icon="delete"
           onPress={() => {
             Alert.alert(
-              t('animal.deleteTitle') ?? 'Delete Animal',
-              t('animal.deleteConfirm') ?? 'Are you sure? This cannot be undone.',
+              t('animals.deleteTitle'),
+              t('animals.deleteConfirm'),
               [
-                { text: t('common.cancel') ?? 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                  text: t('common.delete') ?? 'Delete',
+                  text: t('common.delete'),
                   style: 'destructive',
                   onPress: async () => {
                     try {
                       await api.delete(`/animals/${id}`);
                       router.back();
                     } catch (e) {
-                      setError(e instanceof Error ? e.message : 'An error occurred');
+                      setError(e instanceof Error ? e.message : t('common.error'));
                     }
                   },
                 },
@@ -184,7 +184,7 @@ export default function AnimalDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surface,
   },
   scroll: {
     padding: SPACING.md,
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: CARD_BORDER_RADIUS,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.onPrimary,
   },
   detailRow: {
     flexDirection: 'row',
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
   },
   detailLabel: {
-    color: '#616161',
+    color: colors.onSurfaceVariant,
   },
   detailValue: {
     fontWeight: '600',
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   quickCard: {
     flex: 1,
     borderRadius: CARD_BORDER_RADIUS,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.onPrimary,
   },
   quickContent: {
     alignItems: 'center',

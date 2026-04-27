@@ -4,9 +4,7 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
-import pytest
 from httpx import AsyncClient
-
 
 # ---------------------------------------------------------------------------
 # GET /v1/registry/lookup/{pashu_aadhaar_id}
@@ -20,7 +18,8 @@ class TestLookupAnimal:
             "pashu_aadhaar_id": "123456789012",
             "species": "cattle",
             "breed": "Gir",
-            "owner_name": "Lakshmi",
+            "sex": "female",
+            "owner": {"name": "Lakshmi"},
         }
         with patch(
             "app.routers.bharat_pashudhan.lookup_animal",
@@ -47,9 +46,7 @@ class TestLookupAnimal:
         mock_resp = MagicMock()
         mock_resp.status_code = 503
         mock_resp.text = "Service unavailable"
-        exc = httpx.HTTPStatusError(
-            "error", request=MagicMock(), response=mock_resp
-        )
+        exc = httpx.HTTPStatusError("error", request=MagicMock(), response=mock_resp)
         with patch(
             "app.routers.bharat_pashudhan.lookup_animal",
             new_callable=AsyncMock,
@@ -71,7 +68,11 @@ class TestSyncAnimal:
         with patch(
             "app.routers.bharat_pashudhan.sync_animal",
             new_callable=AsyncMock,
-            return_value={"synced": True, "animal_id": str(animal_id)},
+            return_value={
+                "status": "synced",
+                "animal_id": str(animal_id),
+                "last_sync": "2026-04-16T00:00:00Z",
+            },
         ):
             resp = await client.post(f"/v1/registry/sync/{animal_id}")
             assert resp.status_code == 200
@@ -81,9 +82,7 @@ class TestSyncAnimal:
         mock_resp = MagicMock()
         mock_resp.status_code = 503
         mock_resp.text = "unavailable"
-        exc = httpx.HTTPStatusError(
-            "error", request=MagicMock(), response=mock_resp
-        )
+        exc = httpx.HTTPStatusError("error", request=MagicMock(), response=mock_resp)
         with patch(
             "app.routers.bharat_pashudhan.sync_animal",
             new_callable=AsyncMock,

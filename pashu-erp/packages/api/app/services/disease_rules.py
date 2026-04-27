@@ -6,7 +6,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
     "cattle": [
         {
             "disease": "Foot and Mouth Disease (FMD)",
-            "symptoms": ["fever", "drooling", "blisters_mouth", "lameness", "reduced_milk", "blisters_feet"],
+            "symptoms": [
+                "fever",
+                "drooling",
+                "blisters_mouth",
+                "lameness",
+                "reduced_milk",
+                "blisters_feet",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "Isolate immediately. Contact veterinarian. Do NOT move animal. Report to district veterinary officer.",
@@ -14,7 +21,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Mastitis",
-            "symptoms": ["swollen_udder", "hot_udder", "clots_in_milk", "reduced_milk", "fever", "pain_on_milking"],
+            "symptoms": [
+                "swollen_udder",
+                "hot_udder",
+                "clots_in_milk",
+                "reduced_milk",
+                "fever",
+                "pain_on_milking",
+            ],
             "min_match": 2,
             "risk_level": "high",
             "action": "Stop milking affected quarters. Apply cold compress. Consult vet for antibiotics.",
@@ -22,7 +36,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Brucellosis",
-            "symptoms": ["abortion", "retained_placenta", "swollen_joints", "fever", "reduced_milk", "infertility"],
+            "symptoms": [
+                "abortion",
+                "retained_placenta",
+                "swollen_joints",
+                "fever",
+                "reduced_milk",
+                "infertility",
+            ],
             "min_match": 2,
             "risk_level": "critical",
             "action": "Isolate animal. Test entire herd. Do NOT consume raw milk. Report to authorities.",
@@ -30,7 +51,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Hemorrhagic Septicemia (HS)",
-            "symptoms": ["high_fever", "swollen_throat", "difficulty_breathing", "drooling", "nasal_discharge", "sudden_death"],
+            "symptoms": [
+                "high_fever",
+                "swollen_throat",
+                "difficulty_breathing",
+                "drooling",
+                "nasal_discharge",
+                "sudden_death",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "Emergency vet call. Administer antibiotics immediately. Vaccinate rest of herd.",
@@ -38,7 +66,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Black Quarter (BQ)",
-            "symptoms": ["high_fever", "swollen_leg", "lameness", "crepitant_swelling", "sudden_death", "loss_of_appetite"],
+            "symptoms": [
+                "high_fever",
+                "swollen_leg",
+                "lameness",
+                "crepitant_swelling",
+                "sudden_death",
+                "loss_of_appetite",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "Emergency vet treatment with penicillin. Vaccinate rest of herd immediately.",
@@ -46,7 +81,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Theileriosis (Tropical Theileriosis)",
-            "symptoms": ["high_fever", "swollen_lymph_nodes", "anaemia", "jaundice", "reduced_milk", "loss_of_appetite"],
+            "symptoms": [
+                "high_fever",
+                "swollen_lymph_nodes",
+                "anaemia",
+                "jaundice",
+                "reduced_milk",
+                "loss_of_appetite",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Administer buparvaquone injection. Tick control measures. Supportive therapy.",
@@ -54,7 +96,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Babesiosis (Tick Fever)",
-            "symptoms": ["high_fever", "red_urine", "anaemia", "jaundice", "loss_of_appetite", "weakness"],
+            "symptoms": [
+                "high_fever",
+                "red_urine",
+                "anaemia",
+                "jaundice",
+                "loss_of_appetite",
+                "weakness",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Administer diminazene aceturate. Tick control. IV fluids for dehydration.",
@@ -62,7 +111,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Anaplasmosis",
-            "symptoms": ["fever", "anaemia", "jaundice", "weakness", "loss_of_appetite", "constipation"],
+            "symptoms": [
+                "fever",
+                "anaemia",
+                "jaundice",
+                "weakness",
+                "loss_of_appetite",
+                "constipation",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Oxytetracycline treatment. Blood transfusion if severe. Tick control.",
@@ -70,7 +126,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Bloat (Ruminal Tympany)",
-            "symptoms": ["distended_abdomen", "difficulty_breathing", "restlessness", "stops_eating", "salivation"],
+            "symptoms": [
+                "distended_abdomen",
+                "difficulty_breathing",
+                "restlessness",
+                "stops_eating",
+                "salivation",
+            ],
             "min_match": 2,
             "risk_level": "high",
             "action": "Emergency trocarization if severe. Administer anti-bloat agent. Walk animal gently.",
@@ -78,7 +140,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Milk Fever (Hypocalcemia)",
-            "symptoms": ["weakness", "unable_to_stand", "cold_ears", "muscle_tremors", "dilated_pupils", "reduced_milk"],
+            "symptoms": [
+                "weakness",
+                "unable_to_stand",
+                "cold_ears",
+                "muscle_tremors",
+                "dilated_pupils",
+                "reduced_milk",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "IV calcium borogluconate immediately. Keep animal warm. Prevent aspiration.",
@@ -86,7 +155,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Ketosis",
-            "symptoms": ["loss_of_appetite", "reduced_milk", "rapid_weight_loss", "sweet_breath", "lethargy", "constipation"],
+            "symptoms": [
+                "loss_of_appetite",
+                "reduced_milk",
+                "rapid_weight_loss",
+                "sweet_breath",
+                "lethargy",
+                "constipation",
+            ],
             "min_match": 3,
             "risk_level": "medium",
             "action": "Administer propylene glycol orally. IV dextrose. Increase energy in diet.",
@@ -94,7 +170,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Retained Placenta",
-            "symptoms": ["retained_placenta", "foul_discharge", "fever", "loss_of_appetite", "reduced_milk"],
+            "symptoms": [
+                "retained_placenta",
+                "foul_discharge",
+                "fever",
+                "loss_of_appetite",
+                "reduced_milk",
+            ],
             "min_match": 2,
             "risk_level": "high",
             "action": "Do NOT pull manually. Administer oxytocin. Antibiotics to prevent infection.",
@@ -102,7 +184,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Metritis",
-            "symptoms": ["foul_discharge", "fever", "loss_of_appetite", "reduced_milk", "straining"],
+            "symptoms": [
+                "foul_discharge",
+                "fever",
+                "loss_of_appetite",
+                "reduced_milk",
+                "straining",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Intrauterine antibiotics. Systemic antibiotics. Hormonal therapy.",
@@ -110,7 +198,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Johne's Disease (Paratuberculosis)",
-            "symptoms": ["chronic_diarrhea", "weight_loss", "reduced_milk", "bottle_jaw", "normal_appetite"],
+            "symptoms": [
+                "chronic_diarrhea",
+                "weight_loss",
+                "reduced_milk",
+                "bottle_jaw",
+                "normal_appetite",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "No cure. Cull positive animals. Test herd. Improve hygiene.",
@@ -118,7 +212,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Infectious Bovine Rhinotracheitis (IBR)",
-            "symptoms": ["nasal_discharge", "fever", "red_eyes", "cough", "reduced_milk", "abortion"],
+            "symptoms": [
+                "nasal_discharge",
+                "fever",
+                "red_eyes",
+                "cough",
+                "reduced_milk",
+                "abortion",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Isolate. Supportive treatment. Vaccinate herd. No specific antiviral.",
@@ -126,7 +227,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Bovine Viral Diarrhea (BVD)",
-            "symptoms": ["diarrhea", "fever", "nasal_discharge", "mouth_ulcers", "reduced_milk", "abortion"],
+            "symptoms": [
+                "diarrhea",
+                "fever",
+                "nasal_discharge",
+                "mouth_ulcers",
+                "reduced_milk",
+                "abortion",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Identify and remove persistently infected animals. Vaccinate herd.",
@@ -134,7 +242,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Lumpy Skin Disease (LSD)",
-            "symptoms": ["skin_nodules", "fever", "swollen_lymph_nodes", "reduced_milk", "nasal_discharge", "lameness"],
+            "symptoms": [
+                "skin_nodules",
+                "fever",
+                "swollen_lymph_nodes",
+                "reduced_milk",
+                "nasal_discharge",
+                "lameness",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "Isolate immediately. Notify authorities. Supportive care. Vector control.",
@@ -142,7 +257,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Anthrax",
-            "symptoms": ["sudden_death", "bleeding_from_orifices", "high_fever", "swelling", "difficulty_breathing"],
+            "symptoms": [
+                "sudden_death",
+                "bleeding_from_orifices",
+                "high_fever",
+                "swelling",
+                "difficulty_breathing",
+            ],
             "min_match": 2,
             "risk_level": "critical",
             "action": "DO NOT open carcass. Report immediately. Penicillin if alive. Quarantine area.",
@@ -150,7 +271,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Bovine Tuberculosis",
-            "symptoms": ["chronic_cough", "weight_loss", "reduced_milk", "swollen_lymph_nodes", "fever"],
+            "symptoms": [
+                "chronic_cough",
+                "weight_loss",
+                "reduced_milk",
+                "swollen_lymph_nodes",
+                "fever",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "Tuberculin test herd. Cull positive animals. Do NOT consume raw milk.",
@@ -166,7 +293,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Acidosis (Grain Overload)",
-            "symptoms": ["diarrhea", "loss_of_appetite", "dehydration", "weakness", "bloat", "teeth_grinding"],
+            "symptoms": [
+                "diarrhea",
+                "loss_of_appetite",
+                "dehydration",
+                "weakness",
+                "bloat",
+                "teeth_grinding",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Rumen lavage in severe cases. Oral antacids. Gradual diet correction.",
@@ -176,7 +310,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
     "buffalo": [
         {
             "disease": "Foot and Mouth Disease (FMD)",
-            "symptoms": ["fever", "drooling", "blisters_mouth", "lameness", "reduced_milk", "blisters_feet"],
+            "symptoms": [
+                "fever",
+                "drooling",
+                "blisters_mouth",
+                "lameness",
+                "reduced_milk",
+                "blisters_feet",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "Isolate immediately. Contact veterinarian. Do NOT move animal. Report to district veterinary officer.",
@@ -184,7 +325,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Mastitis",
-            "symptoms": ["swollen_udder", "hot_udder", "clots_in_milk", "reduced_milk", "fever", "pain_on_milking"],
+            "symptoms": [
+                "swollen_udder",
+                "hot_udder",
+                "clots_in_milk",
+                "reduced_milk",
+                "fever",
+                "pain_on_milking",
+            ],
             "min_match": 2,
             "risk_level": "high",
             "action": "Stop milking affected quarters. Apply cold compress. Consult vet for antibiotics. Buffaloes are more susceptible due to pendulous udder.",
@@ -192,7 +340,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Hemorrhagic Septicemia (HS)",
-            "symptoms": ["high_fever", "swollen_throat", "difficulty_breathing", "drooling", "nasal_discharge", "sudden_death"],
+            "symptoms": [
+                "high_fever",
+                "swollen_throat",
+                "difficulty_breathing",
+                "drooling",
+                "nasal_discharge",
+                "sudden_death",
+            ],
             "min_match": 2,
             "risk_level": "critical",
             "action": "Emergency vet call. Administer antibiotics immediately. Vaccinate rest of herd. Buffaloes are highly susceptible — pre-monsoon vaccination essential.",
@@ -200,7 +355,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Black Quarter (BQ)",
-            "symptoms": ["high_fever", "swollen_leg", "lameness", "crepitant_swelling", "sudden_death", "loss_of_appetite"],
+            "symptoms": [
+                "high_fever",
+                "swollen_leg",
+                "lameness",
+                "crepitant_swelling",
+                "sudden_death",
+                "loss_of_appetite",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "Emergency vet treatment with penicillin. Vaccinate rest of herd immediately.",
@@ -208,7 +370,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Brucellosis",
-            "symptoms": ["abortion", "retained_placenta", "swollen_joints", "fever", "reduced_milk", "infertility"],
+            "symptoms": [
+                "abortion",
+                "retained_placenta",
+                "swollen_joints",
+                "fever",
+                "reduced_milk",
+                "infertility",
+            ],
             "min_match": 2,
             "risk_level": "critical",
             "action": "Isolate animal. Test entire herd. Do NOT consume raw milk. Report to authorities.",
@@ -216,7 +385,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Theileriosis (Tropical Theileriosis)",
-            "symptoms": ["high_fever", "swollen_lymph_nodes", "anaemia", "jaundice", "reduced_milk", "loss_of_appetite"],
+            "symptoms": [
+                "high_fever",
+                "swollen_lymph_nodes",
+                "anaemia",
+                "jaundice",
+                "reduced_milk",
+                "loss_of_appetite",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Administer buparvaquone injection. Tick control measures. Supportive therapy.",
@@ -224,7 +400,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Bloat (Ruminal Tympany)",
-            "symptoms": ["distended_abdomen", "difficulty_breathing", "restlessness", "stops_eating", "salivation"],
+            "symptoms": [
+                "distended_abdomen",
+                "difficulty_breathing",
+                "restlessness",
+                "stops_eating",
+                "salivation",
+            ],
             "min_match": 2,
             "risk_level": "high",
             "action": "Emergency trocarization if severe. Administer anti-bloat agent. Walk animal gently. Buffaloes on lush green fodder are at higher risk.",
@@ -232,7 +414,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Milk Fever (Hypocalcemia)",
-            "symptoms": ["weakness", "unable_to_stand", "cold_ears", "muscle_tremors", "dilated_pupils", "reduced_milk"],
+            "symptoms": [
+                "weakness",
+                "unable_to_stand",
+                "cold_ears",
+                "muscle_tremors",
+                "dilated_pupils",
+                "reduced_milk",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "IV calcium borogluconate immediately. Keep animal warm. Prevent aspiration. Common in high-yielding Murrah buffaloes post-calving.",
@@ -240,7 +429,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Ketosis",
-            "symptoms": ["loss_of_appetite", "reduced_milk", "rapid_weight_loss", "sweet_breath", "lethargy", "constipation"],
+            "symptoms": [
+                "loss_of_appetite",
+                "reduced_milk",
+                "rapid_weight_loss",
+                "sweet_breath",
+                "lethargy",
+                "constipation",
+            ],
             "min_match": 2,
             "risk_level": "high",
             "action": "Administer propylene glycol orally. IV dextrose. Increase energy in diet. More common in high-yielding buffaloes in early lactation.",
@@ -248,7 +444,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Babesiosis (Tick Fever)",
-            "symptoms": ["high_fever", "red_urine", "anaemia", "jaundice", "loss_of_appetite", "weakness"],
+            "symptoms": [
+                "high_fever",
+                "red_urine",
+                "anaemia",
+                "jaundice",
+                "loss_of_appetite",
+                "weakness",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Administer diminazene aceturate. Tick control. IV fluids for dehydration.",
@@ -256,7 +459,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Retained Placenta",
-            "symptoms": ["retained_placenta", "foul_discharge", "fever", "loss_of_appetite", "reduced_milk"],
+            "symptoms": [
+                "retained_placenta",
+                "foul_discharge",
+                "fever",
+                "loss_of_appetite",
+                "reduced_milk",
+            ],
             "min_match": 2,
             "risk_level": "high",
             "action": "Do NOT pull manually. Administer oxytocin. Antibiotics to prevent infection. Higher incidence in buffaloes than cattle.",
@@ -272,7 +481,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Lumpy Skin Disease (LSD)",
-            "symptoms": ["skin_nodules", "fever", "swollen_lymph_nodes", "reduced_milk", "nasal_discharge", "lameness"],
+            "symptoms": [
+                "skin_nodules",
+                "fever",
+                "swollen_lymph_nodes",
+                "reduced_milk",
+                "nasal_discharge",
+                "lameness",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "Isolate immediately. Notify authorities. Supportive care. Vector control.",
@@ -280,7 +496,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Anthrax",
-            "symptoms": ["sudden_death", "bleeding_from_orifices", "high_fever", "swelling", "difficulty_breathing"],
+            "symptoms": [
+                "sudden_death",
+                "bleeding_from_orifices",
+                "high_fever",
+                "swelling",
+                "difficulty_breathing",
+            ],
             "min_match": 2,
             "risk_level": "critical",
             "action": "DO NOT open carcass. Report immediately. Penicillin if alive. Quarantine area.",
@@ -288,7 +510,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Acidosis (Grain Overload)",
-            "symptoms": ["diarrhea", "loss_of_appetite", "dehydration", "weakness", "bloat", "teeth_grinding"],
+            "symptoms": [
+                "diarrhea",
+                "loss_of_appetite",
+                "dehydration",
+                "weakness",
+                "bloat",
+                "teeth_grinding",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Rumen lavage in severe cases. Oral antacids. Gradual diet correction.",
@@ -298,7 +527,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
     "goat": [
         {
             "disease": "Peste des Petits Ruminants (PPR)",
-            "symptoms": ["fever", "nasal_discharge", "mouth_ulcers", "diarrhea", "cough", "eye_discharge"],
+            "symptoms": [
+                "fever",
+                "nasal_discharge",
+                "mouth_ulcers",
+                "diarrhea",
+                "cough",
+                "eye_discharge",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "Isolate. No specific treatment. Supportive care. Vaccinate rest of flock.",
@@ -306,7 +542,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Enterotoxemia",
-            "symptoms": ["sudden_death", "convulsions", "bloat", "diarrhea", "loss_of_appetite", "abdominal_pain"],
+            "symptoms": [
+                "sudden_death",
+                "convulsions",
+                "bloat",
+                "diarrhea",
+                "loss_of_appetite",
+                "abdominal_pain",
+            ],
             "min_match": 2,
             "risk_level": "critical",
             "action": "Antitoxin if caught early. Vaccinate entire flock. Regulate feeding.",
@@ -314,7 +557,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Goat Pox",
-            "symptoms": ["fever", "skin_nodules", "nasal_discharge", "eye_discharge", "loss_of_appetite"],
+            "symptoms": [
+                "fever",
+                "skin_nodules",
+                "nasal_discharge",
+                "eye_discharge",
+                "loss_of_appetite",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Isolate. Supportive treatment. Apply antiseptic on lesions. Vaccinate flock.",
@@ -322,7 +571,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Haemonchosis (Barber's Pole Worm)",
-            "symptoms": ["anaemia", "bottle_jaw", "weakness", "weight_loss", "diarrhea", "pale_gums"],
+            "symptoms": [
+                "anaemia",
+                "bottle_jaw",
+                "weakness",
+                "weight_loss",
+                "diarrhea",
+                "pale_gums",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Deworm with effective anthelmintic. FAMACHA scoring. Rotational grazing.",
@@ -330,7 +586,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Pneumonia",
-            "symptoms": ["cough", "nasal_discharge", "fever", "difficulty_breathing", "loss_of_appetite", "lethargy"],
+            "symptoms": [
+                "cough",
+                "nasal_discharge",
+                "fever",
+                "difficulty_breathing",
+                "loss_of_appetite",
+                "lethargy",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Antibiotics. Anti-inflammatory. Improve ventilation. Reduce stress.",
@@ -354,7 +617,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Johne's Disease (Caprine)",
-            "symptoms": ["chronic_diarrhea", "weight_loss", "normal_appetite", "rough_coat", "weakness"],
+            "symptoms": [
+                "chronic_diarrhea",
+                "weight_loss",
+                "normal_appetite",
+                "rough_coat",
+                "weakness",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "No cure. Cull positive animals. Improve hygiene. Test kids from positive does.",
@@ -370,7 +639,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Contagious Caprine Pleuropneumonia (CCPP)",
-            "symptoms": ["cough", "difficulty_breathing", "nasal_discharge", "fever", "loss_of_appetite", "head_extended"],
+            "symptoms": [
+                "cough",
+                "difficulty_breathing",
+                "nasal_discharge",
+                "fever",
+                "loss_of_appetite",
+                "head_extended",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "Oxytetracycline or tylosin antibiotics. Isolate. Vaccinate flock.",
@@ -394,7 +670,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Pregnancy Toxemia (Caprine)",
-            "symptoms": ["loss_of_appetite", "lethargy", "teeth_grinding", "sweet_breath", "unable_to_stand", "blindness"],
+            "symptoms": [
+                "loss_of_appetite",
+                "lethargy",
+                "teeth_grinding",
+                "sweet_breath",
+                "unable_to_stand",
+                "blindness",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Propylene glycol orally. IV dextrose. May require caesarean if near term.",
@@ -402,7 +685,12 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Caprine Bloat",
-            "symptoms": ["distended_abdomen", "difficulty_breathing", "restlessness", "stops_eating"],
+            "symptoms": [
+                "distended_abdomen",
+                "difficulty_breathing",
+                "restlessness",
+                "stops_eating",
+            ],
             "min_match": 2,
             "risk_level": "high",
             "action": "Stomach tube to release gas. Anti-foaming agent. Walk animal gently.",
@@ -410,7 +698,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Tetanus",
-            "symptoms": ["muscle_stiffness", "lock_jaw", "erect_ears", "erect_tail", "difficulty_eating", "convulsions"],
+            "symptoms": [
+                "muscle_stiffness",
+                "lock_jaw",
+                "erect_ears",
+                "erect_tail",
+                "difficulty_eating",
+                "convulsions",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "Tetanus antitoxin. Penicillin. Dark quiet environment. Usually fatal if untreated.",
@@ -420,7 +715,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
     "sheep": [
         {
             "disease": "Blue Tongue",
-            "symptoms": ["fever", "swollen_tongue", "blue_tongue", "drooling", "lameness", "nasal_discharge"],
+            "symptoms": [
+                "fever",
+                "swollen_tongue",
+                "blue_tongue",
+                "drooling",
+                "lameness",
+                "nasal_discharge",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "Supportive care. Anti-inflammatory drugs. Soft feed. Vector control. Vaccinate.",
@@ -428,7 +730,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Sheep Pox",
-            "symptoms": ["fever", "skin_nodules", "nasal_discharge", "eye_discharge", "loss_of_appetite", "swollen_lymph_nodes"],
+            "symptoms": [
+                "fever",
+                "skin_nodules",
+                "nasal_discharge",
+                "eye_discharge",
+                "loss_of_appetite",
+                "swollen_lymph_nodes",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "Isolate. Supportive care. Antiseptic on lesions. Vaccinate flock. Report to authorities.",
@@ -444,7 +753,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Haemonchosis (Ovine)",
-            "symptoms": ["anaemia", "bottle_jaw", "weakness", "weight_loss", "pale_gums", "diarrhea"],
+            "symptoms": [
+                "anaemia",
+                "bottle_jaw",
+                "weakness",
+                "weight_loss",
+                "pale_gums",
+                "diarrhea",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Deworm. FAMACHA scoring. Rotational grazing. Targeted selective treatment.",
@@ -452,7 +768,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Foot Rot (Ovine)",
-            "symptoms": ["lameness", "foul_smell_feet", "swollen_feet", "reluctance_to_walk", "grazing_on_knees"],
+            "symptoms": [
+                "lameness",
+                "foul_smell_feet",
+                "swollen_feet",
+                "reluctance_to_walk",
+                "grazing_on_knees",
+            ],
             "min_match": 2,
             "risk_level": "medium",
             "action": "Hoof trimming. Foot bath with zinc sulfate. Isolate affected. Keep dry.",
@@ -460,7 +782,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Ovine Pneumonia",
-            "symptoms": ["cough", "nasal_discharge", "fever", "difficulty_breathing", "loss_of_appetite"],
+            "symptoms": [
+                "cough",
+                "nasal_discharge",
+                "fever",
+                "difficulty_breathing",
+                "loss_of_appetite",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Antibiotics (oxytetracycline). Anti-inflammatory. Improve housing ventilation.",
@@ -468,7 +796,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Pregnancy Toxemia (Ovine)",
-            "symptoms": ["loss_of_appetite", "lethargy", "teeth_grinding", "sweet_breath", "unable_to_stand", "blindness"],
+            "symptoms": [
+                "loss_of_appetite",
+                "lethargy",
+                "teeth_grinding",
+                "sweet_breath",
+                "unable_to_stand",
+                "blindness",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Oral propylene glycol. IV glucose. Improve nutrition in late pregnancy.",
@@ -476,7 +811,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Braxy",
-            "symptoms": ["sudden_death", "high_fever", "abdominal_pain", "blood_stained_fluid", "loss_of_appetite"],
+            "symptoms": [
+                "sudden_death",
+                "high_fever",
+                "abdominal_pain",
+                "blood_stained_fluid",
+                "loss_of_appetite",
+            ],
             "min_match": 2,
             "risk_level": "critical",
             "action": "Usually fatal. Vaccinate flock. Avoid frosted pastures. Clostridial vaccine.",
@@ -492,7 +833,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Scrapie",
-            "symptoms": ["itching", "wool_loss", "incoordination", "weight_loss", "behavioral_changes", "tremors"],
+            "symptoms": [
+                "itching",
+                "wool_loss",
+                "incoordination",
+                "weight_loss",
+                "behavioral_changes",
+                "tremors",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "No treatment or cure. Cull affected animals. Genetic selection for resistance.",
@@ -502,7 +850,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
     "poultry": [
         {
             "disease": "Newcastle Disease (Ranikhet)",
-            "symptoms": ["respiratory_distress", "greenish_diarrhea", "twisted_neck", "paralysis", "drop_in_egg_production", "sudden_death"],
+            "symptoms": [
+                "respiratory_distress",
+                "greenish_diarrhea",
+                "twisted_neck",
+                "paralysis",
+                "drop_in_egg_production",
+                "sudden_death",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "No treatment. Cull affected birds. Vaccinate rest. Disinfect premises. Report to authorities.",
@@ -518,7 +873,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Avian Influenza (Bird Flu)",
-            "symptoms": ["sudden_death", "respiratory_distress", "swollen_head", "cyanosis_comb", "drop_in_egg_production", "diarrhea"],
+            "symptoms": [
+                "sudden_death",
+                "respiratory_distress",
+                "swollen_head",
+                "cyanosis_comb",
+                "drop_in_egg_production",
+                "diarrhea",
+            ],
             "min_match": 3,
             "risk_level": "critical",
             "action": "REPORT IMMEDIATELY to authorities. Cull all birds. Quarantine. Zoonotic risk.",
@@ -526,7 +888,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Infectious Bronchitis",
-            "symptoms": ["cough", "sneezing", "nasal_discharge", "drop_in_egg_production", "watery_eyes", "wet_droppings"],
+            "symptoms": [
+                "cough",
+                "sneezing",
+                "nasal_discharge",
+                "drop_in_egg_production",
+                "watery_eyes",
+                "wet_droppings",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Supportive care. Antibiotics for secondary infection. Vaccinate. Improve ventilation.",
@@ -534,7 +903,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Coccidiosis (Poultry)",
-            "symptoms": ["bloody_droppings", "weight_loss", "ruffled_feathers", "lethargy", "dehydration"],
+            "symptoms": [
+                "bloody_droppings",
+                "weight_loss",
+                "ruffled_feathers",
+                "lethargy",
+                "dehydration",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Amprolium in water. Sulfonamides. Improve litter management. Coccidiostat in feed.",
@@ -542,7 +917,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Fowl Pox",
-            "symptoms": ["wart_like_lesions", "scabs_on_comb", "drop_in_egg_production", "difficulty_breathing", "lesions_mouth"],
+            "symptoms": [
+                "wart_like_lesions",
+                "scabs_on_comb",
+                "drop_in_egg_production",
+                "difficulty_breathing",
+                "lesions_mouth",
+            ],
             "min_match": 2,
             "risk_level": "medium",
             "action": "Apply iodine on lesions. Antibiotics for secondary infection. Vaccinate flock.",
@@ -550,7 +931,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Infectious Bursal Disease (Gumboro / IBD)",
-            "symptoms": ["ruffled_feathers", "watery_diarrhea", "trembling", "loss_of_appetite", "dehydration", "sudden_death"],
+            "symptoms": [
+                "ruffled_feathers",
+                "watery_diarrhea",
+                "trembling",
+                "loss_of_appetite",
+                "dehydration",
+                "sudden_death",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "No specific treatment. Supportive care. Electrolytes. Vaccinate. Biosecurity.",
@@ -558,7 +946,13 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Fowl Cholera (Pasteurellosis)",
-            "symptoms": ["sudden_death", "swollen_wattles", "greenish_diarrhea", "difficulty_breathing", "loss_of_appetite"],
+            "symptoms": [
+                "sudden_death",
+                "swollen_wattles",
+                "greenish_diarrhea",
+                "difficulty_breathing",
+                "loss_of_appetite",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Sulfonamides or tetracycline. Improve sanitation. Vaccinate. Rodent control.",
@@ -566,7 +960,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "Mycoplasma Gallisepticum (CRD)",
-            "symptoms": ["cough", "nasal_discharge", "sneezing", "swollen_sinuses", "drop_in_egg_production", "foamy_eyes"],
+            "symptoms": [
+                "cough",
+                "nasal_discharge",
+                "sneezing",
+                "swollen_sinuses",
+                "drop_in_egg_production",
+                "foamy_eyes",
+            ],
             "min_match": 3,
             "risk_level": "medium",
             "action": "Tylosin or enrofloxacin antibiotics. Improve ventilation. Reduce stress.",
@@ -574,7 +975,14 @@ DISEASE_RULES: dict[str, list[dict[str, Any]]] = {
         },
         {
             "disease": "E. coli Infection (Colibacillosis)",
-            "symptoms": ["diarrhea", "ruffled_feathers", "lethargy", "swollen_joints", "respiratory_distress", "sudden_death"],
+            "symptoms": [
+                "diarrhea",
+                "ruffled_feathers",
+                "lethargy",
+                "swollen_joints",
+                "respiratory_distress",
+                "sudden_death",
+            ],
             "min_match": 3,
             "risk_level": "high",
             "action": "Antibiotic sensitivity test. Enrofloxacin or gentamicin. Improve water hygiene.",
@@ -640,7 +1048,9 @@ def evaluate_symptoms(species: str, symptoms: list[str]) -> dict:
     else:
         overall_risk = "low"
         risk_score = 0.1
-        recommended_action = "No matching disease pattern found. Monitor animal and consult vet if symptoms persist."
+        recommended_action = (
+            "No matching disease pattern found. Monitor animal and consult vet if symptoms persist."
+        )
 
     return {
         "matches": top_matches,

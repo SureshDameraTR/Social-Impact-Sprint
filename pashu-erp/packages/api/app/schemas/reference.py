@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 # Market rates
 # ---------------------------------------------------------------------------
 
+
 class MarketRateUpdate(BaseModel):
     product: str | None = Field(None, max_length=100)
     unit: str | None = Field(None, max_length=20)
@@ -39,11 +40,13 @@ class MarketRateRead(BaseModel):
 
 class MarketRateListResponse(BaseModel):
     data: list[MarketRateRead]
+    total: int
 
 
 # ---------------------------------------------------------------------------
 # Insurance premiums
 # ---------------------------------------------------------------------------
+
 
 class InsurancePremiumUpdate(BaseModel):
     species: str | None = Field(None, max_length=50)
@@ -68,11 +71,13 @@ class InsurancePremiumRead(BaseModel):
 
 class InsurancePremiumListResponse(BaseModel):
     data: list[InsurancePremiumRead]
+    total: int
 
 
 # ---------------------------------------------------------------------------
 # Medicine catalog
 # ---------------------------------------------------------------------------
+
 
 class MedicineCatalogRead(BaseModel):
     id: UUID
@@ -90,3 +95,4 @@ class MedicineCatalogRead(BaseModel):
 
 class MedicineCatalogListResponse(BaseModel):
     data: list[MedicineCatalogRead]
+    total: int

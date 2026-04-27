@@ -2,9 +2,7 @@
 
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
-
 
 # ---------------------------------------------------------------------------
 # GET /v1/map/points
@@ -12,9 +10,7 @@ from httpx import AsyncClient
 
 
 class TestGetMapPoints:
-    async def test_map_points_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_map_points_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with combined map data."""
         # Mock health events
         health_result = MagicMock()
@@ -37,8 +33,8 @@ class TestGetMapPoints:
         assert resp.status_code == 200
         body = resp.json()
         assert "total" in body
-        assert "points" in body
-        assert isinstance(body["points"], list)
+        assert "data" in body
+        assert isinstance(body["data"], list)
 
     async def test_map_points_no_auth(self, client_no_auth: AsyncClient) -> None:
         """GET without auth returns 401/403."""

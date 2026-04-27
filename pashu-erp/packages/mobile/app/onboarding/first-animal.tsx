@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
 import { Button, Text, TextInput, Chip } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { api } from '../../src/config/api';
-import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../../src/config/theme';
+import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors, statusColors } from '../../src/config/theme';
 
 const SPECIES_OPTIONS = [
   { key: 'cattle', emoji: '🐄', breeds: ['Hallikar', 'Amrit Mahal', 'Khillari', 'Deoni', 'Krishna Valley', 'HF Cross'] },
@@ -36,7 +36,7 @@ export default function FirstAnimalScreen() {
       </Text>
       <View style={styles.speciesGrid}>
         {SPECIES_OPTIONS.map((sp) => (
-          <TouchableOpacity
+          <Pressable
             key={sp.key}
             style={[
               styles.speciesCard,
@@ -46,7 +46,9 @@ export default function FirstAnimalScreen() {
               setSelectedSpecies(sp.key);
               setSelectedBreed(null);
             }}
-            activeOpacity={0.7}
+            accessibilityLabel={t(`animals.${sp.key}`)}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: selectedSpecies === sp.key }}
           >
             <Text style={styles.speciesEmoji}>{sp.emoji}</Text>
             <Text
@@ -58,7 +60,7 @@ export default function FirstAnimalScreen() {
             >
               {t(`animals.${sp.key}`)}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
 
@@ -92,8 +94,8 @@ export default function FirstAnimalScreen() {
         onChangeText={setAnimalName}
         mode="outlined"
         style={styles.input}
-        outlineColor="#BDBDBD"
-        activeOutlineColor="#2E7D32"
+        outlineColor={colors.outlineVariant}
+        activeOutlineColor={colors.primary}
         placeholder={t('onboarding.animalNamePlaceholder')}
       />
 
@@ -105,7 +107,7 @@ export default function FirstAnimalScreen() {
             await api.post('/animals', { species: selectedSpecies, breed: selectedBreed, name: animalName });
             router.push('/onboarding/tutorial');
           } catch (e) {
-            Alert.alert(t('common.error'), t('onboarding.saveFailed') ?? 'Failed to save animal. Please try again.');
+            Alert.alert(t('common.error'), t('onboarding.saveFailed'));
           } finally {
             setSaving(false);
           }
@@ -141,7 +143,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   heading: {
-    color: '#2E7D32',
+    color: statusColors.healthy,
     fontWeight: 'bold',
     marginBottom: SPACING.xs,
   },
@@ -173,8 +175,8 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   speciesCardSelected: {
-    borderColor: '#2E7D32',
-    backgroundColor: '#C8E6C9',
+    borderColor: statusColors.healthy,
+    backgroundColor: colors.secondaryContainer,
   },
   speciesEmoji: {
     fontSize: 48,
@@ -184,7 +186,7 @@ const styles = StyleSheet.create({
     color: '#616161',
   },
   speciesLabelSelected: {
-    color: '#1B5E20',
+    color: colors.onPrimaryContainer,
     fontWeight: 'bold',
   },
   breedRow: {
@@ -197,10 +199,10 @@ const styles = StyleSheet.create({
     minHeight: TOUCH_TARGET_MIN,
   },
   breedChipSelected: {
-    backgroundColor: '#C8E6C9',
+    backgroundColor: colors.secondaryContainer,
   },
   breedTextSelected: {
-    color: '#1B5E20',
+    color: colors.onPrimaryContainer,
   },
   input: {
     marginTop: SPACING.lg,
@@ -208,7 +210,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   addButton: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: statusColors.healthy,
     borderRadius: CARD_BORDER_RADIUS,
     marginTop: SPACING.md,
   },

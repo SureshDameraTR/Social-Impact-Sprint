@@ -1,14 +1,8 @@
 """Unit tests for User endpoints — /v1/farmers, /v1/users."""
 
-import uuid
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
-
-from tests.conftest import FARMER_USER_ID
-
 
 # ---------------------------------------------------------------------------
 # GET /v1/farmers — List (admin only)
@@ -16,9 +10,7 @@ from tests.conftest import FARMER_USER_ID
 
 
 class TestListFarmers:
-    async def test_list_as_admin(
-        self, client_as_admin: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_as_admin(self, client_as_admin: AsyncClient, mock_db: AsyncMock) -> None:
         """GET as admin returns 200 with paginated data."""
         count_result = MagicMock()
         count_result.scalar.return_value = 0
@@ -27,9 +19,7 @@ class TestListFarmers:
         animal_count_result = MagicMock()
         animal_count_result.all.return_value = []
 
-        mock_db.execute = AsyncMock(
-            side_effect=[count_result, user_result, animal_count_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[count_result, user_result, animal_count_result])
 
         resp = await client_as_admin.get("/v1/farmers")
         assert resp.status_code == 200
@@ -54,9 +44,7 @@ class TestListFarmers:
 
 
 class TestGetProfile:
-    async def test_profile_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_profile_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with user profile."""
         count_result = MagicMock()
         count_result.scalar.return_value = 3

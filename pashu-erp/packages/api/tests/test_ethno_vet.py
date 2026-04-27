@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
 
 
@@ -33,9 +32,7 @@ def _mock_remedy() -> MagicMock:
 
 
 class TestListRemedies:
-    async def test_list_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []
@@ -44,9 +41,7 @@ class TestListRemedies:
         resp = await client.get("/v1/ethno-vet/remedies")
         assert resp.status_code == 200
 
-    async def test_list_with_species_filter(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_with_species_filter(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with species filter returns 200."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []
@@ -78,9 +73,7 @@ class TestListRemedies:
 
 
 class TestGetRemedy:
-    async def test_get_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 for existing remedy."""
         remedy = _mock_remedy()
         result = MagicMock()
@@ -90,9 +83,7 @@ class TestGetRemedy:
         resp = await client.get(f"/v1/ethno-vet/remedies/{remedy.id}")
         assert resp.status_code == 200
 
-    async def test_get_not_found(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_not_found(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with nonexistent ID returns 404."""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
@@ -108,9 +99,7 @@ class TestGetRemedy:
 
 
 class TestSearchRemedies:
-    async def test_search_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_search_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with valid query returns 200."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []

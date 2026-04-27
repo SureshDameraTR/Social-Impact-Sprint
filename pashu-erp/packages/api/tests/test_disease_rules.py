@@ -1,25 +1,25 @@
 """Tests for the rule-based disease triage engine (app.services.disease_rules).
 
-Covers all 4 species, exact symptom matching logic, scoring, sorting,
+Covers all 5 species, exact symptom matching logic, scoring, sorting,
 edge cases (unknown species, empty symptoms, below-threshold matches),
 and the 55+ rules comprehensively.
 """
 
 from app.services.disease_rules import DISEASE_RULES, evaluate_symptoms
 
-
 # ---------------------------------------------------------------------------
 # Cattle — known symptom combinations
 # ---------------------------------------------------------------------------
 
-class TestCattleDiseaseMatching:
 
+class TestCattleDiseaseMatching:
     def test_fmd_classic_symptoms(self):
         """FMD requires min_match=3; supplying 4 classic symptoms should match."""
         result = evaluate_symptoms("cattle", ["fever", "drooling", "blisters_mouth", "lameness"])
         matches = result["matches"]
         assert len(matches) >= 1
-        fmd = next(m for m in matches if "FMD" in m["disease"])
+        fmd = next((m for m in matches if "FMD" in m["disease"]), None)
+        assert fmd is not None, "Expected FMD match not found"
         assert fmd["match_count"] >= 3
         assert fmd["risk_level"] == "critical"
         assert result["risk_level"] == "critical"
@@ -41,20 +41,26 @@ class TestCattleDiseaseMatching:
         assert bruc["risk_level"] == "critical"
 
     def test_hs_three_symptoms(self):
-        result = evaluate_symptoms("cattle", ["high_fever", "swollen_throat", "difficulty_breathing"])
+        result = evaluate_symptoms(
+            "cattle", ["high_fever", "swollen_throat", "difficulty_breathing"]
+        )
         matches = result["matches"]
         hs = next((m for m in matches if "Hemorrhagic" in m["disease"]), None)
         assert hs is not None
         assert hs["match_count"] == 3
 
     def test_black_quarter(self):
-        result = evaluate_symptoms("cattle", ["high_fever", "swollen_leg", "lameness", "crepitant_swelling"])
+        result = evaluate_symptoms(
+            "cattle", ["high_fever", "swollen_leg", "lameness", "crepitant_swelling"]
+        )
         bq = next((m for m in result["matches"] if "Black Quarter" in m["disease"]), None)
         assert bq is not None
         assert bq["risk_level"] == "critical"
 
     def test_theileriosis(self):
-        result = evaluate_symptoms("cattle", ["high_fever", "swollen_lymph_nodes", "anaemia", "jaundice"])
+        result = evaluate_symptoms(
+            "cattle", ["high_fever", "swollen_lymph_nodes", "anaemia", "jaundice"]
+        )
         theil = next((m for m in result["matches"] if "Theileriosis" in m["disease"]), None)
         assert theil is not None
         assert theil["risk_level"] == "high"
@@ -75,7 +81,9 @@ class TestCattleDiseaseMatching:
         assert bloat is not None
 
     def test_milk_fever(self):
-        result = evaluate_symptoms("cattle", ["weakness", "unable_to_stand", "cold_ears", "muscle_tremors"])
+        result = evaluate_symptoms(
+            "cattle", ["weakness", "unable_to_stand", "cold_ears", "muscle_tremors"]
+        )
         mf = next((m for m in result["matches"] if "Milk Fever" in m["disease"]), None)
         assert mf is not None
 
@@ -94,7 +102,9 @@ class TestCattleDiseaseMatching:
         assert rp is not None
 
     def test_metritis(self):
-        result = evaluate_symptoms("cattle", ["foul_discharge", "fever", "loss_of_appetite", "reduced_milk"])
+        result = evaluate_symptoms(
+            "cattle", ["foul_discharge", "fever", "loss_of_appetite", "reduced_milk"]
+        )
         met = next((m for m in result["matches"] if "Metritis" in m["disease"]), None)
         assert met is not None
 
@@ -104,9 +114,7 @@ class TestCattleDiseaseMatching:
         assert johne is not None
 
     def test_ibr(self):
-        result = evaluate_symptoms(
-            "cattle", ["nasal_discharge", "fever", "red_eyes", "cough"]
-        )
+        result = evaluate_symptoms("cattle", ["nasal_discharge", "fever", "red_eyes", "cough"])
         ibr = next((m for m in result["matches"] if "IBR" in m["disease"]), None)
         assert ibr is not None
 
@@ -132,9 +140,7 @@ class TestCattleDiseaseMatching:
         assert anthrax["risk_level"] == "critical"
 
     def test_bovine_tb(self):
-        result = evaluate_symptoms(
-            "cattle", ["chronic_cough", "weight_loss", "reduced_milk"]
-        )
+        result = evaluate_symptoms("cattle", ["chronic_cough", "weight_loss", "reduced_milk"])
         tb = next((m for m in result["matches"] if "Tuberculosis" in m["disease"]), None)
         assert tb is not None
 
@@ -152,11 +158,65 @@ class TestCattleDiseaseMatching:
 
 
 # ---------------------------------------------------------------------------
+# Buffalo diseases
+# ---------------------------------------------------------------------------
+
+
+class TestBuffaloDiseaseMatching:
+    def test_hs_classic_symptoms(self):
+        """HS requires min_match=2; supplying 3 classic symptoms should match."""
+        result = evaluate_symptoms(
+            "buffalo", ["high_fever", "swollen_throat", "difficulty_breathing"]
+        )
+        matches = result["matches"]
+        hs = next((m for m in matches if "Hemorrhagic" in m["disease"]), None)
+        assert hs is not None
+        assert hs["match_count"] >= 2
+        assert hs["risk_level"] == "critical"
+
+    def test_fmd_buffalo(self):
+        result = evaluate_symptoms(
+            "buffalo", ["drooling", "lameness", "blisters_mouth", "reduced_milk"]
+        )
+        fmd = next((m for m in result["matches"] if "FMD" in m["disease"]), None)
+        assert fmd is not None
+        assert fmd["risk_level"] == "critical"
+
+    def test_brucellosis_buffalo(self):
+        result = evaluate_symptoms("buffalo", ["abortion", "retained_placenta", "swollen_joints"])
+        bruc = next((m for m in result["matches"] if "Brucellosis" in m["disease"]), None)
+        assert bruc is not None
+        assert bruc["risk_level"] == "critical"
+
+    def test_mastitis_buffalo(self):
+        result = evaluate_symptoms("buffalo", ["swollen_udder", "hot_udder"])
+        mast = next((m for m in result["matches"] if "Mastitis" in m["disease"]), None)
+        assert mast is not None
+        assert mast["risk_level"] == "high"
+
+    def test_theileriosis_buffalo(self):
+        result = evaluate_symptoms(
+            "buffalo", ["high_fever", "swollen_lymph_nodes", "anaemia", "jaundice"]
+        )
+        theil = next((m for m in result["matches"] if "Theileriosis" in m["disease"]), None)
+        assert theil is not None
+        assert theil["risk_level"] == "high"
+
+    def test_black_quarter_buffalo(self):
+        result = evaluate_symptoms(
+            "buffalo", ["high_fever", "swollen_leg", "lameness", "crepitant_swelling"]
+        )
+        bq = next((m for m in result["matches"] if "Black Quarter" in m["disease"]), None)
+        assert bq is not None
+        assert bq["risk_level"] == "critical"
+
+
+# ---------------------------------------------------------------------------
 # Goat diseases
 # ---------------------------------------------------------------------------
 
-class TestGoatDiseaseMatching:
 
+class TestGoatDiseaseMatching:
     def test_ppr(self):
         result = evaluate_symptoms("goat", ["fever", "nasal_discharge", "mouth_ulcers", "diarrhea"])
         ppr = next((m for m in result["matches"] if "PPR" in m["disease"]), None)
@@ -196,9 +256,7 @@ class TestGoatDiseaseMatching:
         assert bruc is not None
 
     def test_johnes_caprine(self):
-        result = evaluate_symptoms(
-            "goat", ["chronic_diarrhea", "weight_loss", "normal_appetite"]
-        )
+        result = evaluate_symptoms("goat", ["chronic_diarrhea", "weight_loss", "normal_appetite"])
         johne = next((m for m in result["matches"] if "Johne" in m["disease"]), None)
         assert johne is not None
 
@@ -209,16 +267,12 @@ class TestGoatDiseaseMatching:
         assert orf["risk_level"] == "medium"
 
     def test_ccpp(self):
-        result = evaluate_symptoms(
-            "goat", ["cough", "difficulty_breathing", "nasal_discharge"]
-        )
+        result = evaluate_symptoms("goat", ["cough", "difficulty_breathing", "nasal_discharge"])
         ccpp = next((m for m in result["matches"] if "CCPP" in m["disease"]), None)
         assert ccpp is not None
 
     def test_coccidiosis_caprine(self):
-        result = evaluate_symptoms(
-            "goat", ["bloody_diarrhea", "weight_loss", "dehydration"]
-        )
+        result = evaluate_symptoms("goat", ["bloody_diarrhea", "weight_loss", "dehydration"])
         cocc = next((m for m in result["matches"] if "Coccidiosis" in m["disease"]), None)
         assert cocc is not None
 
@@ -228,9 +282,7 @@ class TestGoatDiseaseMatching:
         assert fr is not None
 
     def test_pregnancy_toxemia_caprine(self):
-        result = evaluate_symptoms(
-            "goat", ["loss_of_appetite", "lethargy", "teeth_grinding"]
-        )
+        result = evaluate_symptoms("goat", ["loss_of_appetite", "lethargy", "teeth_grinding"])
         pt = next((m for m in result["matches"] if "Pregnancy Toxemia" in m["disease"]), None)
         assert pt is not None
 
@@ -240,9 +292,7 @@ class TestGoatDiseaseMatching:
         assert blot is not None
 
     def test_tetanus(self):
-        result = evaluate_symptoms(
-            "goat", ["muscle_stiffness", "lock_jaw", "erect_ears"]
-        )
+        result = evaluate_symptoms("goat", ["muscle_stiffness", "lock_jaw", "erect_ears"])
         tet = next((m for m in result["matches"] if "Tetanus" in m["disease"]), None)
         assert tet is not None
         assert tet["risk_level"] == "critical"
@@ -252,8 +302,8 @@ class TestGoatDiseaseMatching:
 # Sheep diseases
 # ---------------------------------------------------------------------------
 
-class TestSheepDiseaseMatching:
 
+class TestSheepDiseaseMatching:
     def test_blue_tongue(self):
         result = evaluate_symptoms("sheep", ["fever", "swollen_tongue", "blue_tongue"])
         bt = next((m for m in result["matches"] if "Blue Tongue" in m["disease"]), None)
@@ -261,9 +311,7 @@ class TestSheepDiseaseMatching:
         assert bt["risk_level"] == "critical"
 
     def test_sheep_pox(self):
-        result = evaluate_symptoms(
-            "sheep", ["fever", "skin_nodules", "nasal_discharge"]
-        )
+        result = evaluate_symptoms("sheep", ["fever", "skin_nodules", "nasal_discharge"])
         sp = next((m for m in result["matches"] if "Sheep Pox" in m["disease"]), None)
         assert sp is not None
 
@@ -283,16 +331,12 @@ class TestSheepDiseaseMatching:
         assert fr is not None
 
     def test_ovine_pneumonia(self):
-        result = evaluate_symptoms(
-            "sheep", ["cough", "nasal_discharge", "fever"]
-        )
+        result = evaluate_symptoms("sheep", ["cough", "nasal_discharge", "fever"])
         pn = next((m for m in result["matches"] if "Ovine Pneumonia" in m["disease"]), None)
         assert pn is not None
 
     def test_pregnancy_toxemia_ovine(self):
-        result = evaluate_symptoms(
-            "sheep", ["loss_of_appetite", "lethargy", "teeth_grinding"]
-        )
+        result = evaluate_symptoms("sheep", ["loss_of_appetite", "lethargy", "teeth_grinding"])
         pt = next((m for m in result["matches"] if "Pregnancy Toxemia" in m["disease"]), None)
         assert pt is not None
 
@@ -307,9 +351,7 @@ class TestSheepDiseaseMatching:
         assert li is not None
 
     def test_scrapie(self):
-        result = evaluate_symptoms(
-            "sheep", ["itching", "wool_loss", "incoordination"]
-        )
+        result = evaluate_symptoms("sheep", ["itching", "wool_loss", "incoordination"])
         scr = next((m for m in result["matches"] if "Scrapie" in m["disease"]), None)
         assert scr is not None
         assert scr["risk_level"] == "critical"
@@ -319,8 +361,8 @@ class TestSheepDiseaseMatching:
 # Poultry diseases
 # ---------------------------------------------------------------------------
 
-class TestPoultryDiseaseMatching:
 
+class TestPoultryDiseaseMatching:
     def test_newcastle(self):
         result = evaluate_symptoms(
             "poultry",
@@ -331,9 +373,7 @@ class TestPoultryDiseaseMatching:
         assert nd["risk_level"] == "critical"
 
     def test_mareks(self):
-        result = evaluate_symptoms(
-            "poultry", ["paralysis", "weight_loss", "grey_iris"]
-        )
+        result = evaluate_symptoms("poultry", ["paralysis", "weight_loss", "grey_iris"])
         mk = next((m for m in result["matches"] if "Marek" in m["disease"]), None)
         assert mk is not None
 
@@ -347,9 +387,7 @@ class TestPoultryDiseaseMatching:
         assert ai["risk_level"] == "critical"
 
     def test_infectious_bronchitis(self):
-        result = evaluate_symptoms(
-            "poultry", ["cough", "sneezing", "nasal_discharge"]
-        )
+        result = evaluate_symptoms("poultry", ["cough", "sneezing", "nasal_discharge"])
         ib = next((m for m in result["matches"] if "Infectious Bronchitis" in m["disease"]), None)
         assert ib is not None
 
@@ -371,7 +409,10 @@ class TestPoultryDiseaseMatching:
             "poultry",
             ["ruffled_feathers", "watery_diarrhea", "trembling"],
         )
-        ibd = next((m for m in result["matches"] if "IBD" in m["disease"] or "Gumboro" in m["disease"]), None)
+        ibd = next(
+            (m for m in result["matches"] if "IBD" in m["disease"] or "Gumboro" in m["disease"]),
+            None,
+        )
         assert ibd is not None
 
     def test_fowl_cholera(self):
@@ -403,30 +444,39 @@ class TestPoultryDiseaseMatching:
 # Scoring and sorting logic
 # ---------------------------------------------------------------------------
 
-class TestScoringAndSorting:
 
+class TestScoringAndSorting:
     def test_top_matches_limited_to_three(self):
         """Even if many rules match, only top 3 are returned."""
         # Symptoms that could match multiple cattle diseases
         result = evaluate_symptoms(
             "cattle",
-            ["fever", "nasal_discharge", "reduced_milk", "loss_of_appetite",
-             "diarrhea", "weakness", "weight_loss", "anaemia", "jaundice"],
+            [
+                "fever",
+                "nasal_discharge",
+                "reduced_milk",
+                "loss_of_appetite",
+                "diarrhea",
+                "weakness",
+                "weight_loss",
+                "anaemia",
+                "jaundice",
+            ],
         )
         assert len(result["matches"]) <= 3
 
     def test_match_score_calculation(self):
         """Score is match_count / total_symptoms for the rule."""
         result = evaluate_symptoms("cattle", ["fever", "drooling", "blisters_mouth"])
-        fmd = next(m for m in result["matches"] if "FMD" in m["disease"])
+        fmd = next((m for m in result["matches"] if "FMD" in m["disease"]), None)
+        assert fmd is not None, "Expected FMD match not found"
         assert fmd["match_score"] == round(3 / 6, 3)
 
     def test_sort_by_score_then_risk(self):
         """Higher match scores sort first; ties broken by risk severity."""
         result = evaluate_symptoms(
             "cattle",
-            ["fever", "drooling", "blisters_mouth", "lameness",
-             "reduced_milk", "blisters_feet"],
+            ["fever", "drooling", "blisters_mouth", "lameness", "reduced_milk", "blisters_feet"],
         )
         if len(result["matches"]) >= 2:
             # First match should have the highest score
@@ -451,8 +501,7 @@ class TestScoringAndSorting:
         """Shared symptoms across diseases should match multiple rules."""
         result = evaluate_symptoms(
             "cattle",
-            ["high_fever", "anaemia", "jaundice", "weakness",
-             "loss_of_appetite", "red_urine"],
+            ["high_fever", "anaemia", "jaundice", "weakness", "loss_of_appetite", "red_urine"],
         )
         # Should match Babesiosis and potentially Theileriosis, Anaplasmosis
         assert len(result["matches"]) >= 2
@@ -462,7 +511,8 @@ class TestScoringAndSorting:
     def test_matched_symptoms_returned(self):
         """Each match should list which specific symptoms matched."""
         result = evaluate_symptoms("cattle", ["swollen_udder", "hot_udder", "clots_in_milk"])
-        mastitis = next(m for m in result["matches"] if "Mastitis" in m["disease"])
+        mastitis = next((m for m in result["matches"] if "Mastitis" in m["disease"]), None)
+        assert mastitis is not None, "Expected Mastitis match not found"
         assert "swollen_udder" in mastitis["matched_symptoms"]
         assert "hot_udder" in mastitis["matched_symptoms"]
         assert "clots_in_milk" in mastitis["matched_symptoms"]
@@ -472,8 +522,8 @@ class TestScoringAndSorting:
 # Edge cases and boundary conditions
 # ---------------------------------------------------------------------------
 
-class TestEdgeCases:
 
+class TestEdgeCases:
     def test_unknown_species_returns_empty(self):
         result = evaluate_symptoms("elephant", ["fever", "drooling"])
         assert result["matches"] == []
@@ -493,9 +543,11 @@ class TestEdgeCases:
         # Only rules with min_match=1 would fire; none in the cattle set have that
         # Most rules require 2-3 symptoms minimum
         for m in result["matches"]:
-            assert m["match_count"] >= m["total_symptoms"] // len(
-                DISEASE_RULES["cattle"][0]["symptoms"]
-            ) or m["match_count"] >= 2
+            assert (
+                m["match_count"]
+                >= m["total_symptoms"] // len(DISEASE_RULES["cattle"][0]["symptoms"])
+                or m["match_count"] >= 2
+            )
 
     def test_case_insensitive_species(self):
         result_lower = evaluate_symptoms("cattle", ["fever", "drooling", "blisters_mouth"])

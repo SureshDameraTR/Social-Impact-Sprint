@@ -12,7 +12,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
-router = APIRouter(prefix="/api/iot", tags=["IoT"])
+router = APIRouter(prefix="/api/v1/iot", tags=["IoT"])
 
 # ---------------------------------------------------------------------------
 # Load sample devices once at import time

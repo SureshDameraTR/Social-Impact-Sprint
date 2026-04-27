@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { Card, Chip, Searchbar, Text, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '../src/components/EmptyState';
-import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../src/config/theme';
+import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors, statusColors } from '../src/config/theme';
 import { api } from '../src/config/api';
 
 type Evidence = 'validated' | 'studied' | 'traditional';
@@ -46,8 +46,8 @@ export default function EthnoVetScreen() {
   const fetchRemedies = useCallback(() => {
     setLoading(true);
     setError(null);
-    api.get<Remedy[]>('/ethno-vet/remedies')
-      .then(res => setRemedies(res))
+    api.get<any>('/ethno-vet/remedies')
+      .then(res => setRemedies(Array.isArray(res) ? res : res.data ?? []))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -74,7 +74,7 @@ export default function EthnoVetScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#2E7D32" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -145,12 +145,13 @@ export default function EthnoVetScreen() {
 
       {filtered.map((remedy) => {
         const isExpanded = expandedId === remedy.id;
-        const ev = EVIDENCE_CONFIG[remedy.evidence];
+        const ev = EVIDENCE_CONFIG[remedy.evidence] ?? EVIDENCE_CONFIG.traditional;
         return (
-          <TouchableOpacity
+          <Pressable
             key={remedy.id}
             onPress={() => setExpandedId(isExpanded ? null : remedy.id)}
-            activeOpacity={0.7}
+            accessibilityLabel={`${isKn ? remedy.nameKn : remedy.nameEn}, ${isExpanded ? t('ethnoVet.tapToCollapse') : t('ethnoVet.tapToExpand')}`}
+            accessibilityRole="button"
           >
             <Card style={styles.card}>
               <Card.Content>
@@ -210,7 +211,7 @@ export default function EthnoVetScreen() {
                 </Text>
               </Card.Content>
             </Card>
-          </TouchableOpacity>
+          </Pressable>
         );
       })}
 
@@ -228,14 +229,14 @@ export default function EthnoVetScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surface,
   },
   content: {
     padding: SPACING.md,
     paddingBottom: 100,
   },
   heading: {
-    color: '#2E7D32',
+    color: statusColors.healthy,
     fontWeight: 'bold',
     marginBottom: SPACING.sm,
   },
@@ -305,7 +306,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#E0E0E0',
   },
   expandedLabel: {
-    color: '#2E7D32',
+    color: statusColors.healthy,
     fontWeight: 'bold',
     marginTop: SPACING.sm,
     marginBottom: SPACING.xs,

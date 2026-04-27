@@ -3,9 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
-import pytest
 from httpx import AsyncClient
-
 
 # ---------------------------------------------------------------------------
 # GET /v1/weather/forecast/{district}
@@ -51,9 +49,7 @@ class TestWeatherForecast:
         mock_resp = MagicMock()
         mock_resp.status_code = 502
         mock_resp.text = "Gateway error"
-        exc = httpx.HTTPStatusError(
-            "error", request=MagicMock(), response=mock_resp
-        )
+        exc = httpx.HTTPStatusError("error", request=MagicMock(), response=mock_resp)
 
         with patch(
             "app.routers.weather.get_forecast",

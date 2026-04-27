@@ -2,7 +2,7 @@
 
 Single source of truth for all SDLC agents. When files move or new modules appear, update this file — agents reference it instead of hardcoding paths.
 
-Last verified: 2026-04-14
+Last verified: 2026-04-16
 
 ## Packages
 
@@ -23,11 +23,11 @@ Last verified: 2026-04-14
 | FastAPI API | `api` | 8000 | Built from `packages/api/` |
 | Mock Backends | `mock-backends` | 8001 | Built from `mocks/` |
 
-Config: `docker-compose.yml`, `.env`, `.env.example`
+Config: `docker-compose.yml`, `docker-compose.test.yml`, `.env`, `.env.example`
 
 ## API Package — File Registry
 
-### Models (25 ORM models) — `packages/api/app/models/`
+### Models (26 ORM models) — `packages/api/app/models/`
 | File | Table | Key Relations |
 |------|-------|---------------|
 | `user.py` | users | has_many: animals, health_events, yield_logs |
@@ -49,8 +49,9 @@ Config: `docker-compose.yml`, `.env`, `.env.example`
 | `vet.py` | vet_consultations | belongs_to: animal, user (vet) |
 | `otp.py` | otp_requests | belongs_to: user (by phone) |
 | `base.py` | - | Base class: UUID PK, created_at, updated_at, deleted_at |
+| `consent.py` | consents | belongs_to: user; DPDP consent records (purpose, status, audit trail) |
 
-### Routers (27 endpoints) — `packages/api/app/routers/`
+### Routers (29 endpoints) — `packages/api/app/routers/`
 | File | Prefix | Auth | Methods |
 |------|--------|------|---------|
 | `auth.py` | `/v1/auth` | None | POST send-otp, verify-otp |
@@ -67,7 +68,7 @@ Config: `docker-compose.yml`, `.env`, `.env.example`
 | `feed.py` | `/v1/feed` | farmer/vet | GET ingredients, POST calculate |
 | `ethno_vet.py` | `/v1/ethno-vet` | farmer | GET remedies |
 | `bharat_pashudhan.py` | `/v1/registry` | admin | GET lookup |
-| `vaccination.py` | `/v1/vaccination` | farmer/vet | GET due, POST record |
+| `vaccination.py` | `/v1/vaccinations` | farmer/vet | CRUD + schedules; **admin only**: `GET /species-breakdown`, `GET /village-coverage` |
 | `insurance.py` | `/v1/insurance` | farmer | GET products, POST claim |
 | `alerts.py` | `/v1/alerts` | farmer/vet | GET nearby, POST report |
 | `medicine.py` | `/v1/medicine` | vet | CRUD medicines |
@@ -81,9 +82,10 @@ Config: `docker-compose.yml`, `.env`, `.env.example`
 | `reference.py` | `/v1/reference` | any | GET breeds, rates |
 | `files.py` | `/v1/files` | any | POST upload |
 | `vet.py` | `/v1/vet` | vet | CRUD consultations |
+| `consent.py` | `/v1/consent` | any | grant, withdraw, list my consents, erasure request |
 
-### Schemas (19 Pydantic models) — `packages/api/app/schemas/`
-`animals.py`, `health.py`, `milk.py`, `finance.py`, `marketplace.py`, `schemes.py`, `medicine.py`, `advisory.py`, `ethno_vet.py`, `feed.py`, `alerts.py`, `insurance.py`, `weather.py`, `shg.py`, `admin.py`, `income.py`, `auth.py`
+### Schemas (20 Pydantic models) — `packages/api/app/schemas/`
+`animals.py`, `health.py`, `milk.py`, `finance.py`, `marketplace.py`, `schemes.py`, `medicine.py`, `advisory.py`, `ethno_vet.py`, `feed.py`, `alerts.py`, `insurance.py`, `weather.py`, `shg.py`, `admin.py`, `income.py`, `auth.py`, `consent.py`
 
 **Gap**: Routers without dedicated schemas: `iot`, `map_points`, `onboarding`, `vaccination`, `milk_center`, `bharat_pashudhan`, `reference`, `files`, `vet`
 
@@ -112,7 +114,7 @@ Config: `docker-compose.yml`, `.env`, `.env.example`
 | `request_logging.py` | Request ID injection, timing |
 
 ### Migrations — `packages/api/alembic/versions/`
-8 versions: initial_schema → performance_indexes → otp_table → reference_data → float_to_numeric → audit_softdelete → gender_column → vet_consultations
+12 versions: initial_schema → performance_indexes → otp_table → reference_data → float_to_numeric → audit_softdelete → gender_column → vet_consultations → composite_indexes → refresh_tokens → fk_constraints_updated_at → buffalo_species_enum
 
 ### Config
 | File | Purpose |
@@ -184,6 +186,9 @@ Config: `docker-compose.yml`, `.env`, `.env.example`
 | `my-consultations.tsx` | - | `/v1/vet` |
 | `onboarding/*.tsx` | - | `/v1/onboarding` |
 
+### Build Config
+`eas.json` — EAS Build profiles (development, preview, production)
+
 ### Config — `packages/mobile/src/config/`
 `api.ts` — Axios client (15s timeout, 3 retries, exponential backoff)
 
@@ -198,6 +203,9 @@ Config: `docker-compose.yml`, `.env`, `.env.example`
 ### Components — `packages/collection/src/components/`
 `NavBar.tsx`, `FarmerSearch.tsx`, `ShiftSelector.tsx`, `RatePreview.tsx`, `AuthGuard.tsx`, `ErrorBoundary.tsx`
 
+### i18n — `packages/collection/src/i18n/`
+`en.json`, `kn.json` (Kannada), `hi.json` (Hindi), `index.ts`
+
 ### API Client — `packages/collection/src/api/`
 `client.ts`, `auth.ts`, `milk.ts`
 
@@ -208,6 +216,9 @@ Config: `docker-compose.yml`, `.env`, `.env.example`
 
 ### Components — `packages/vet/src/components/`
 `NavBar.tsx`, `StatCard.tsx`, `SpeciesChip.tsx`, `EmptyState.tsx`, `AuthGuard.tsx`, `ErrorBoundary.tsx`
+
+### i18n — `packages/vet/src/i18n/`
+`en.json`, `kn.json` (Kannada), `hi.json` (Hindi), `index.ts`
 
 ### API Client — `packages/vet/src/api/`
 `client.ts`, `auth.ts`, `vet.ts`
@@ -233,6 +244,7 @@ Config: `docker-compose.yml`, `.env`, `.env.example`
 | Unit (JS) | Jest | `packages/admin/src/__tests__/` | Components, utils |
 | Unit (Mobile) | Jest + jest-expo | `packages/mobile/__tests__/` | Screens, components |
 | Integration | pytest | `packages/api/tests/test_integration_e2e.py` | API workflows |
+| Integration (real DB) | pytest | `packages/api/tests/integration/` | Auth flow, animal CRUD (PostgreSQL) |
 | E2E | Playwright | `e2e/admin-smoke.spec.ts` | Admin UI flows |
 | Visual regression | Playwright | `e2e/visual/visual-baseline.spec.ts` | Admin, Collection, Vet screenshots |
 | Load | k6 | `e2e/load/baseline.js` | API throughput + latency |
@@ -259,12 +271,13 @@ All documentation lives in `docs/` at the project root (not in `pashu-erp/`).
 
 ## Auth & Roles
 
-| Role | Login | Capabilities |
-|------|-------|-------------|
-| farmer | OTP phone (+919900000001) | Animals, milk, health, income, marketplace |
-| admin | OTP phone (+919900000002) | Dashboard, all data, user management |
-| vet | OTP phone (+919900000003) | Cases, alerts, medicine, consultations |
-| milk_center | OTP phone (+919900000004) | Collection records, settlements |
+| Role | Phone | Name | Capabilities |
+|------|-------|------|-------------|
+| admin | +919900000001 | Deepak Kumar | Dashboard, all data, user management |
+| farmer | +919900000002 | Lakshmi Devi | Animals, milk, health, income, marketplace |
+| farmer | +919900000003 | Annapurna Gowda | Animals, milk, health, income, marketplace |
+| farmer | +919900000004 | Savitri Bai | Animals, milk, health, income, marketplace |
+| vet | +919900000005 | Dr. Ramesh | Cases, alerts, medicine, consultations |
 
 Dev OTP: `123456` (console provider, all environments)
 

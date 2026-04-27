@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from httpx import AsyncClient
 
 from tests.conftest import FARMER_USER_ID
@@ -32,9 +31,7 @@ def _mock_sell_record() -> MagicMock:
 
 
 class TestListSellRecords:
-    async def test_list_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with paginated data."""
         count_result = MagicMock()
         count_result.scalar.return_value = 0
@@ -60,9 +57,7 @@ class TestListSellRecords:
 
 
 class TestRecordSale:
-    async def test_sell_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_sell_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST with valid data returns 201."""
         resp = await client.post(
             "/v1/marketplace/sell",
@@ -103,9 +98,7 @@ class TestRecordSale:
 
 
 class TestSellHistory:
-    async def test_history_own_user(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_history_own_user(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET own history returns 200."""
         count_result = MagicMock()
         count_result.scalar.return_value = 0
@@ -133,9 +126,7 @@ class TestSellHistory:
 
 
 class TestMarketRates:
-    async def test_rates_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_rates_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with market rates."""
         with patch(
             "app.routers.marketplace.get_all_market_rates",
@@ -155,9 +146,7 @@ class TestMarketRates:
 
 
 class TestMarketplaceSummary:
-    async def test_summary_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_summary_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET own summary returns 200."""
         totals_row = MagicMock()
         totals_row.total_revenue = 5000.0
@@ -169,13 +158,9 @@ class TestMarketplaceSummary:
         breakdown_result = MagicMock()
         breakdown_result.all.return_value = []
 
-        mock_db.execute = AsyncMock(
-            side_effect=[totals_result, breakdown_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[totals_result, breakdown_result])
 
-        resp = await client.get(
-            f"/v1/marketplace/summary/{FARMER_USER_ID}"
-        )
+        resp = await client.get(f"/v1/marketplace/summary/{FARMER_USER_ID}")
         assert resp.status_code == 200
         body = resp.json()
         assert "total_revenue" in body

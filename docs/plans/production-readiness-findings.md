@@ -498,3 +498,16 @@ async def require_milk_center_staff(current_user: User = Depends(get_current_use
 - [x] LOW-3: Remove console.warn from admin auth provider
 - [x] LOW-4: Replace `any` with `unknown` in data provider
 - [x] LOW-5: Make collection app base URL configurable
+
+---
+
+## Production release blockers — engineering notes (2026-04-15)
+
+**Status**: Tracked before prod cutover; not all items require code changes before continuing development.
+
+| Item | Notes |
+|------|--------|
+| **CI vs SQLite test driver** | `.github/workflows/ci.yml` sets `DATABASE_URL=sqlite+aiosqlite:///test.db` for API tests, but `pashu-erp/packages/api/pyproject.toml` optional `dev` dependencies do not declare `aiosqlite`. SQLAlchemy’s `sqlite+aiosqlite` URL requires that package. **Before prod release**: add `aiosqlite` to dev (or test) dependencies, or align CI `DATABASE_URL` with drivers that are actually installed, and confirm GitHub Actions is green on `main`. |
+| **Ruff** | `ruff check app/` can report many non-critical issues (e.g. line length). **Policy**: treat non-critical style violations as acceptable technical debt for ongoing work; clear or gate critical/error-class rules before release if the team adopts a stricter bar. |
+| **Vaccination aggregates / village coverage** | Product decision (2026-04-15): **`/v1/vaccinations/species-breakdown` and `/v1/vaccinations/village-coverage` are admin-only** (`require_admin`). |
+| **Insurance premium estimate** | Product decision (2026-04-15): **owner or admin** — `GET /v1/insurance/premium-estimate/{animal_id}` allowed if `animal.user_id == current_user` or `current_user.role == admin`. |

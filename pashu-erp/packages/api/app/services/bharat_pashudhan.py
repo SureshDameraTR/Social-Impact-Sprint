@@ -5,13 +5,16 @@ Raises ServiceNotConfiguredError when the URL is not set.
 """
 
 from datetime import datetime, timezone
+from urllib.parse import quote
 from uuid import UUID
 
 from app.config import settings
+from app.services.circuit_breakers import registry_breaker
 from app.services.errors import ServiceNotConfiguredError
 from app.services.http_client import get_http_client, retry_on_network
 
 
+@registry_breaker
 @retry_on_network
 async def lookup_animal(pashu_aadhaar_id: str) -> dict | None:
     """Look up an animal in the national Bharat Pashudhan registry.
@@ -27,9 +30,8 @@ async def lookup_animal(pashu_aadhaar_id: str) -> dict | None:
         raise ServiceNotConfiguredError("BHARAT_PASHUDHAN_API_URL")
 
     client = await get_http_client()
-    resp = await client.get(
-        f"{settings.bharat_pashudhan_api_url}/animals/{pashu_aadhaar_id}"
-    )
+    safe_id = quote(pashu_aadhaar_id, safe="")
+    resp = await client.get(f"{settings.bharat_pashudhan_api_url}/animals/{safe_id}")
     if resp.status_code == 404:
         return None
     resp.raise_for_status()
@@ -39,6 +41,7 @@ async def lookup_animal(pashu_aadhaar_id: str) -> dict | None:
     return record
 
 
+@registry_breaker
 @retry_on_network
 async def sync_animal(animal_id: UUID) -> dict:
     """Sync a local animal record with the national registry.

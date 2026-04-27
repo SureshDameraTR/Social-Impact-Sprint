@@ -18,7 +18,7 @@ from pathlib import Path
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/api/weather", tags=["Weather"])
+router = APIRouter(prefix="/api/v1/weather", tags=["Weather"])
 
 # Load district metadata
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -47,7 +47,7 @@ def _deterministic_seed(district: str, d: date) -> float:
 def _deterministic_random(seed_float: float, salt: int) -> float:
     """Derive additional pseudo-random values from a seed using a salt."""
     combined = seed_float * 1000000 + salt
-    h = hashlib.md5(str(combined).encode()).hexdigest()
+    h = hashlib.sha256(str(combined).encode()).hexdigest()
     return int(h[:8], 16) / 0xFFFFFFFF
 
 
@@ -329,12 +329,28 @@ async def weather_tts(req: TTSRequest):
     """Return a mock TTS audio response for weather information.
 
     Generates a tiny valid WAV file (silence) encoded as base64 to mimic
-    a real TTS service like Sarvam AI.
+    a real TTS service like Sarvam AI. The text_content field contains the
+    advisory text that would be spoken in a production TTS system.
     """
     wav_bytes = _generate_silent_wav()
     audio_b64 = base64.b64encode(wav_bytes).decode("ascii")
     request_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"tts-{req.district}-{req.language_code}"))
+
+    # Build descriptive text content for the mock response
+    today = date.today()
+    forecast = _generate_forecast(req.district, today)
+    text_content = (
+        f"Weather advisory for {req.district}: "
+        f"Temperature {forecast['temp_min']}-{forecast['temp_max']}C, "
+        f"humidity {forecast['humidity']}%, "
+        f"condition {forecast['condition']}. "
+        f"Heat stress index: {forecast['heat_stress_index']}."
+    )
+
     return {
         "audio": audio_b64,
         "request_id": request_id,
+        "text_content": text_content,
+        "language_code": req.language_code,
+        "is_mock": True,
     }

@@ -20,7 +20,11 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error("ErrorBoundary caught:", error, info.componentStack);
+    if (process.env.NODE_ENV === "development") {
+      console.error("ErrorBoundary caught:", error, info.componentStack);
+    }
+    // In production, error details are available via the error boundary state
+    // and can be sent to a structured logging service when one is configured.
   }
 
   private handleReload = (): void => {

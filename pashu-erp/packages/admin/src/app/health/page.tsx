@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useList } from "@refinedev/core";
 import {
   Box,
@@ -49,19 +49,20 @@ function riskLabel(score: number): string {
 }
 
 export default function HealthPage() {
-  useEffect(() => {
-    document.title = 'Health Alerts — PashuRaksha ERP';
-  }, []);
-
   const [riskFilter, setRiskFilter] = useState("All");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState<SortKey>("event_date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  const { data, isLoading, isError } = useList<HealthAlert>({ resource: "health" });
+  const { data, isLoading, isError } = useList<HealthAlert>({
+    resource: "health",
+    pagination: { current: page + 1, pageSize: rowsPerPage },
+    sorters: [{ field: sortBy, order: sortDir }],
+  });
 
   const alerts = data?.data ?? [];
+  const serverTotal = data?.total ?? 0;
 
   const handleSort = (key: SortKey) => {
     if (sortBy === key) {
@@ -70,6 +71,7 @@ export default function HealthPage() {
       setSortBy(key);
       setSortDir("asc");
     }
+    setPage(0);
   };
 
   const filtered = useMemo(() => {
@@ -78,20 +80,7 @@ export default function HealthPage() {
     );
   }, [alerts, riskFilter]);
 
-  const sortedRows = useMemo(() => {
-    const sorted = [...filtered];
-    sorted.sort((a, b) => {
-      if (sortBy === "ai_risk_score") {
-        const cmp = a.ai_risk_score - b.ai_risk_score;
-        return sortDir === "asc" ? cmp : -cmp;
-      }
-      const cmp = (a.event_date || "").localeCompare(b.event_date || "");
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-    return sorted;
-  }, [filtered, sortBy, sortDir]);
-
-  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress /></Box>;
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }} role="status" aria-label="Loading health alerts"><CircularProgress /></Box>;
   if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
 
   return (
@@ -127,7 +116,7 @@ export default function HealthPage() {
           </Stack>
         </Box>
         <TableContainer>
-          <Table>
+          <Table aria-label="Health alerts table">
             <TableHead>
               <TableRow>
                 <TableCell>
@@ -147,16 +136,14 @@ export default function HealthPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedRows.length === 0 ? (
+              {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} sx={{ border: 0 }}>
                     <EmptyState />
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedRows
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((alert) => (
+                filtered.map((alert) => (
                     <TableRow key={alert.id}>
                       <TableCell
                         sx={{ ...sxCodeCell, whiteSpace: "nowrap" }}
@@ -194,7 +181,7 @@ export default function HealthPage() {
         </TableContainer>
         <TablePagination
           component="div"
-          count={sortedRows.length}
+          count={riskFilter !== "All" ? filtered.length : serverTotal}
           page={page}
           onPageChange={(_, p) => setPage(p)}
           rowsPerPage={rowsPerPage}

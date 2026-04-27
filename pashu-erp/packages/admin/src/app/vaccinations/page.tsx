@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import { useList } from "@refinedev/core";
 import {
   Box,
@@ -126,10 +126,6 @@ interface ScheduleEntry {
 /* ---------- component ---------- */
 
 export default function VaccinationsPage() {
-  useEffect(() => {
-    document.title = 'Vaccinations — PashuRaksha ERP';
-  }, []);
-
   const { data: villageRaw, isLoading: vLoading, isError: vError } = useList<VillageCoverageRaw>({ resource: "vaccinations/village-coverage" });
   const { data: speciesRaw, isLoading: sLoading, isError: sError } = useList<SpeciesBreakdownRaw>({ resource: "vaccinations/species-breakdown" });
   const { data: scheduleRaw, isLoading: schLoading, isError: schError } = useList<ScheduleEntryRaw>({ resource: "vaccinations/schedule" });
@@ -193,7 +189,7 @@ export default function VaccinationsPage() {
     [scheduleList]
   );
 
-  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress /></Box>;
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }} role="status" aria-label="Loading vaccination data"><CircularProgress /></Box>;
   if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
 
   return (
@@ -274,7 +270,7 @@ export default function VaccinationsPage() {
       </Typography>
       <Paper sx={{ mb: 4 }}>
         <TableContainer>
-          <Table>
+          <Table aria-label="Village vaccination coverage">
             <TableHead>
               <TableRow>
                 <TableCell>Village Code</TableCell>
@@ -372,7 +368,7 @@ export default function VaccinationsPage() {
       </Typography>
       <Paper>
         <TableContainer>
-          <Table>
+          <Table aria-label="Upcoming vaccination schedule">
             <TableHead>
               <TableRow>
                 <TableCell>Animal</TableCell>
@@ -390,8 +386,8 @@ export default function VaccinationsPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedSchedule.map((entry, idx) => (
-                  <TableRow key={idx}>
+                sortedSchedule.map((entry) => (
+                  <TableRow key={`${entry.animal}-${entry.vaccine}-${entry.dueDate}`}>
                     <TableCell sx={sxNameCell}>
                       {entry.animal}
                     </TableCell>
@@ -415,7 +411,7 @@ export default function VaccinationsPage() {
                         sx={{
                           fontWeight: 600,
                           fontSize: '11.5px',
-                          color: "#FFFFFF",
+                          color: colors.surface,
                           bgcolor: urgencyColor(entry.daysUntilDue),
                           border: 'none',
                         }}

@@ -12,7 +12,7 @@ from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.marketplace import SellRecord
 from app.models.user import User
-from app.schemas.marketplace import SellRecordCreate, SellRecordRead
+from app.schemas.marketplace import SellRecordCreate, SellRecordListResponse, SellRecordRead
 from app.services.market_rates import get_all_market_rates
 
 router = APIRouter(prefix="/v1/marketplace", tags=["Marketplace"])
@@ -22,7 +22,8 @@ router = APIRouter(prefix="/v1/marketplace", tags=["Marketplace"])
 # Routes
 # ---------------------------------------------------------------------------
 
-@router.get("")
+
+@router.get("", response_model=SellRecordListResponse)
 async def list_sell_records(
     limit: int = Query(100, le=500),
     offset: int = Query(0, ge=0),
@@ -37,9 +38,7 @@ async def list_sell_records(
     count_result = await db.execute(select(func.count()).select_from(base.subquery()))
     total = count_result.scalar() or 0
 
-    result = await db.execute(
-        base.order_by(SellRecord.sold_at.desc()).offset(offset).limit(limit)
-    )
+    result = await db.execute(base.order_by(SellRecord.sold_at.desc()).offset(offset).limit(limit))
     data = result.scalars().all()
     return {"data": data, "total": total, "limit": limit, "offset": offset}
 
@@ -72,7 +71,7 @@ async def record_sale(
     return record
 
 
-@router.get("/history/{user_id}")
+@router.get("/history/{user_id}", response_model=SellRecordListResponse)
 async def get_sell_history(
     user_id: UUID,
     limit: int = Query(50, le=200),
@@ -87,15 +86,11 @@ async def get_sell_history(
     base = select(SellRecord).where(SellRecord.user_id == user_id, SellRecord.deleted_at.is_(None))
 
     # Count
-    count_result = await db.execute(
-        select(func.count()).select_from(base.subquery())
-    )
+    count_result = await db.execute(select(func.count()).select_from(base.subquery()))
     total = count_result.scalar() or 0
 
     # Data
-    result = await db.execute(
-        base.order_by(SellRecord.sold_at.desc()).offset(offset).limit(limit)
-    )
+    result = await db.execute(base.order_by(SellRecord.sold_at.desc()).offset(offset).limit(limit))
     data = result.scalars().all()
 
     return {"data": data, "total": total, "limit": limit, "offset": offset}

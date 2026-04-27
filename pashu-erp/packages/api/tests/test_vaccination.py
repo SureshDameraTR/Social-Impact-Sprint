@@ -2,9 +2,8 @@
 
 import uuid
 from datetime import date, datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
 
 from tests.conftest import FARMER_USER_ID
@@ -40,9 +39,7 @@ def _mock_vaccination() -> MagicMock:
 
 
 class TestRecordVaccination:
-    async def test_record_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_record_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST with valid data returns 201."""
         animal = _mock_animal()
         result = MagicMock()
@@ -59,9 +56,7 @@ class TestRecordVaccination:
         )
         assert resp.status_code == 201
 
-    async def test_record_animal_not_found(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_record_animal_not_found(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST with nonexistent animal returns 404."""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
@@ -77,9 +72,7 @@ class TestRecordVaccination:
         )
         assert resp.status_code == 404
 
-    async def test_record_forbidden(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_record_forbidden(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST on another user's animal returns 403."""
         animal = _mock_animal(user_id=str(uuid.uuid4()))
         result = MagicMock()
@@ -123,9 +116,7 @@ class TestRecordVaccination:
 
 
 class TestDueVaccinations:
-    async def test_due_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_due_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200."""
         animal_result = MagicMock()
         animal_result.all.return_value = []
@@ -163,9 +154,7 @@ class TestVaccinationSchedule:
 
 
 class TestGetVaccinations:
-    async def test_get_for_animal_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_for_animal_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 for owned animal."""
         animal = _mock_animal()
         animal_result = MagicMock()
@@ -174,16 +163,12 @@ class TestGetVaccinations:
         vax_result = MagicMock()
         vax_result.scalars.return_value.all.return_value = []
 
-        mock_db.execute = AsyncMock(
-            side_effect=[animal_result, vax_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[animal_result, vax_result])
 
         resp = await client.get(f"/v1/vaccinations/{animal.id}")
         assert resp.status_code == 200
 
-    async def test_get_for_animal_not_found(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_for_animal_not_found(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with nonexistent animal returns 404."""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
@@ -200,17 +185,22 @@ class TestGetVaccinations:
 
 class TestSpeciesBreakdown:
     async def test_breakdown_success(
-        self, client: AsyncClient, mock_db: AsyncMock
+        self, client_as_admin: AsyncClient, mock_db: AsyncMock
     ) -> None:
-        """GET returns 200 with breakdown data."""
+        """GET returns 200 with breakdown data (admin only)."""
         result = MagicMock()
         result.all.return_value = []
         mock_db.execute = AsyncMock(return_value=result)
 
-        resp = await client.get("/v1/vaccinations/species-breakdown")
+        resp = await client_as_admin.get("/v1/vaccinations/species-breakdown")
         assert resp.status_code == 200
         body = resp.json()
         assert "breakdown" in body
+
+    async def test_breakdown_forbidden_for_non_admin(self, client: AsyncClient) -> None:
+        """GET returns 403 for farmer role."""
+        resp = await client.get("/v1/vaccinations/species-breakdown")
+        assert resp.status_code == 403
 
 
 # ---------------------------------------------------------------------------
@@ -220,28 +210,31 @@ class TestSpeciesBreakdown:
 
 class TestVillageCoverage:
     async def test_coverage_with_village(
-        self, client: AsyncClient, mock_db: AsyncMock
+        self, client_as_admin: AsyncClient, mock_db: AsyncMock
     ) -> None:
-        """GET with village_code returns 200."""
+        """GET with village_code returns 200 (admin only)."""
         total_result = MagicMock()
         total_result.scalar.return_value = 0
         mock_db.execute = AsyncMock(return_value=total_result)
 
-        resp = await client.get(
-            "/v1/vaccinations/village-coverage?village_code=629001"
-        )
+        resp = await client_as_admin.get("/v1/vaccinations/village-coverage?village_code=629001")
         assert resp.status_code == 200
 
     async def test_coverage_all_villages(
-        self, client: AsyncClient, mock_db: AsyncMock
+        self, client_as_admin: AsyncClient, mock_db: AsyncMock
     ) -> None:
-        """GET without village_code returns 200."""
+        """GET without village_code returns 200 (admin only)."""
         result = MagicMock()
         result.all.return_value = []
         mock_db.execute = AsyncMock(return_value=result)
 
-        resp = await client.get("/v1/vaccinations/village-coverage")
+        resp = await client_as_admin.get("/v1/vaccinations/village-coverage")
         assert resp.status_code == 200
         body = resp.json()
         assert "data" in body
         assert "total" in body
+
+    async def test_coverage_forbidden_for_non_admin(self, client: AsyncClient) -> None:
+        """GET returns 403 for farmer role."""
+        resp = await client.get("/v1/vaccinations/village-coverage")
+        assert resp.status_code == 403

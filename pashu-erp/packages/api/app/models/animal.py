@@ -1,26 +1,26 @@
 import enum
-from datetime import date, datetime
+from datetime import date
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Date,
-    DateTime,
     Enum,
     ForeignKey,
     Integer,
     Numeric,
     String,
-    func,
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import AuditMixin, Base, SoftDeleteMixin
+from app.models.base import AuditMixin, Base, SoftDeleteMixin, TimestampMixin
 
 
 class Species(str, enum.Enum):
     cattle = "cattle"
+    buffalo = "buffalo"
     goat = "goat"
     sheep = "sheep"
     poultry = "poultry"
@@ -37,8 +37,18 @@ class AnimalSex(str, enum.Enum):
     female = "female"
 
 
-class Animal(AuditMixin, SoftDeleteMixin, Base):
+class Animal(TimestampMixin, AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "animals"
+    __table_args__ = (
+        CheckConstraint(
+            "body_condition_score IS NULL OR body_condition_score BETWEEN 1.0 AND 5.0",
+            name="ck_animals_body_condition_score_range",
+        ),
+        CheckConstraint(
+            "lactation_number IS NULL OR lactation_number >= 0",
+            name="ck_animals_lactation_non_negative",
+        ),
+    )
 
     id: Mapped[str] = mapped_column(
         UUID(as_uuid=True),
@@ -60,22 +70,30 @@ class Animal(AuditMixin, SoftDeleteMixin, Base):
     body_condition_score: Mapped[float | None] = mapped_column(Numeric(3, 1), nullable=True)
     is_insured: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships — lazy="noload" to prevent automatic eager loading;
     # use selectinload() explicitly in queries that need related data.
     owner = relationship(
-        "User", back_populates="animals", foreign_keys=[user_id], lazy="noload",
+        "User",
+        back_populates="animals",
+        foreign_keys=[user_id],
+        lazy="noload",
     )
     health_events = relationship(
-        "HealthEvent", back_populates="animal",
-        foreign_keys="HealthEvent.animal_id", lazy="noload",
+        "HealthEvent",
+        back_populates="animal",
+        foreign_keys="HealthEvent.animal_id",
+        lazy="noload",
     )
     vaccinations = relationship(
-        "Vaccination", back_populates="animal",
-        foreign_keys="Vaccination.animal_id", lazy="noload",
+        "Vaccination",
+        back_populates="animal",
+        foreign_keys="Vaccination.animal_id",
+        lazy="noload",
     )
     yield_logs = relationship(
-        "YieldLog", back_populates="animal",
-        foreign_keys="YieldLog.animal_id", lazy="noload",
+        "YieldLog",
+        back_populates="animal",
+        foreign_keys="YieldLog.animal_id",
+        lazy="noload",
     )

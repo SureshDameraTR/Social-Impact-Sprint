@@ -10,6 +10,7 @@ function getCsrfToken(): string {
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/v1",
+  timeout: 15000,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });

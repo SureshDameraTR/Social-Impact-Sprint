@@ -1,11 +1,9 @@
 """Unit tests for Milk Center endpoints — /v1/milk-center."""
 
 import uuid
-from datetime import datetime, timezone
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from httpx import AsyncClient
 
 from tests.conftest import MILK_CENTER_USER_ID
@@ -117,9 +115,7 @@ class TestReceiveMilk:
         )
         assert resp.status_code == 404
 
-    async def test_receive_invalid_shift(
-        self, client_as_milk_center: AsyncClient
-    ) -> None:
+    async def test_receive_invalid_shift(self, client_as_milk_center: AsyncClient) -> None:
         """POST with invalid shift returns 422."""
         resp = await client_as_milk_center.post(
             "/v1/milk-center/receive",
@@ -134,9 +130,7 @@ class TestReceiveMilk:
         )
         assert resp.status_code == 422
 
-    async def test_receive_missing_fields(
-        self, client_as_milk_center: AsyncClient
-    ) -> None:
+    async def test_receive_missing_fields(self, client_as_milk_center: AsyncClient) -> None:
         """POST without required fields returns 422."""
         resp = await client_as_milk_center.post(
             "/v1/milk-center/receive",
@@ -155,18 +149,41 @@ class TestDailyReport:
         self, client_as_milk_center: AsyncClient, mock_db: AsyncMock
     ) -> None:
         """GET returns 200 with daily report."""
-        result = MagicMock()
-        result.scalars.return_value.all.return_value = []
-        mock_db.execute = AsyncMock(return_value=result)
+        center = _mock_center()
 
-        resp = await client_as_milk_center.get(
-            f"/v1/milk-center/{uuid.uuid4()}/daily-report"
+        # First call: center ownership lookup
+        center_result = MagicMock()
+        center_result.scalar_one_or_none.return_value = center
+
+        # Subsequent calls: shift aggregation + farmer count
+        agg_result = MagicMock()
+        agg_result.all.return_value = []
+        farmer_count_result = MagicMock()
+        farmer_count_result.scalar.return_value = 0
+
+        mock_db.execute = AsyncMock(
+            side_effect=[center_result, agg_result, farmer_count_result]
         )
+
+        resp = await client_as_milk_center.get(f"/v1/milk-center/{center.id}/daily-report")
         assert resp.status_code == 200
         body = resp.json()
         assert "summary" in body
         assert "morning" in body
         assert "evening" in body
+
+    async def test_daily_report_wrong_center_forbidden(
+        self, client_as_milk_center: AsyncClient, mock_db: AsyncMock
+    ) -> None:
+        """GET daily report for a center not managed by user returns 403."""
+        center = _mock_center()
+        center.manager_user_id = str(uuid.uuid4())  # different manager
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = center
+        mock_db.execute = AsyncMock(return_value=result)
+
+        resp = await client_as_milk_center.get(f"/v1/milk-center/{center.id}/daily-report")
+        assert resp.status_code == 403
 
 
 # ---------------------------------------------------------------------------
@@ -179,17 +196,40 @@ class TestFarmerSettlements:
         self, client_as_milk_center: AsyncClient, mock_db: AsyncMock
     ) -> None:
         """GET returns 200 with settlement data."""
-        result = MagicMock()
-        result.all.return_value = []
-        mock_db.execute = AsyncMock(return_value=result)
+        center = _mock_center()
+
+        # First call: center ownership lookup
+        center_result = MagicMock()
+        center_result.scalar_one_or_none.return_value = center
+
+        # Second call: aggregation query
+        agg_result = MagicMock()
+        agg_result.all.return_value = []
+
+        mock_db.execute = AsyncMock(side_effect=[center_result, agg_result])
 
         resp = await client_as_milk_center.get(
-            f"/v1/milk-center/{uuid.uuid4()}/farmer-settlements"
+            f"/v1/milk-center/{center.id}/farmer-settlements"
         )
         assert resp.status_code == 200
         body = resp.json()
         assert "settlements" in body
         assert "total_payout_inr" in body
+
+    async def test_settlements_wrong_center_forbidden(
+        self, client_as_milk_center: AsyncClient, mock_db: AsyncMock
+    ) -> None:
+        """GET settlements for a center not managed by user returns 403."""
+        center = _mock_center()
+        center.manager_user_id = str(uuid.uuid4())  # different manager
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = center
+        mock_db.execute = AsyncMock(return_value=result)
+
+        resp = await client_as_milk_center.get(
+            f"/v1/milk-center/{center.id}/farmer-settlements"
+        )
+        assert resp.status_code == 403
 
 
 # ---------------------------------------------------------------------------
@@ -206,18 +246,12 @@ class TestSearchFarmers:
         result.scalars.return_value.all.return_value = []
         mock_db.execute = AsyncMock(return_value=result)
 
-        resp = await client_as_milk_center.get(
-            "/v1/milk-center/farmers/search?phone=99000"
-        )
+        resp = await client_as_milk_center.get("/v1/milk-center/farmers/search?phone=99000")
         assert resp.status_code == 200
 
-    async def test_search_no_params(
-        self, client_as_milk_center: AsyncClient
-    ) -> None:
+    async def test_search_no_params(self, client_as_milk_center: AsyncClient) -> None:
         """GET without search params returns 400."""
-        resp = await client_as_milk_center.get(
-            "/v1/milk-center/farmers/search"
-        )
+        resp = await client_as_milk_center.get("/v1/milk-center/farmers/search")
         assert resp.status_code == 400
 
 
@@ -245,9 +279,7 @@ class TestQuickEnrollFarmer:
         )
         assert resp.status_code == 201
 
-    async def test_enroll_invalid_phone(
-        self, client_as_milk_center: AsyncClient
-    ) -> None:
+    async def test_enroll_invalid_phone(self, client_as_milk_center: AsyncClient) -> None:
         """POST with invalid phone pattern returns 422."""
         resp = await client_as_milk_center.post(
             "/v1/milk-center/farmers/enroll",
@@ -259,9 +291,7 @@ class TestQuickEnrollFarmer:
         )
         assert resp.status_code == 422
 
-    async def test_enroll_invalid_aadhaar(
-        self, client_as_milk_center: AsyncClient
-    ) -> None:
+    async def test_enroll_invalid_aadhaar(self, client_as_milk_center: AsyncClient) -> None:
         """POST with invalid Aadhaar returns 422."""
         resp = await client_as_milk_center.post(
             "/v1/milk-center/farmers/enroll",

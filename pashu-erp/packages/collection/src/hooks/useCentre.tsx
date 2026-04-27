@@ -16,11 +16,11 @@ const CentreContext = createContext<CentreContextValue>({
 
 export function CentreProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [centreId, setCentreId] = useState<string | null>(
-    localStorage.getItem("collection_centre_id")
+  const [centreId, setCentreId] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("collection_centre_id") : null
   );
-  const [centreName, setCentreName] = useState<string | null>(
-    localStorage.getItem("collection_centre_name")
+  const [centreName, setCentreName] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("collection_centre_name") : null
   );
 
   const setCentre = useCallback((id: string, name: string) => {

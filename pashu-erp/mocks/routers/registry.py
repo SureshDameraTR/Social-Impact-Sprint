@@ -11,7 +11,7 @@ from random import Random
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/api/registry", tags=["Registry"])
+router = APIRouter(prefix="/api/v1/registry", tags=["Registry"])
 
 # ---------------------------------------------------------------------------
 # Load breed data at import time
@@ -71,7 +71,8 @@ def _generate_animal(pashu_id: str) -> dict:
     block = rng.choice(BLOCKS)
     district = rng.choice(DISTRICTS)
     mobile_suffix = rng.randint(7000000000, 9999999999)
-    aadhaar_last4 = f"{rng.randint(1000, 9999)}"
+    # Use clearly fake Aadhaar fragment (0000-prefixed) to avoid resembling real data
+    aadhaar_last4 = f"{rng.randint(0, 99):04d}"
 
     # Date of birth: 1-8 years ago from a fixed reference (2026-04-09)
     ref_date = date(2026, 4, 9)

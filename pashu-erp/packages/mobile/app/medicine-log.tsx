@@ -55,7 +55,7 @@ export default function MedicineLogScreen() {
     ])
       .then(([animalsData, withdrawalsData]) => {
         setAnimals(Array.isArray(animalsData) ? animalsData : (animalsData as any).data ?? []);
-        setWithdrawals(withdrawalsData);
+        setWithdrawals(Array.isArray(withdrawalsData) ? withdrawalsData : (withdrawalsData as any).data ?? []);
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
@@ -77,8 +77,7 @@ export default function MedicineLogScreen() {
       setSelectedMedicine(null);
       setSelectedAnimal(null);
     } catch (e) {
-      if (__DEV__) console.error('Medicine log save failed:', e);
-      showError(t('medicinelog.saveFailed') ?? 'Failed to save medicine log. Please try again.');
+      showError(t('medicinelog.saveFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -249,7 +248,7 @@ export default function MedicineLogScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surface,
   },
   content: {
     padding: SPACING.md,

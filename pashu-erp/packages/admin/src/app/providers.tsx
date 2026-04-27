@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Refine } from "@refinedev/core";
 import routerProvider from "@refinedev/nextjs-router";
 import { usePathname, useRouter } from "next/navigation";
-import { ThemeProvider, CssBaseline, Box, CircularProgress } from "@mui/material";
+import { ThemeProvider, CssBaseline, Box, CircularProgress, useMediaQuery, useTheme } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
 import PetsIcon from "@mui/icons-material/Pets";
@@ -26,6 +26,8 @@ import AdminSidebar, { SIDEBAR_WIDTH } from "@/components/AdminSidebar";
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
   const [status, setStatus] = useState<"loading" | "authenticated" | "unauthenticated">("loading");
 
   useEffect(() => {
@@ -37,6 +39,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       if (result.authenticated) {
         setStatus("authenticated");
       } else {
+        setStatus("unauthenticated");
         router.replace("/login");
       }
     });
@@ -48,7 +51,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (status === "loading") {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }} role="status" aria-label="Checking authentication">
         <CircularProgress />
       </Box>
     );
@@ -69,7 +72,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         id="main-content"
         sx={{
           flexGrow: 1,
-          ml: `${SIDEBAR_WIDTH}px`,
+          ml: isDesktop ? `${SIDEBAR_WIDTH}px` : 0,
+          pt: isDesktop ? 0 : '64px',
           minHeight: "100vh",
           bgcolor: "background.default",
         }}

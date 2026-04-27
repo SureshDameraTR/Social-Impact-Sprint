@@ -40,19 +40,20 @@ interface GovtScheme {
 type SortKey = "scheme_code" | "name" | "max_subsidy_amount" | "subsidy_percentage";
 
 export default function SchemesPage() {
-  useEffect(() => {
-    document.title = 'Govt Schemes — PashuRaksha ERP';
-  }, []);
-
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState<SortKey>("scheme_code");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  const { data, isLoading, isError } = useList<GovtScheme>({ resource: "schemes" });
+  const { data, isLoading, isError } = useList<GovtScheme>({
+    resource: "schemes",
+    pagination: { current: page + 1, pageSize: rowsPerPage },
+    sorters: [{ field: sortBy, order: sortDir }],
+  });
 
   const schemes = data?.data ?? [];
+  const serverTotal = data?.total ?? 0;
 
   const handleSort = useCallback((key: SortKey) => {
     setSortBy((prev) => {
@@ -63,22 +64,16 @@ export default function SchemesPage() {
       setSortDir("asc");
       return key;
     });
+    setPage(0);
   }, []);
 
   const filtered = useMemo(() => {
-    const result = schemes.filter(
+    return schemes.filter(
       (s) =>
         s.name.toLowerCase().includes(search.toLowerCase()) ||
         s.scheme_code.toLowerCase().includes(search.toLowerCase())
     );
-    result.sort((a, b) => {
-      const aVal = a[sortBy];
-      const bVal = b[sortBy];
-      const cmp = typeof aVal === "string" ? aVal.localeCompare(bVal as string) : (aVal as number) - (bVal as number);
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-    return result;
-  }, [schemes, search, sortBy, sortDir]);
+  }, [schemes, search]);
 
   if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }} role="status" aria-label="Loading"><CircularProgress /></Box>;
   if (isError) return <Box sx={{ p: 4 }}><Alert severity="error">Failed to load data from server.</Alert></Box>;
@@ -163,9 +158,7 @@ export default function SchemesPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((scheme) => (
+                filtered.map((scheme) => (
                     <TableRow key={scheme.id}>
                       <TableCell
                         sx={{ ...sxCodeCell, fontWeight: 600, color: colors.primary }}
@@ -206,8 +199,8 @@ export default function SchemesPage() {
                           sx={{
                             fontWeight: 600,
                             fontSize: '11.5px',
-                            bgcolor: scheme.is_active ? colors.successLight : '#f0f0f0',
-                            color: scheme.is_active ? colors.accentGreen : '#999',
+                            bgcolor: scheme.is_active ? colors.successLight : colors.surfaceAlt,
+                            color: scheme.is_active ? colors.accentGreen : colors.textDim,
                             border: 'none',
                           }}
                         />
@@ -226,7 +219,7 @@ export default function SchemesPage() {
         </TableContainer>
         <TablePagination
           component="div"
-          count={filtered.length}
+          count={search ? filtered.length : serverTotal}
           page={page}
           onPageChange={(_, p) => setPage(p)}
           rowsPerPage={rowsPerPage}

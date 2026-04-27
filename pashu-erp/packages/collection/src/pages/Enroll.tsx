@@ -128,7 +128,7 @@ export default function Enroll() {
                 onClick={resetForm}
                 sx={{
                   bgcolor: "primary.main",
-                  "&:hover": { bgcolor: "#0a5534" },
+                  "&:hover": { bgcolor: "primary.dark" },
                   textTransform: "none",
                   fontWeight: 700,
                   fontSize: 16,
@@ -218,7 +218,7 @@ export default function Enroll() {
                 disabled={!canSubmit}
                 sx={{
                   bgcolor: "primary.main",
-                  "&:hover": { bgcolor: "#0a5534" },
+                  "&:hover": { bgcolor: "primary.dark" },
                   textTransform: "none",
                   fontWeight: 700,
                   fontSize: 16,

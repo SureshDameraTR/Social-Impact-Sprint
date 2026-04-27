@@ -198,8 +198,13 @@ def get_vaccination_schedule(species: str) -> list[dict]:
     return [
         {
             "vaccine": v["vaccine"],
-            "first_dose": f"{v.get('first_dose_months', v.get('first_dose_days', '?'))} {'months' if 'first_dose_months' in v else 'days'}",
-            "repeat_interval": f"Every {v['repeat_interval_months']} months" if v.get("repeat_interval_months") else "Single dose",
+            "first_dose": (
+                f"{v.get('first_dose_months', v.get('first_dose_days', '?'))}"
+                f" {'months' if 'first_dose_months' in v else 'days'}"
+            ),
+            "repeat_interval": f"Every {v['repeat_interval_months']} months"
+            if v.get("repeat_interval_months")
+            else "Single dose",
             "mandatory": v["mandatory"],
             "notes": v["notes"],
         }
@@ -243,33 +248,41 @@ def get_due_vaccinations(
         if last_date is None:
             # Never administered — check if old enough for first dose
             if first_dose_months and age_months >= first_dose_months:
-                due.append({
-                    "vaccine": vaccine_name,
-                    "status": "overdue" if age_months > first_dose_months + 1 else "due_now",
-                    "due_date": (date_of_birth + timedelta(days=int(first_dose_months * 30.44))).isoformat(),
-                    "notes": vaccine["notes"],
-                    "mandatory": vaccine["mandatory"],
-                })
+                due.append(
+                    {
+                        "vaccine": vaccine_name,
+                        "status": "overdue" if age_months > first_dose_months + 1 else "due_now",
+                        "due_date": (
+                            date_of_birth + timedelta(days=int(first_dose_months * 30.44))
+                        ).isoformat(),
+                        "notes": vaccine["notes"],
+                        "mandatory": vaccine["mandatory"],
+                    }
+                )
             elif first_dose_days and age_days >= first_dose_days:
-                due.append({
-                    "vaccine": vaccine_name,
-                    "status": "overdue" if age_days > first_dose_days + 7 else "due_now",
-                    "due_date": (date_of_birth + timedelta(days=first_dose_days)).isoformat(),
-                    "notes": vaccine["notes"],
-                    "mandatory": vaccine["mandatory"],
-                })
+                due.append(
+                    {
+                        "vaccine": vaccine_name,
+                        "status": "overdue" if age_days > first_dose_days + 7 else "due_now",
+                        "due_date": (date_of_birth + timedelta(days=first_dose_days)).isoformat(),
+                        "notes": vaccine["notes"],
+                        "mandatory": vaccine["mandatory"],
+                    }
+                )
         elif repeat_months:
             # Has been administered — check if repeat is due
             next_due = last_date + timedelta(days=int(repeat_months * 30.44))
             days_until = (next_due - today).days
             if days_until <= 30:  # Due within 30 days
-                due.append({
-                    "vaccine": vaccine_name,
-                    "status": "overdue" if days_until < 0 else "due_soon",
-                    "due_date": next_due.isoformat(),
-                    "last_administered": last_date.isoformat(),
-                    "notes": vaccine["notes"],
-                    "mandatory": vaccine["mandatory"],
-                })
+                due.append(
+                    {
+                        "vaccine": vaccine_name,
+                        "status": "overdue" if days_until < 0 else "due_soon",
+                        "due_date": next_due.isoformat(),
+                        "last_administered": last_date.isoformat(),
+                        "notes": vaccine["notes"],
+                        "mandatory": vaccine["mandatory"],
+                    }
+                )
 
     return due

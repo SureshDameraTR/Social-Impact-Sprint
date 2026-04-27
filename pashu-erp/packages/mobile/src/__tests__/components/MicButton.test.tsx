@@ -6,6 +6,38 @@ import { theme } from '../../config/theme';
 
 jest.useFakeTimers();
 
+// Mock expo-av Audio
+const mockStopAndUnloadAsync = jest.fn().mockResolvedValue(undefined);
+const mockGetURI = jest.fn().mockReturnValue('file:///tmp/recording.wav');
+const mockStartAsync = jest.fn().mockResolvedValue(undefined);
+const mockPrepareToRecordAsync = jest.fn().mockResolvedValue(undefined);
+
+jest.mock('expo-av', () => ({
+  Audio: {
+    requestPermissionsAsync: jest.fn().mockResolvedValue({ granted: true }),
+    setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
+    Recording: jest.fn().mockImplementation(() => ({
+      prepareToRecordAsync: mockPrepareToRecordAsync,
+      startAsync: mockStartAsync,
+      stopAndUnloadAsync: mockStopAndUnloadAsync,
+      getURI: mockGetURI,
+    })),
+    RecordingOptionsPresets: {
+      HIGH_QUALITY: {},
+    },
+  },
+}));
+
+// Mock voice service
+jest.mock('../../services/voice', () => ({
+  transcribeAudio: jest.fn().mockResolvedValue({
+    text: 'ಮೂರು ಲೀಟರ್',
+    confidence: 0.95,
+    parsedNumber: 3,
+    language: 'kn',
+  }),
+}));
+
 const wrap = (ui: React.ReactElement) => (
   <PaperProvider theme={theme}>{ui}</PaperProvider>
 );
@@ -70,5 +102,20 @@ describe('MicButton', () => {
     expect(() =>
       render(wrap(<MicButton onResult={undefined as never} />))
     ).not.toThrow();
+  });
+
+  // ── Permission denied ────────────────────────────────────────────────────
+  it('shows error when mic permission is denied', async () => {
+    const { Audio } = require('expo-av');
+    Audio.requestPermissionsAsync.mockResolvedValueOnce({ granted: false });
+
+    const { getByTestId } = render(wrap(<MicButton onResult={onResult} />));
+    fireEvent.press(getByTestId('mic-button'));
+
+    await waitFor(() => {
+      const statusEl = getByTestId('mic-status-text');
+      expect(statusEl.props.children).toBeTruthy();
+    });
+    expect(onResult).not.toHaveBeenCalled();
   });
 });

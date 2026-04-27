@@ -30,7 +30,7 @@ export default function LoginScreen() {
 
   const validatePhone = (value: string): boolean => {
     if (!PHONE_REGEX.test(value)) {
-      setPhoneError(t('login.invalidPhone') ?? 'Enter a valid 10-digit Indian mobile number');
+      setPhoneError(t('login.invalidPhone'));
       return false;
     }
     setPhoneError('');
@@ -41,22 +41,26 @@ export default function LoginScreen() {
     if (!validatePhone(phone)) return;
     setLoading(true);
     setError('');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15_000);
     try {
       const response = await fetch(`${API_URL}/auth/request-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: `+91${phone}` }),
+        signal: controller.signal,
       });
       if (!response.ok) {
         const err = await response.json();
-        setError(err.detail || (t('login.otpFailed') ?? 'Failed to send OTP'));
+        setError(err.detail || t('login.otpFailed'));
         return;
       }
       setOtpSent(true);
       setResendCooldown(60);
     } catch {
-      setError(t('common.networkError') ?? 'Network error. Check your connection.');
+      setError(t('errors.networkError'));
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
@@ -64,6 +68,8 @@ export default function LoginScreen() {
   const handleVerifyOtp = async () => {
     setLoading(true);
     setError('');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15_000);
     try {
       const response = await fetch(`${API_URL}/auth/verify-otp`, {
         method: 'POST',
@@ -73,10 +79,11 @@ export default function LoginScreen() {
           otp: otp.join(''),
           client_type: 'mobile',
         }),
+        signal: controller.signal,
       });
       if (!response.ok) {
         const err = await response.json();
-        setError(err.detail || (t('login.verificationFailed') ?? 'Verification failed'));
+        setError(err.detail || t('login.verificationFailed'));
         if (err.code === 'OTP_MAX_ATTEMPTS' || err.code === 'OTP_EXPIRED') {
           setOtpSent(false);
           setOtp(['', '', '', '', '', '']);
@@ -87,31 +94,34 @@ export default function LoginScreen() {
       await Storage.setItemAsync('auth_token', data.access_token);
       router.replace('/(tabs)');
     } catch {
-      setError(t('common.networkError') ?? 'Network error. Check your connection.');
+      setError(t('errors.networkError'));
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
 
   const handleOtpChange = (text: string, index: number) => {
-    // Handle paste: if text has multiple digits, distribute across boxes
-    if (text.length > 1) {
-      const digits = text.replace(/\D/g, '').slice(0, 6).split('');
+    const digits = text.replace(/\D/g, '');
+
+    // Handle paste or multi-character input: distribute across boxes
+    if (digits.length > 1) {
+      const chars = digits.slice(0, 6 - index).split('');
       const newOtp = [...otp];
-      digits.forEach((d, i) => {
-        if (index + i < 6) newOtp[index + i] = d;
+      chars.forEach((d, i) => {
+        newOtp[index + i] = d;
       });
       setOtp(newOtp);
-      const focusIdx = Math.min(index + digits.length, 5);
+      const focusIdx = Math.min(index + chars.length, 5);
       otpRefs.current[focusIdx]?.focus();
       return;
     }
 
+    // Single digit entry
     const newOtp = [...otp];
-    newOtp[index] = text;
+    newOtp[index] = digits.slice(0, 1);
     setOtp(newOtp);
-    // Auto-focus next
-    if (text && index < 5) {
+    if (digits && index < 5) {
       otpRefs.current[index + 1]?.focus();
     }
   };
@@ -191,18 +201,19 @@ export default function LoginScreen() {
               <View style={styles.otpRow}>
                 {otp.map((digit, i) => (
                   <RNTextInput
-                    key={i}
+                    key={`otp-digit-${i}`}
                     ref={(ref) => { otpRefs.current[i] = ref; }}
                     value={digit}
                     onChangeText={(text) => handleOtpChange(text, i)}
                     onKeyPress={({ nativeEvent }) => handleOtpKeyPress(nativeEvent.key, i)}
                     keyboardType="number-pad"
-                    maxLength={1}
+                    maxLength={6}
                     style={[
                       styles.otpBox,
                       digit ? styles.otpBoxFilled : {},
                     ]}
                     textAlign="center"
+                    textAlignVertical="center"
                     accessibilityLabel={`OTP digit ${i + 1} of 6`}
                     accessibilityHint="Enter one digit"
                   />
@@ -228,7 +239,7 @@ export default function LoginScreen() {
             <View style={{ alignItems: 'center', marginTop: 12 }}>
               {resendCooldown > 0 ? (
                 <Text variant="bodySmall" style={{ color: '#414941' }}>
-                  {t('login.resendOtpIn', { seconds: resendCooldown }) ?? `Resend OTP in ${resendCooldown}s`}
+                  {t('login.resendOtpIn', { seconds: resendCooldown })}
                 </Text>
               ) : (
                 <Button
@@ -240,7 +251,7 @@ export default function LoginScreen() {
                   }}
                   textColor={colors.primary}
                 >
-                  {t('login.resendOtp') ?? 'Resend OTP'}
+                  {t('login.resendOtp')}
                 </Button>
               )}
             </View>
@@ -339,6 +350,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: '#1A1A1A',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    lineHeight: 52,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   otpBoxFilled: {
     borderColor: colors.primary,

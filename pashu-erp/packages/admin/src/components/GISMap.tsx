@@ -15,10 +15,10 @@ export interface MapPoint {
 }
 
 const severityColor: Record<string, string> = {
-  critical: "#d32f2f",
-  high: "#f57c00",
-  medium: "#fbc02d",
-  low: "#388e3c",
+  critical: "#c0392b",
+  high: "#d97706",
+  medium: "#d97706",
+  low: "#16a34a",
 };
 
 interface GISMapProps {
@@ -51,7 +51,6 @@ function MapInner({
       document.head.appendChild(link);
     }
   }, []);
-  /* eslint-disable @typescript-eslint/no-var-requires */
   const RL = require("react-leaflet") as typeof import("react-leaflet");
   const {
     MapContainer,
@@ -110,8 +109,8 @@ function MapInner({
                   center={[pt.lat, pt.lng]}
                   radius={8}
                   pathOptions={{
-                    color: "#0288d1",
-                    fillColor: "#0288d1",
+                    color: "#0369a1",
+                    fillColor: "#0369a1",
                     fillOpacity: 0.6,
                   }}
                 >
@@ -132,8 +131,8 @@ function MapInner({
                   center={[pt.lat, pt.lng]}
                   radius={5}
                   pathOptions={{
-                    color: "#388e3c",
-                    fillColor: "#388e3c",
+                    color: "#16a34a",
+                    fillColor: "#16a34a",
                     fillOpacity: 0.5,
                   }}
                 >
@@ -181,9 +180,9 @@ const DynamicMap = dynamic(() => Promise.resolve(MapInner), {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        bgcolor: "#f0f4f3",
+        bgcolor: "background.default",
         borderRadius: 2,
-        color: "#5f7a74",
+        color: "text.secondary",
         fontSize: 14,
       }}
     >

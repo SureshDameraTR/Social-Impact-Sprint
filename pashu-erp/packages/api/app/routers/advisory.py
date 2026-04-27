@@ -10,16 +10,16 @@ from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.advisory import AdvisoryTip
 from app.models.user import User
-from app.schemas.advisory import AdvisoryTipRead
+from app.schemas.advisory import AdvisoryTipListResponse, AdvisoryTipRead
 
 router = APIRouter(prefix="/v1/advisory", tags=["Advisory"])
 
 
-@router.get("/tips")
+@router.get("/tips", response_model=AdvisoryTipListResponse)
 async def list_tips(
     species: str | None = Query(None, description="Filter by species"),
     category: str | None = Query(None, description="Filter by category"),
-    skip: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -30,8 +30,10 @@ async def list_tips(
         AdvisoryTip.deleted_at.is_(None),
     ]
     count_query = select(func.count()).select_from(AdvisoryTip).where(*base_filters)
-    query = select(AdvisoryTip).where(*base_filters).order_by(
-        AdvisoryTip.priority.desc(), AdvisoryTip.published_at.desc()
+    query = (
+        select(AdvisoryTip)
+        .where(*base_filters)
+        .order_by(AdvisoryTip.priority.desc(), AdvisoryTip.published_at.desc())
     )
 
     if species:
@@ -47,12 +49,14 @@ async def list_tips(
     count_result = await db.execute(count_query)
     total = count_result.scalar() or 0
 
-    result = await db.execute(query.offset(skip).limit(limit))
+    result = await db.execute(query.offset(offset).limit(limit))
     return {"data": result.scalars().all(), "total": total}
 
 
 @router.get("/tips/{tip_id}", response_model=AdvisoryTipRead)
-async def get_tip(tip_id: UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_tip(
+    tip_id: UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
     """Get a specific advisory tip by ID."""
     result = await db.execute(
         select(AdvisoryTip).where(AdvisoryTip.id == tip_id, AdvisoryTip.deleted_at.is_(None))

@@ -1,0 +1,669 @@
+{
+  "total": 82,
+  "stats": {
+    "avg_ms": 10.2,
+    "p50_ms": 5.9,
+    "p95_ms": 28.6,
+    "p99_ms": 112.6,
+    "min_ms": 1.5,
+    "max_ms": 112.6
+  },
+  "results": [
+    {
+      "method": "GET",
+      "path": "/v1/files/6da3a477-2a16-487e-b00a-d11eacc1007e",
+      "status": 200,
+      "time_ms": 112.6,
+      "size_bytes": 22,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/income/transactions",
+      "status": 200,
+      "time_ms": 74.0,
+      "size_bytes": 43,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/health",
+      "status": 200,
+      "time_ms": 41.2,
+      "size_bytes": 42172,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/admin/charts/milk",
+      "status": 200,
+      "time_ms": 28.6,
+      "size_bytes": 1105,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/admin/gis/alerts",
+      "status": 200,
+      "time_ms": 28.6,
+      "size_bytes": 305,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/iot/readings",
+      "status": 200,
+      "time_ms": 19.5,
+      "size_bytes": 3713,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vet/cases/454f9c78-451f-46de-a8a5-74284a0b0c78",
+      "status": 200,
+      "time_ms": 19.3,
+      "size_bytes": 969,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/income/history/7124b015-1026-459c-8a79-3a2772772e90",
+      "status": 200,
+      "time_ms": 16.1,
+      "size_bytes": 43,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vet/cases",
+      "status": 200,
+      "time_ms": 16.1,
+      "size_bytes": 26103,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vet/dashboard/alerts",
+      "status": 200,
+      "time_ms": 15.5,
+      "size_bytes": 12502,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/income/by-category",
+      "status": 200,
+      "time_ms": 13.3,
+      "size_bytes": 339,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/map/points",
+      "status": 200,
+      "time_ms": 13.1,
+      "size_bytes": 15371,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/income/summary",
+      "status": 200,
+      "time_ms": 12.3,
+      "size_bytes": 166,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/milk",
+      "status": 200,
+      "time_ms": 11.5,
+      "size_bytes": 24469,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/feed/ingredients",
+      "status": 200,
+      "time_ms": 11.5,
+      "size_bytes": 7944,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/consent/my",
+      "status": 200,
+      "time_ms": 11.5,
+      "size_bytes": 21,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/medicines/withdrawal-status/1ce4ad9f-b6f5-44c8-8635-c660f1b12d51",
+      "status": 200,
+      "time_ms": 11.3,
+      "size_bytes": 1883,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/farmers",
+      "status": 200,
+      "time_ms": 10.5,
+      "size_bytes": 4128,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/ethno-vet/remedies/177ee0cf-75ea-40bf-8442-2aed9773209f",
+      "status": 200,
+      "time_ms": 10.3,
+      "size_bytes": 808,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/income/breakdown/7124b015-1026-459c-8a79-3a2772772e90",
+      "status": 200,
+      "time_ms": 10.2,
+      "size_bytes": 82,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/milk/history",
+      "status": 200,
+      "time_ms": 9.8,
+      "size_bytes": 12418,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vet/dashboard/stats",
+      "status": 200,
+      "time_ms": 9.8,
+      "size_bytes": 80,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/advisory/tips/b7371881-cc4e-4913-abb1-b847de949149",
+      "status": 200,
+      "time_ms": 9.7,
+      "size_bytes": 1009,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/ethno-vet/remedies",
+      "status": 200,
+      "time_ms": 9.5,
+      "size_bytes": 18994,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/finance/summary",
+      "status": 200,
+      "time_ms": 9.4,
+      "size_bytes": 246,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/advisory/tips",
+      "status": 200,
+      "time_ms": 9.1,
+      "size_bytes": 15023,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace",
+      "status": 200,
+      "time_ms": 8.8,
+      "size_bytes": 35191,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/shg/00000000-0000-0000-0000-000000000000",
+      "status": 404,
+      "time_ms": 8.7,
+      "size_bytes": 32,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/health/history/1ce4ad9f-b6f5-44c8-8635-c660f1b12d51",
+      "status": 403,
+      "time_ms": 8.6,
+      "size_bytes": 28,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/shg",
+      "status": 200,
+      "time_ms": 8.6,
+      "size_bytes": 21,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/medicines",
+      "status": 200,
+      "time_ms": 7.8,
+      "size_bytes": 6323,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaccinations/species-breakdown",
+      "status": 200,
+      "time_ms": 7.5,
+      "size_bytes": 194,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/reference/medicines",
+      "status": 200,
+      "time_ms": 7.4,
+      "size_bytes": 6305,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/admin/stats",
+      "status": 500,
+      "time_ms": 7.0,
+      "size_bytes": 21,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/animals",
+      "status": 200,
+      "time_ms": 6.9,
+      "size_bytes": 3245,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/milk-center/00000000-0000-0000-0000-000000000000/daily-report",
+      "status": 200,
+      "time_ms": 6.8,
+      "size_bytes": 282,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/ethno-vet/search?q=fever",
+      "status": 200,
+      "time_ms": 6.8,
+      "size_bytes": 759,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/income/monthly",
+      "status": 200,
+      "time_ms": 6.4,
+      "size_bytes": 92,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vet/my-cases",
+      "status": 200,
+      "time_ms": 6.3,
+      "size_bytes": 21,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/history/7124b015-1026-459c-8a79-3a2772772e90",
+      "status": 200,
+      "time_ms": 6.0,
+      "size_bytes": 43,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/weather/tts/Bangalore Urban",
+      "status": 200,
+      "time_ms": 6.0,
+      "size_bytes": 4392,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/health/alerts/map",
+      "status": 200,
+      "time_ms": 5.9,
+      "size_bytes": 305,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/milk/center/00000000-0000-0000-0000-000000000000/daily",
+      "status": 200,
+      "time_ms": 5.9,
+      "size_bytes": 144,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/summary/7124b015-1026-459c-8a79-3a2772772e90",
+      "status": 200,
+      "time_ms": 5.9,
+      "size_bytes": 123,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaccinations/village-coverage",
+      "status": 200,
+      "time_ms": 5.8,
+      "size_bytes": 202,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/weather/forecast/Bangalore Urban",
+      "status": 200,
+      "time_ms": 5.8,
+      "size_bytes": 986,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/files",
+      "status": 200,
+      "time_ms": 5.8,
+      "size_bytes": 4193,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/income/summary/7124b015-1026-459c-8a79-3a2772772e90",
+      "status": 200,
+      "time_ms": 5.7,
+      "size_bytes": 166,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/insurance/premium-estimate/1ce4ad9f-b6f5-44c8-8635-c660f1b12d51",
+      "status": 200,
+      "time_ms": 5.7,
+      "size_bytes": 351,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaccinations/due",
+      "status": 200,
+      "time_ms": 5.7,
+      "size_bytes": 2347,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/registry/lookup/IN-KA-001-0001",
+      "status": 404,
+      "time_ms": 5.6,
+      "size_bytes": 89,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/ready",
+      "status": 200,
+      "time_ms": 5.5,
+      "size_bytes": 92,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/schemes",
+      "status": 200,
+      "time_ms": 5.5,
+      "size_bytes": 24035,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "status": 200,
+      "time_ms": 5.3,
+      "size_bytes": 43,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/milk-center/00000000-0000-0000-0000-000000000000/farmer-settlements",
+      "status": 200,
+      "time_ms": 5.1,
+      "size_bytes": 129,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaccinations/coverage/VLG001",
+      "status": 200,
+      "time_ms": 5.1,
+      "size_bytes": 81,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/milk/today",
+      "status": 200,
+      "time_ms": 5.0,
+      "size_bytes": 103,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/milk/farmer/7124b015-1026-459c-8a79-3a2772772e90/history",
+      "status": 200,
+      "time_ms": 5.0,
+      "size_bytes": 43,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/medicine-log/withdrawals",
+      "status": 200,
+      "time_ms": 4.9,
+      "size_bytes": 21,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/iot/device-types",
+      "status": 200,
+      "time_ms": 4.9,
+      "size_bytes": 283,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/milk/daily-summary",
+      "status": 200,
+      "time_ms": 4.7,
+      "size_bytes": 1463,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/rates",
+      "status": 200,
+      "time_ms": 4.7,
+      "size_bytes": 1449,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/schemes/0273d737-330d-4399-a475-89d1e47dc3a7",
+      "status": 200,
+      "time_ms": 4.7,
+      "size_bytes": 460,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/shg/00000000-0000-0000-0000-000000000000/compliance",
+      "status": 404,
+      "time_ms": 4.7,
+      "size_bytes": 32,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaccinations/due/7124b015-1026-459c-8a79-3a2772772e90",
+      "status": 200,
+      "time_ms": 4.3,
+      "size_bytes": 90,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/profile",
+      "status": 200,
+      "time_ms": 4.3,
+      "size_bytes": 294,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/milk-center/my-center",
+      "status": 404,
+      "time_ms": 4.2,
+      "size_bytes": 31,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/weather/alerts/Bangalore Urban",
+      "status": 200,
+      "time_ms": 4.1,
+      "size_bytes": 59,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/iot/devices",
+      "status": 200,
+      "time_ms": 4.0,
+      "size_bytes": 2244,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/insurance/policies/7124b015-1026-459c-8a79-3a2772772e90",
+      "status": 200,
+      "time_ms": 3.7,
+      "size_bytes": 21,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/iot/devices/SC-GIR-0042/latest",
+      "status": 200,
+      "time_ms": 3.7,
+      "size_bytes": 368,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/animals/1ce4ad9f-b6f5-44c8-8635-c660f1b12d51",
+      "status": 200,
+      "time_ms": 3.6,
+      "size_bytes": 392,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/iot/devices/SC-GIR-0042",
+      "status": 200,
+      "time_ms": 3.4,
+      "size_bytes": 266,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaccinations/1ce4ad9f-b6f5-44c8-8635-c660f1b12d51",
+      "status": 403,
+      "time_ms": 3.3,
+      "size_bytes": 28,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/alerts/nearby?lat=12.97&lng=77.59",
+      "status": 422,
+      "time_ms": 2.7,
+      "size_bytes": 89,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaccinations/schedule",
+      "status": 200,
+      "time_ms": 2.6,
+      "size_bytes": 2928,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaccinations/schedule/cattle",
+      "status": 200,
+      "time_ms": 2.4,
+      "size_bytes": 1184,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/reference/market-rates",
+      "status": 200,
+      "time_ms": 2.1,
+      "size_bytes": 3916,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/milk-center/farmers/search?q=raj",
+      "status": 400,
+      "time_ms": 1.9,
+      "size_bytes": 51,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/reference/insurance-premiums",
+      "status": 200,
+      "time_ms": 1.8,
+      "size_bytes": 2919,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/v1/auth/me",
+      "status": 200,
+      "time_ms": 1.7,
+      "size_bytes": 116,
+      "error": ""
+    },
+    {
+      "method": "GET",
+      "path": "/metrics",
+      "status": 200,
+      "time_ms": 1.5,
+      "size_bytes": 41,
+      "error": ""
+    }
+  ]
+}

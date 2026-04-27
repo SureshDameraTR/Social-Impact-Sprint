@@ -15,6 +15,9 @@ dependencies = [
     "httpx>=0.27.0",
     "bcrypt>=4.0.0",
     "tenacity>=8.2.0",
+    "circuitbreaker>=2.0.0",
+    "slowapi>=0.1.9",
+    "cachetools>=5.3.0",
 ]
 
 [project.optional-dependencies]
@@ -37,11 +40,29 @@ target-version = "py310"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "S", "B", "PT", "UP", "N"]
-ignore = ["S101"]  # Allow assert in tests
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+    "I",   # isort (import ordering)
+    "B",   # flake8-bugbear (common pitfalls)
+    "PT",  # flake8-pytest-style
+    "UP",  # pyupgrade (modern Python idioms)
+    "N",   # pep8-naming
+]
+ignore = [
+    "B008",  # Depends() in default args is standard FastAPI pattern
+]
+per-file-ignores = { "app/seed/demo_data.py" = ["E501"], "app/services/disease_rules.py" = ["E501"], "tests/test_browser_walkthrough.py" = ["E501"] }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 filterwarnings = ["ignore::DeprecationWarning"]
 addopts = "--strict-markers --tb=short"
+markers = ["integration: marks tests as integration tests requiring real PostgreSQL"]
+
+[dependency-groups]
+dev = [
+    "playwright>=1.58.0",
+]

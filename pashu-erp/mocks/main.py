@@ -9,7 +9,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import weather, registry, iot, storage
+from routers import iot, registry, storage, weather
 
 app = FastAPI(
     title="PashuRaksha Mock Services",
@@ -25,8 +25,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allow_headers=["Content-Type", "Authorization", "X-CSRF-Token"],
 )
 
 app.include_router(weather.router)

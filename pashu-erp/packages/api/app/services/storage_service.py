@@ -4,6 +4,7 @@ Proxies file upload/download requests to the configured storage backend.
 """
 
 from app.config import settings
+from app.services.circuit_breakers import storage_breaker
 from app.services.errors import ServiceNotConfiguredError
 from app.services.http_client import get_http_client, retry_on_network
 
@@ -15,6 +16,7 @@ def _base_url() -> str:
     return url.rstrip("/")
 
 
+@storage_breaker
 @retry_on_network
 async def upload_file(
     file_bytes: bytes,
@@ -40,6 +42,7 @@ async def upload_file(
     return resp.json()
 
 
+@storage_breaker
 @retry_on_network
 async def get_file(file_id: str) -> tuple[bytes, str]:
     """Download a file from the storage backend.
@@ -55,6 +58,7 @@ async def get_file(file_id: str) -> tuple[bytes, str]:
     return resp.content, ct
 
 
+@storage_breaker
 @retry_on_network
 async def list_files(
     entity_type: str | None = None,

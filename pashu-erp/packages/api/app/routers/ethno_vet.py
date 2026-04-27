@@ -10,16 +10,16 @@ from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.ethno_vet import TraditionalRemedy
 from app.models.user import User
-from app.schemas.ethno_vet import TraditionalRemedyRead
+from app.schemas.ethno_vet import TraditionalRemedyListResponse, TraditionalRemedyRead
 
 router = APIRouter(prefix="/v1/ethno-vet", tags=["Ethno-Veterinary"])
 
 
-@router.get("/remedies")
+@router.get("/remedies", response_model=TraditionalRemedyListResponse)
 async def list_remedies(
     species: str | None = Query(None, description="Filter by species"),
     condition: str | None = Query(None, description="Filter by condition treated"),
-    skip: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -51,15 +51,21 @@ async def list_remedies(
     count_result = await db.execute(count_query)
     total = count_result.scalar() or 0
 
-    result = await db.execute(query.offset(skip).limit(limit))
+    result = await db.execute(query.offset(offset).limit(limit))
     return {"data": result.scalars().all(), "total": total}
 
 
 @router.get("/remedies/{remedy_id}", response_model=TraditionalRemedyRead)
-async def get_remedy(remedy_id: UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_remedy(
+    remedy_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """Get detailed information about a traditional remedy."""
     result = await db.execute(
-        select(TraditionalRemedy).where(TraditionalRemedy.id == remedy_id, TraditionalRemedy.deleted_at.is_(None))
+        select(TraditionalRemedy).where(
+            TraditionalRemedy.id == remedy_id, TraditionalRemedy.deleted_at.is_(None)
+        )
     )
     remedy = result.scalar_one_or_none()
     if remedy is None:
@@ -67,10 +73,10 @@ async def get_remedy(remedy_id: UUID, current_user: User = Depends(get_current_u
     return remedy
 
 
-@router.get("/search")
+@router.get("/search", response_model=TraditionalRemedyListResponse)
 async def search_remedies(
     q: str = Query(..., min_length=2, description="Search keyword"),
-    skip: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -94,6 +100,6 @@ async def search_remedies(
     total = count_result.scalar() or 0
 
     result = await db.execute(
-        select(TraditionalRemedy).where(*search_filter).offset(skip).limit(limit)
+        select(TraditionalRemedy).where(*search_filter).offset(offset).limit(limit)
     )
     return {"data": result.scalars().all(), "total": total}

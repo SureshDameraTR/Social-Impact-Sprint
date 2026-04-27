@@ -8,13 +8,12 @@ from app.services.vaccination_scheduler import (
     get_vaccination_schedule,
 )
 
-
 # ---------------------------------------------------------------------------
 # get_vaccination_schedule — species lookup
 # ---------------------------------------------------------------------------
 
-class TestGetVaccinationSchedule:
 
+class TestGetVaccinationSchedule:
     def test_cattle_schedule(self):
         schedule = get_vaccination_schedule("cattle")
         assert len(schedule) == len(VACCINATION_CALENDAR["cattle"])
@@ -60,22 +59,26 @@ class TestGetVaccinationSchedule:
 
     def test_first_dose_format_months(self):
         schedule = get_vaccination_schedule("cattle")
-        fmd = next(v for v in schedule if v["vaccine"] == "FMD Vaccine")
+        fmd = next((v for v in schedule if v["vaccine"] == "FMD Vaccine"), None)
+        assert fmd is not None, "Expected FMD Vaccine not found in schedule"
         assert "months" in fmd["first_dose"]
 
     def test_first_dose_format_days_poultry(self):
         schedule = get_vaccination_schedule("poultry")
-        mareks = next(v for v in schedule if v["vaccine"] == "Marek's Disease Vaccine")
+        mareks = next((v for v in schedule if v["vaccine"] == "Marek's Disease Vaccine"), None)
+        assert mareks is not None, "Expected Marek's Disease Vaccine not found in schedule"
         assert "days" in mareks["first_dose"]
 
     def test_single_dose_display(self):
         schedule = get_vaccination_schedule("cattle")
-        bruc = next(v for v in schedule if "Brucellosis" in v["vaccine"])
+        bruc = next((v for v in schedule if "Brucellosis" in v["vaccine"]), None)
+        assert bruc is not None, "Expected Brucellosis vaccine not found in schedule"
         assert bruc["repeat_interval"] == "Single dose"
 
     def test_repeat_interval_display(self):
         schedule = get_vaccination_schedule("cattle")
-        fmd = next(v for v in schedule if v["vaccine"] == "FMD Vaccine")
+        fmd = next((v for v in schedule if v["vaccine"] == "FMD Vaccine"), None)
+        assert fmd is not None, "Expected FMD Vaccine not found in schedule"
         assert "Every" in fmd["repeat_interval"]
 
 
@@ -83,8 +86,8 @@ class TestGetVaccinationSchedule:
 # get_due_vaccinations — age-based scheduling
 # ---------------------------------------------------------------------------
 
-class TestGetDueVaccinations:
 
+class TestGetDueVaccinations:
     def test_newborn_calf_nothing_due(self):
         """A calf born today should not have any vaccines due yet."""
         dob = date.today()
@@ -116,8 +119,9 @@ class TestGetDueVaccinations:
 
     def test_due_now_status(self):
         """A vaccine at exactly the right age should be due_now."""
-        # FMD first dose at 4 months — create animal exactly 4 months old
-        dob = date.today() - timedelta(days=int(4 * 30.44))
+        # FMD first dose at 4 months — create animal just past 4 months
+        # (int(4*30.44)=121 days → 121/30.44=3.97 months, add 1 day to cross threshold)
+        dob = date.today() - timedelta(days=int(4 * 30.44) + 2)
         due = get_due_vaccinations("cattle", dob)
         fmd = next((v for v in due if v["vaccine"] == "FMD Vaccine"), None)
         assert fmd is not None
@@ -191,7 +195,7 @@ class TestGetDueVaccinations:
 
     def test_goat_three_month_ppr_due(self):
         """PPR is due at 3 months for goats."""
-        dob = date.today() - timedelta(days=int(3 * 30.44))
+        dob = date.today() - timedelta(days=int(3 * 30.44) + 2)
         due = get_due_vaccinations("goat", dob)
         ppr = next((v for v in due if "PPR" in v["vaccine"]), None)
         assert ppr is not None

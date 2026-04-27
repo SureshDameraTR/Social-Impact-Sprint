@@ -50,7 +50,7 @@ test.describe('Farmers Page', () => {
     await expect(page.locator('table')).toBeVisible();
     // Should have at least one data row
     const rows = page.locator('tbody tr');
-    await expect(rows).toHaveCountGreaterThan(0);
+    expect(await rows.count()).toBeGreaterThan(0);
   });
 
   test('search filters table rows', async ({ page }) => {

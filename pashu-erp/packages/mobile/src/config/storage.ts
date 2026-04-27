@@ -12,14 +12,14 @@ if (Platform.OS !== 'web') {
 
 export async function getItemAsync(key: string): Promise<string | null> {
   if (Platform.OS === 'web') {
-    return localStorage.getItem(key);
+    return sessionStorage.getItem(key);
   }
   return SecureStore!.getItemAsync(key);
 }
 
 export async function setItemAsync(key: string, value: string): Promise<void> {
   if (Platform.OS === 'web') {
-    localStorage.setItem(key, value);
+    sessionStorage.setItem(key, value);
     return;
   }
   return SecureStore!.setItemAsync(key, value);
@@ -27,7 +27,7 @@ export async function setItemAsync(key: string, value: string): Promise<void> {
 
 export async function deleteItemAsync(key: string): Promise<void> {
   if (Platform.OS === 'web') {
-    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
     return;
   }
   return SecureStore!.deleteItemAsync(key);

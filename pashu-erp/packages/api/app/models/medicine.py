@@ -4,10 +4,10 @@ from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import AuditMixin, Base, SoftDeleteMixin
+from app.models.base import AuditMixin, Base, SoftDeleteMixin, TimestampMixin
 
 
-class Medicine(AuditMixin, SoftDeleteMixin, Base):
+class Medicine(TimestampMixin, AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "medicines"
 
     id: Mapped[str] = mapped_column(
@@ -21,11 +21,12 @@ class Medicine(AuditMixin, SoftDeleteMixin, Base):
     withdrawal_milk_days: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     withdrawal_meat_days: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     species_applicable: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     administrations = relationship(
-        "MedicineAdministration", back_populates="medicine",
-        foreign_keys="MedicineAdministration.medicine_id", lazy="noload",
+        "MedicineAdministration",
+        back_populates="medicine",
+        foreign_keys="MedicineAdministration.medicine_id",
+        lazy="noload",
     )
 
 
@@ -48,10 +49,15 @@ class MedicineAdministration(AuditMixin, SoftDeleteMixin, Base):
     )
     withdrawal_milk_until: Mapped[date | None] = mapped_column(Date, nullable=True)
     withdrawal_meat_until: Mapped[date | None] = mapped_column(Date, nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=True
+    )
 
     # Relationships
     animal = relationship("Animal", foreign_keys=[animal_id], lazy="noload")
     medicine = relationship(
-        "Medicine", back_populates="administrations",
-        foreign_keys=[medicine_id], lazy="noload",
+        "Medicine",
+        back_populates="administrations",
+        foreign_keys=[medicine_id],
+        lazy="noload",
     )

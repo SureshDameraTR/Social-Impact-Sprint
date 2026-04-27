@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { IconButton } from 'react-native-paper';
+import { Icon, IconButton } from 'react-native-paper';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { colors } from '../../src/config/theme';
@@ -21,7 +21,7 @@ const HeaderRight = React.memo(function HeaderRight() {
         icon="bell-outline"
         size={24}
         onPress={() => router.push('/vaccinations')}
-        iconColor="#414941"
+        iconColor={colors.onSurfaceVariant}
         accessibilityLabel="Notifications"
         accessibilityRole="button"
       />
@@ -29,10 +29,9 @@ const HeaderRight = React.memo(function HeaderRight() {
         onPress={() => router.push('/profile')}
         accessibilityLabel="Profile"
         accessibilityRole="button"
+        style={styles.avatar}
       >
-        <View style={styles.avatar}>
-          <IconButton icon="account" size={20} iconColor="#FFFFFF" />
-        </View>
+        <Icon source="account" size={20} color={colors.onPrimary} />
       </Pressable>
     </View>
   );
@@ -45,7 +44,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: '#717971',
+        tabBarInactiveTintColor: colors.outline,
         tabBarLabelStyle: {
           fontSize: 13,
           fontWeight: '600',
@@ -56,7 +55,7 @@ export default function TabLayout() {
           paddingBottom: 12,
           paddingTop: 8,
           borderTopWidth: 0,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: colors.onPrimary,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.08,
@@ -68,7 +67,7 @@ export default function TabLayout() {
         },
         headerRight: () => <HeaderRight />,
         headerStyle: {
-          backgroundColor: '#F5F5F0',
+          backgroundColor: colors.surface,
           shadowColor: 'transparent',
           elevation: 0,
         },
@@ -85,7 +84,7 @@ export default function TabLayout() {
           title: t('common.home'),
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.tabIconContainer, focused && styles.tabIconActive]}>
-              <IconButton icon="home" size={26} iconColor={color} style={styles.tabIcon} />
+              <Icon source="home" size={26} color={color} />
             </View>
           ),
           headerTitle: 'PashuRaksha',
@@ -97,7 +96,7 @@ export default function TabLayout() {
           title: t('common.milk'),
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.tabIconContainer, focused && styles.tabIconActive]}>
-              <IconButton icon="water" size={26} iconColor={color} style={styles.tabIcon} />
+              <Icon source="water" size={26} color={color} />
             </View>
           ),
         }}
@@ -108,7 +107,7 @@ export default function TabLayout() {
           title: t('common.sell'),
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.tabIconContainer, focused && styles.tabIconActive]}>
-              <IconButton icon="cart" size={26} iconColor={color} style={styles.tabIcon} />
+              <Icon source="cart" size={26} color={color} />
             </View>
           ),
         }}
@@ -119,7 +118,7 @@ export default function TabLayout() {
           title: t('common.health'),
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.tabIconContainer, focused && styles.tabIconActive]}>
-              <IconButton icon="heart-pulse" size={26} iconColor={color} style={styles.tabIcon} />
+              <Icon source="heart-pulse" size={26} color={color} />
             </View>
           ),
         }}
@@ -130,7 +129,7 @@ export default function TabLayout() {
           title: t('common.income'),
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.tabIconContainer, focused && styles.tabIconActive]}>
-              <IconButton icon="currency-inr" size={26} iconColor={color} style={styles.tabIcon} />
+              <Icon source="currency-inr" size={26} color={color} />
             </View>
           ),
         }}
@@ -156,14 +155,14 @@ const styles = StyleSheet.create({
   },
   tabIconContainer: {
     borderRadius: 20,
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabIconActive: {
-    backgroundColor: '#A8F5C8',
+    backgroundColor: colors.primaryContainer,
     borderRadius: 20,
-    paddingHorizontal: 12,
-  },
-  tabIcon: {
-    margin: 0,
+    paddingHorizontal: 16,
   },
 });

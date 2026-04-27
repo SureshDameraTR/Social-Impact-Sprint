@@ -1,4 +1,3 @@
-import re
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
@@ -6,13 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-_HTML_TAG_RE = re.compile(r"<[^>]+>")
-
-
-def _strip_html(v: str | None) -> str | None:
-    if v is None:
-        return v
-    return _HTML_TAG_RE.sub("", v).strip()
+from app.schemas.validators import strip_html as _strip_html
 
 
 class PolicyStatus(str, Enum):
@@ -65,6 +58,11 @@ class InsuranceClaimRead(BaseModel):
     filed_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class InsurancePolicyListResponse(BaseModel):
+    data: list[InsurancePolicyRead]
+    total: int
 
 
 class PremiumEstimate(BaseModel):

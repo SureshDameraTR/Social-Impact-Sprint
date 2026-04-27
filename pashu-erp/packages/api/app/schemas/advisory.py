@@ -33,3 +33,8 @@ class AdvisoryTipRead(BaseModel):
     published_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class AdvisoryTipListResponse(BaseModel):
+    data: list[AdvisoryTipRead]
+    total: int

@@ -1,4 +1,3 @@
-import re
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
@@ -6,13 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-_HTML_TAG_RE = re.compile(r"<[^>]+>")
-
-
-def _strip_html(v: str | None) -> str | None:
-    if v is None:
-        return v
-    return _HTML_TAG_RE.sub("", v).strip()
+from app.schemas.validators import strip_html as _strip_html
 
 
 class SHGGrading(str, Enum):
@@ -40,6 +33,23 @@ class SHGGroupCreate(BaseModel):
         return _strip_html(v)
 
 
+class SHGGroupUpdate(BaseModel):
+    name: str | None = Field(None, max_length=200)
+    registration_number: str | None = Field(None, max_length=50)
+    district: str | None = None
+    village_code: str | None = None
+    member_count: int | None = None
+    women_only: bool | None = None
+    total_savings: Decimal | None = Field(None, max_digits=10, decimal_places=2)
+    grading: SHGGrading | None = None
+    panchsutra_compliance: dict | None = None
+
+    @field_validator("name", "district", mode="before")
+    @classmethod
+    def strip_html_tags(cls, v: str | None) -> str | None:
+        return _strip_html(v)
+
+
 class SHGGroupRead(BaseModel):
     id: UUID
     name: str
@@ -56,6 +66,11 @@ class SHGGroupRead(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class SHGGroupListResponse(BaseModel):
+    data: list[SHGGroupRead]
+    total: int
 
 
 class PanchsutraScore(BaseModel):

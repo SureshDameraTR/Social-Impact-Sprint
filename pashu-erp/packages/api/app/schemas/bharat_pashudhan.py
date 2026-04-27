@@ -6,6 +6,7 @@ from pydantic import BaseModel
 # Nested structures from the registry
 # ---------------------------------------------------------------------------
 
+
 class RegistryOwner(BaseModel):
     name: str
     aadhaar_last4: str | None = None
@@ -38,6 +39,7 @@ class RegistryInsurance(BaseModel):
 # Lookup response
 # ---------------------------------------------------------------------------
 
+
 class RegistryAnimalLookup(BaseModel):
     pashu_aadhaar_id: str
     species: str
@@ -58,6 +60,7 @@ class RegistryAnimalLookup(BaseModel):
 # ---------------------------------------------------------------------------
 # Sync response
 # ---------------------------------------------------------------------------
+
 
 class RegistrySyncResponse(BaseModel):
     status: str

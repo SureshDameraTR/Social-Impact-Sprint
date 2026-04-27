@@ -3,6 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     Enum,
     ForeignKey,
@@ -15,7 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import AuditMixin, Base, SoftDeleteMixin
+from app.models.base import AuditMixin, Base, SoftDeleteMixin, TimestampMixin
 
 
 class MilkSession(str, enum.Enum):
@@ -23,13 +24,16 @@ class MilkSession(str, enum.Enum):
     evening = "evening"
 
 
-class YieldLog(AuditMixin, SoftDeleteMixin, Base):
+class YieldLog(TimestampMixin, AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "yield_logs"
     __table_args__ = (
         UniqueConstraint(
-            "animal_id", "session", "recorded_at",
+            "animal_id",
+            "session",
+            "recorded_at",
             name="uq_yield_animal_session_date",
         ),
+        CheckConstraint("quantity_liters >= 0", name="ck_yield_logs_quantity_non_negative"),
     )
 
     id: Mapped[str] = mapped_column(
@@ -46,22 +50,27 @@ class YieldLog(AuditMixin, SoftDeleteMixin, Base):
     quantity_liters: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     session: Mapped[str] = mapped_column(Enum(MilkSession, name="milk_session"), nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(),
+        DateTime(timezone=True),
+        server_default=func.now(),
     )
     notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Relationships — lazy="noload" to prevent automatic eager loading
     animal = relationship(
-        "Animal", back_populates="yield_logs",
-        foreign_keys=[animal_id], lazy="noload",
+        "Animal",
+        back_populates="yield_logs",
+        foreign_keys=[animal_id],
+        lazy="noload",
     )
     user = relationship(
-        "User", back_populates="yield_logs",
-        foreign_keys=[user_id], lazy="noload",
+        "User",
+        back_populates="yield_logs",
+        foreign_keys=[user_id],
+        lazy="noload",
     )
 
 
-class MilkCollectionCenter(AuditMixin, SoftDeleteMixin, Base):
+class MilkCollectionCenter(TimestampMixin, AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "milk_collection_centers"
 
     id: Mapped[str] = mapped_column(
@@ -77,18 +86,40 @@ class MilkCollectionCenter(AuditMixin, SoftDeleteMixin, Base):
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     manager = relationship("User", foreign_keys=[manager_user_id], lazy="noload")
     collection_records = relationship(
-        "MilkCollectionRecord", back_populates="center",
-        foreign_keys="MilkCollectionRecord.center_id", lazy="noload",
+        "MilkCollectionRecord",
+        back_populates="center",
+        foreign_keys="MilkCollectionRecord.center_id",
+        lazy="noload",
     )
 
 
-class MilkCollectionRecord(AuditMixin, SoftDeleteMixin, Base):
+class MilkCollectionRecord(TimestampMixin, AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "milk_collection_records"
+    __table_args__ = (
+        CheckConstraint(
+            "quantity_liters >= 0", name="ck_milk_collection_records_quantity_non_negative"
+        ),
+        CheckConstraint(
+            "fat_pct IS NULL OR fat_pct BETWEEN 0 AND 100",
+            name="ck_milk_collection_records_fat_pct_range",
+        ),
+        CheckConstraint(
+            "snf_pct IS NULL OR snf_pct BETWEEN 0 AND 100",
+            name="ck_milk_collection_records_snf_pct_range",
+        ),
+        CheckConstraint(
+            "rate_per_liter IS NULL OR rate_per_liter > 0",
+            name="ck_milk_collection_records_rate_positive",
+        ),
+        CheckConstraint(
+            "total_amount IS NULL OR total_amount >= 0",
+            name="ck_milk_collection_records_total_non_negative",
+        ),
+    )
 
     id: Mapped[str] = mapped_column(
         UUID(as_uuid=True),
@@ -111,12 +142,15 @@ class MilkCollectionRecord(AuditMixin, SoftDeleteMixin, Base):
         nullable=False,
     )
     collected_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(),
+        DateTime(timezone=True),
+        server_default=func.now(),
     )
 
     # Relationships — lazy="noload" to prevent automatic eager loading
     center = relationship(
-        "MilkCollectionCenter", back_populates="collection_records",
-        foreign_keys=[center_id], lazy="noload",
+        "MilkCollectionCenter",
+        back_populates="collection_records",
+        foreign_keys=[center_id],
+        lazy="noload",
     )
     farmer = relationship("User", foreign_keys=[farmer_user_id], lazy="noload")

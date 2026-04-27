@@ -33,11 +33,11 @@ const MIN_QUANTITY = 0.1;
 const MAX_QUANTITY = 999;
 const MAX_PRICE = 99999;
 
-function validateNumericField(value: string, min: number, max: number, fieldName: string): string | null {
+function validateNumericField(value: string, min: number, max: number, t: (key: string, opts?: Record<string, unknown>) => string, fieldName: string): string | null {
   const num = parseFloat(value);
-  if (isNaN(num) || num < 0) return `Enter a valid ${fieldName}`;
-  if (num < min) return `Minimum ${min}`;
-  if (num > max) return `Maximum ${max}`;
+  if (isNaN(num) || num < 0) return t('errors.invalidField', { field: fieldName });
+  if (num < min) return t('errors.minimumValue', { min });
+  if (num > max) return t('errors.maximumValue', { max });
 
   return null;
 }
@@ -95,8 +95,8 @@ export default function SellScreen() {
   }, []);
 
   const handleRecordSale = useCallback(async () => {
-    const qtyErr = validateNumericField(quantity, MIN_QUANTITY, MAX_QUANTITY, 'quantity');
-    const priceErr = validateNumericField(price, MIN_QUANTITY, MAX_PRICE, 'price');
+    const qtyErr = validateNumericField(quantity, MIN_QUANTITY, MAX_QUANTITY, t, t('sell.quantity'));
+    const priceErr = validateNumericField(price, MIN_QUANTITY, MAX_PRICE, t, t('sell.pricePerUnit'));
     setQuantityError(qtyErr);
     setPriceError(priceErr);
     if (qtyErr || priceErr) return;
@@ -119,8 +119,7 @@ export default function SellScreen() {
       // Refresh recent sales
       fetchSales();
     } catch (e) {
-      if (__DEV__) console.error('Listing creation failed:', e);
-      showError(t('sell.createFailed') ?? 'Failed to create listing. Please try again.');
+      showError(t('sell.createFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -177,7 +176,7 @@ export default function SellScreen() {
         contentContainerStyle={styles.scroll}
         ListHeaderComponent={
           <>
-            <Text variant="headlineSmall" style={styles.heading}>
+            <Text variant="headlineSmall" style={styles.heading} accessibilityRole="header">
               {t('sell.sellProducts')}
             </Text>
 
@@ -204,7 +203,7 @@ export default function SellScreen() {
                     value={quantity}
                     onChangeText={(text) => {
                       setQuantity(text);
-                      if (quantityError) setQuantityError(validateNumericField(text, MIN_QUANTITY, MAX_QUANTITY, 'quantity'));
+                      if (quantityError) setQuantityError(validateNumericField(text, MIN_QUANTITY, MAX_QUANTITY, t, t('sell.quantity')));
                     }}
                     keyboardType="decimal-pad"
                     mode="outlined"
@@ -228,7 +227,7 @@ export default function SellScreen() {
                   value={price}
                   onChangeText={(text) => {
                     setPrice(text);
-                    if (priceError) setPriceError(validateNumericField(text, MIN_QUANTITY, MAX_PRICE, 'price'));
+                    if (priceError) setPriceError(validateNumericField(text, MIN_QUANTITY, MAX_PRICE, t, t('sell.pricePerUnit')));
                   }}
                   keyboardType="decimal-pad"
                   mode="outlined"
@@ -247,7 +246,7 @@ export default function SellScreen() {
                     <Card.Content style={styles.totalContent}>
                       <Text variant="bodyLarge" style={styles.totalLabel}>{t('sell.total')}</Text>
                       <Text variant="headlineMedium" style={styles.totalAmount}>
-                        {'\u20B9'}{total.toLocaleString('en-IN')}
+                        {'\u20B9'}{total.toLocaleString()}
                       </Text>
                     </Card.Content>
                   </Card>
@@ -262,6 +261,8 @@ export default function SellScreen() {
                   contentStyle={styles.recordButtonContent}
                   labelStyle={styles.recordButtonLabel}
                   buttonColor={colors.primary}
+                  accessibilityLabel={t('sell.recordSale')}
+                  accessibilityRole="button"
                 >
                   {t('sell.recordSale')}
                 </Button>
@@ -270,7 +271,7 @@ export default function SellScreen() {
 
             {/* Recent sales header */}
             <Divider style={styles.divider} />
-            <Text variant="titleMedium" style={styles.sectionTitle}>
+            <Text variant="titleMedium" style={styles.sectionTitle} accessibilityRole="header">
               {t('sell.recentSales')}
             </Text>
             {recentSales.length === 0 && (

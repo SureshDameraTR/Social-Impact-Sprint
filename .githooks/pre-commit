@@ -1,0 +1,22 @@
+#!/bin/bash
+# Lightweight pre-commit hook — no external dependencies
+# Install: git config core.hooksPath .githooks
+
+# Check for Python files changed
+PYTHON_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$' || true)
+if [ -n "$PYTHON_FILES" ]; then
+  echo "Running ruff on staged Python files..."
+  cd pashu-erp/packages/api
+  if command -v uv &>/dev/null; then
+    uv run ruff check $PYTHON_FILES 2>/dev/null || {
+      echo "Ruff check failed. Fix issues before committing."
+      exit 1
+    }
+  fi
+  cd -
+fi
+
+# Check for secrets
+if git diff --cached --diff-filter=ACM -p | grep -qiE '(password|secret|api_key)\s*=\s*["\x27][^"\x27]{8,}'; then
+  echo "WARNING: Possible secret detected in staged changes. Review before committing."
+fi

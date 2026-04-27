@@ -4,10 +4,9 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
 
-from tests.conftest import VET_USER_ID, FARMER_USER_ID
+from tests.conftest import FARMER_USER_ID, VET_USER_ID
 
 
 def _mock_consultation(
@@ -57,9 +56,7 @@ def _mock_consultation(
 
 
 class TestListCases:
-    async def test_list_as_vet(
-        self, client_as_vet: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_as_vet(self, client_as_vet: AsyncClient, mock_db: AsyncMock) -> None:
         """GET as vet returns 200 with case data."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []
@@ -70,9 +67,7 @@ class TestListCases:
         body = resp.json()
         assert "data" in body
 
-    async def test_list_as_admin(
-        self, client_as_admin: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_as_admin(self, client_as_admin: AsyncClient, mock_db: AsyncMock) -> None:
         """GET as admin returns 200."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []
@@ -81,17 +76,13 @@ class TestListCases:
         resp = await client_as_admin.get("/v1/vet/cases")
         assert resp.status_code == 200
 
-    async def test_list_with_filters(
-        self, client_as_vet: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_with_filters(self, client_as_vet: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with status and priority filters returns 200."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []
         mock_db.execute = AsyncMock(return_value=result)
 
-        resp = await client_as_vet.get(
-            "/v1/vet/cases?status=pending&priority=urgent"
-        )
+        resp = await client_as_vet.get("/v1/vet/cases?status=pending&priority=urgent")
         assert resp.status_code == 200
 
     async def test_list_no_auth(self, client_no_auth: AsyncClient) -> None:
@@ -111,9 +102,7 @@ class TestListCases:
 
 
 class TestGetCase:
-    async def test_get_success(
-        self, client_as_vet: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_success(self, client_as_vet: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200."""
         case = _mock_consultation(vet_id=VET_USER_ID, status="in_review")
         result = MagicMock()
@@ -123,9 +112,7 @@ class TestGetCase:
         resp = await client_as_vet.get(f"/v1/vet/cases/{case.id}")
         assert resp.status_code == 200
 
-    async def test_get_not_found(
-        self, client_as_vet: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_not_found(self, client_as_vet: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with nonexistent ID returns 404."""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
@@ -141,9 +128,7 @@ class TestGetCase:
 
 
 class TestClaimCase:
-    async def test_claim_success(
-        self, client_as_vet: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_claim_success(self, client_as_vet: AsyncClient, mock_db: AsyncMock) -> None:
         """PATCH on unclaimed case returns 200."""
         case = _mock_consultation()
         result = MagicMock()
@@ -172,9 +157,7 @@ class TestClaimCase:
 
 
 class TestDiagnoseCase:
-    async def test_diagnose_success(
-        self, client_as_vet: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_diagnose_success(self, client_as_vet: AsyncClient, mock_db: AsyncMock) -> None:
         """PATCH with diagnosis returns 200."""
         case = _mock_consultation(vet_id=VET_USER_ID, status="in_review")
         result = MagicMock()
@@ -212,9 +195,7 @@ class TestDiagnoseCase:
 
 
 class TestCloseCase:
-    async def test_close_success(
-        self, client_as_vet: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_close_success(self, client_as_vet: AsyncClient, mock_db: AsyncMock) -> None:
         """PATCH returns 200."""
         case = _mock_consultation(vet_id=VET_USER_ID, status="diagnosed")
         result = MagicMock()
@@ -231,9 +212,7 @@ class TestCloseCase:
 
 
 class TestVetDashboardStats:
-    async def test_stats_as_vet(
-        self, client_as_vet: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_stats_as_vet(self, client_as_vet: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with dashboard stats."""
         scalar_result = MagicMock()
         scalar_result.scalar.return_value = 0
@@ -254,9 +233,7 @@ class TestVetDashboardStats:
 
 
 class TestMyCases:
-    async def test_my_cases_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_my_cases_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with farmer's own cases."""
         result = MagicMock()
         result.scalars.return_value.all.return_value = []

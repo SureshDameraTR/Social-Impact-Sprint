@@ -4,19 +4,18 @@ Unit tests run against a test client with mocked database dependencies.
 No real database or external services required.
 """
 
-import uuid
-from datetime import datetime, timezone
-from typing import AsyncGenerator
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import jwt
-import pytest
-from httpx import ASGITransport, AsyncClient
-
 # ---------------------------------------------------------------------------
 # Environment setup — must happen before importing app modules
 # ---------------------------------------------------------------------------
 import os
+import uuid
+from collections.abc import AsyncGenerator
+from datetime import datetime, timezone
+from unittest.mock import AsyncMock, MagicMock
+
+import jwt
+import pytest
+from httpx import ASGITransport, AsyncClient
 
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test")
 os.environ.setdefault(
@@ -30,6 +29,7 @@ os.environ.setdefault("CORS_ORIGINS", "http://localhost:3000")
 # ---------------------------------------------------------------------------
 # Fake user factory
 # ---------------------------------------------------------------------------
+
 
 def _make_user(
     role: str = "farmer",
@@ -90,7 +90,8 @@ def _make_token(user_id: str) -> str:
 # User fixtures
 # ---------------------------------------------------------------------------
 
-@pytest.fixture()
+
+@pytest.fixture
 def farmer_user() -> MagicMock:
     return _make_user(
         role="farmer",
@@ -100,7 +101,7 @@ def farmer_user() -> MagicMock:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def admin_user() -> MagicMock:
     return _make_user(
         role="admin",
@@ -110,7 +111,7 @@ def admin_user() -> MagicMock:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def vet_user() -> MagicMock:
     return _make_user(
         role="vet",
@@ -120,7 +121,7 @@ def vet_user() -> MagicMock:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def milk_center_user() -> MagicMock:
     return _make_user(
         role="milk_center",
@@ -134,22 +135,23 @@ def milk_center_user() -> MagicMock:
 # Auth token fixtures
 # ---------------------------------------------------------------------------
 
-@pytest.fixture()
+
+@pytest.fixture
 def farmer_token() -> str:
     return _make_token(FARMER_USER_ID)
 
 
-@pytest.fixture()
+@pytest.fixture
 def admin_token() -> str:
     return _make_token(ADMIN_USER_ID)
 
 
-@pytest.fixture()
+@pytest.fixture
 def vet_token() -> str:
     return _make_token(VET_USER_ID)
 
 
-@pytest.fixture()
+@pytest.fixture
 def milk_center_token() -> str:
     return _make_token(MILK_CENTER_USER_ID)
 
@@ -157,6 +159,7 @@ def milk_center_token() -> str:
 # ---------------------------------------------------------------------------
 # Auth header helpers
 # ---------------------------------------------------------------------------
+
 
 def auth_header(token: str) -> dict[str, str]:
     """Build an Authorization header dict."""
@@ -166,6 +169,7 @@ def auth_header(token: str) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 # Mock DB session fixture
 # ---------------------------------------------------------------------------
+
 
 def _auto_populate_id(obj: object) -> None:
     """Simulate DB auto-populating id and timestamps on refresh.
@@ -188,13 +192,13 @@ def _auto_populate_id(obj: object) -> None:
             setattr(obj, ts_field, _now)
 
     # Set a default status for Transaction / Claim models
-    if hasattr(obj, "amount") and (not hasattr(obj, "status") or getattr(obj, "status") is None):
+    if hasattr(obj, "amount") and (not hasattr(obj, "status") or obj.status is None):
         obj.status = "completed"
-    elif hasattr(obj, "status") and getattr(obj, "status") is None:
+    elif hasattr(obj, "status") and obj.status is None:
         obj.status = "completed"
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_db() -> AsyncMock:
     """Create a mock async database session."""
     session = AsyncMock()
@@ -212,7 +216,8 @@ def mock_db() -> AsyncMock:
 # App + Client fixture with dependency overrides
 # ---------------------------------------------------------------------------
 
-@pytest.fixture()
+
+@pytest.fixture
 async def client(
     farmer_user: MagicMock,
     mock_db: AsyncMock,
@@ -222,9 +227,9 @@ async def client(
     For admin/vet tests, use client_as_admin or client_as_vet instead.
     """
     # Import app lazily to avoid import-time settings validation issues
-    from app.main import create_app
     from app.database import get_db
-    from app.middleware.auth import get_current_user, require_admin, require_vet_or_admin
+    from app.main import create_app
+    from app.middleware.auth import get_current_user
 
     app = create_app()
 
@@ -246,14 +251,14 @@ async def client(
     app.dependency_overrides.clear()
 
 
-@pytest.fixture()
+@pytest.fixture
 async def client_as_admin(
     admin_user: MagicMock,
     mock_db: AsyncMock,
 ) -> AsyncGenerator[AsyncClient, None]:
     """Test client authenticated as admin."""
-    from app.main import create_app
     from app.database import get_db
+    from app.main import create_app
     from app.middleware.auth import get_current_user, require_admin, require_vet_or_admin
 
     app = create_app()
@@ -277,14 +282,14 @@ async def client_as_admin(
     app.dependency_overrides.clear()
 
 
-@pytest.fixture()
+@pytest.fixture
 async def client_as_vet(
     vet_user: MagicMock,
     mock_db: AsyncMock,
 ) -> AsyncGenerator[AsyncClient, None]:
     """Test client authenticated as vet."""
-    from app.main import create_app
     from app.database import get_db
+    from app.main import create_app
     from app.middleware.auth import get_current_user, require_vet_or_admin
 
     app = create_app()
@@ -307,14 +312,14 @@ async def client_as_vet(
     app.dependency_overrides.clear()
 
 
-@pytest.fixture()
+@pytest.fixture
 async def client_as_milk_center(
     milk_center_user: MagicMock,
     mock_db: AsyncMock,
 ) -> AsyncGenerator[AsyncClient, None]:
     """Test client authenticated as milk center staff."""
-    from app.main import create_app
     from app.database import get_db
+    from app.main import create_app
     from app.middleware.auth import get_current_user
 
     app = create_app()
@@ -340,13 +345,13 @@ async def client_as_milk_center(
     app.dependency_overrides.clear()
 
 
-@pytest.fixture()
+@pytest.fixture
 async def client_no_auth(
     mock_db: AsyncMock,
 ) -> AsyncGenerator[AsyncClient, None]:
     """Test client with NO auth override — triggers 401/403."""
-    from app.main import create_app
     from app.database import get_db
+    from app.main import create_app
 
     app = create_app()
 

@@ -34,7 +34,15 @@
     "listen": "Listen",
     "english": "English",
     "hindi": "हिन्दी",
-    "kannada": "ಕನ್ನಡ"
+    "kannada": "ಕನ್ನಡ",
+    "updateAvailable": "A new version is available",
+    "updateRestart": "Restart to apply update",
+    "restart": "Restart",
+    "offlineBanner": "No internet connection — showing cached data",
+    "syncingBanner": "Syncing {{count}} pending changes...",
+    "syncComplete": "All changes synced",
+    "savedOffline": "Saved offline — will sync when connected",
+    "pendingChanges": "pending"
   },
   "auth": {
     "enterPhone": "Enter phone number",
@@ -45,6 +53,13 @@
     "phoneLabel": "Mobile number",
     "otpSent": "OTP sent",
     "welcome": "Welcome to PashuRaksha"
+  },
+  "login": {
+    "invalidPhone": "Enter a valid 10-digit Indian mobile number",
+    "otpFailed": "Failed to send OTP",
+    "verificationFailed": "Verification failed",
+    "resendOtpIn": "Resend OTP in {{seconds}}s",
+    "resendOtp": "Resend OTP"
   },
   "home": {
     "greeting": "Hello, Lakshamma",
@@ -83,7 +98,10 @@
     "healthStatus": "Health Status",
     "healthy": "Healthy",
     "sick": "Sick",
-    "totalAnimals": "Total Animals"
+    "totalAnimals": "Total Animals",
+    "deleteTitle": "Delete Animal",
+    "deleteConfirm": "Are you sure? This cannot be undone.",
+    "saveFailed": "Failed to save"
   },
   "milk": {
     "recordMilk": "Record Milk",
@@ -96,7 +114,8 @@
     "selectAnimal": "Select Animal",
     "session": "Session",
     "quantity": "Quantity",
-    "recorded": "Milk recorded"
+    "recorded": "Milk recorded",
+    "recordFailed": "Failed to record milk entry. Please try again."
   },
   "sell": {
     "sellProducts": "Sell Products",
@@ -110,7 +129,8 @@
     "recordSale": "Record Sale",
     "recentSales": "Recent Sales",
     "buyer": "Buyer",
-    "saleRecorded": "Sale recorded"
+    "saleRecorded": "Sale recorded",
+    "createFailed": "Failed to create listing. Please try again."
   },
   "health": {
     "healthCheck": "Health Check",
@@ -162,7 +182,8 @@
     "kisanCreditCardLabel": "Kisan Credit Card — Low interest",
     "kisanCredit": "Kisan Credit Card - Low interest",
     "apply": "Apply",
-    "applyNow": "Apply Now"
+    "applyNow": "Apply Now",
+    "downloadComingSoon": "Download feature coming soon"
   },
   "onboarding": {
     "welcomeSubtitle": "Your complete livestock care companion",
@@ -191,7 +212,8 @@
     "tutorialSellDesc": "Track all your sales in one place",
     "skip": "Skip",
     "next": "Next",
-    "getStarted": "Get Started"
+    "getStarted": "Get Started",
+    "saveFailed": "Failed to save. Please try again."
   },
   "weather": {
     "title": "Weather",
@@ -206,7 +228,8 @@
     },
     "fiveDayForecast": "5-Day Forecast",
     "rainfallAlert": "Rain expected this week — keep animals sheltered",
-    "voiceSummary": "Voice Summary"
+    "voiceSummary": "Voice Summary",
+    "ttsError": "Could not play weather summary"
   },
   "advisory": {
     "title": "Advisory & Tips",
@@ -230,7 +253,18 @@
     "addPhoto": "Add Photo",
     "premiumCalculator": "Premium Calculator",
     "calculate": "Calculate",
-    "estimatedPremium": "Estimated Premium"
+    "estimatedPremium": "Estimated Premium",
+    "changePhoto": "Change Photo",
+    "photoAttached": "Photo attached",
+    "photoFailed": "Failed to capture photo",
+    "cameraPermissionRequired": "Camera permission is required to take photos",
+    "galleryPermissionRequired": "Gallery permission is required to select photos",
+    "photoSourcePrompt": "Choose photo source",
+    "takePhoto": "Take Photo",
+    "chooseFromGallery": "Choose from Gallery",
+    "claimSubmitted": "Claim submitted successfully",
+    "claimFailed": "Failed to submit claim. Please try again.",
+    "perYear": "per year"
   },
   "feed": {
     "title": "Feed Calculator",
@@ -290,7 +324,8 @@
     "dueToday": "Due today",
     "overdue": "Overdue",
     "completed": "Completed",
-    "markDone": "Mark as Done"
+    "markDone": "Mark as Done",
+    "markDoneFailed": "Failed to mark vaccination as done. Please try again."
   },
   "medicineLog": {
     "title": "Medicine Log",
@@ -312,18 +347,39 @@
     "noMilkRecords": "No milk records yet",
     "noSales": "No sales recorded yet",
     "noHealthEvents": "No health events recorded",
+    "noVaccinations": "No vaccinations scheduled",
     "noIncome": "No income recorded yet",
-    "startSelling": "Start selling to track your income"
+    "startSelling": "Start selling to track your income",
+    "noAlerts": "No disease alerts nearby"
   },
   "errors": {
     "networkError": "Network error — please try again",
     "serverError": "Server error",
     "unauthorized": "Please login again",
-    "voiceFailed": "Voice not recognized — enter manually"
+    "voiceFailed": "Voice not recognized — enter manually",
+    "invalidField": "Enter a valid {{field}}",
+    "minimumValue": "Minimum {{min}}",
+    "maximumValue": "Maximum {{max}}",
+    "invalidQuantity": "Enter a valid quantity",
+    "minimumQuantity": "Minimum {{min}} L",
+    "maximumQuantity": "Maximum {{max}} L"
+  },
+  "medicinelog": {
+    "saveFailed": "Failed to save medicine log. Please try again."
+  },
+  "a11y": {
+    "closeClaimForm": "Close claim form",
+    "deleteDigit": "Delete",
+    "smartFarmLabel": "Smart Farm",
+    "notificationsLabel": "Notifications",
+    "profileLabel": "Profile",
+    "speciesSelect": "Select {{species}} species"
   },
   "profile": {
     "farmDetails": "Farm Details",
     "farmSize": "Farm Size",
+    "village": "Village",
+    "role": "Role",
     "memberSince": "Member Since",
     "logout": "Logout"
   },
@@ -336,7 +392,10 @@
     "comingSoon": "Phase 2 Feature - IoT integration coming soon",
     "gpsTracking": "GPS Animal Tracking",
     "gpsDescription": "Live map will show animal locations from GPS collars",
-    "iotDevices": "IoT Devices"
+    "iotDevices": "IoT Devices",
+    "smartAlerts": "Smart Alerts",
+    "deviceOffline": "{{name}} is offline - {{battery}} battery",
+    "allDevicesNormal": "All devices reporting normally"
   },
   "vetPhoto": {
     "title": "Send Photo to Vet",

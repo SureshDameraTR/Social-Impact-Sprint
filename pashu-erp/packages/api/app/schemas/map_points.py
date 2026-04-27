@@ -59,5 +59,5 @@ class MapPoint(BaseModel):
 
 
 class MapPointsResponse(BaseModel):
+    data: list[MapPoint]
     total: int
-    points: list[MapPoint]

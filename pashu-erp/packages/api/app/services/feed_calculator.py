@@ -32,12 +32,54 @@ FEEDING_STANDARDS = {
 
 # Default feed ingredient database for ration formulation
 DEFAULT_INGREDIENTS = [
-    {"name": "Green Fodder (Napier)", "category": "roughage", "protein_pct": 8.0, "energy_kcal": 450, "cost_per_kg": 3.0, "dm_pct": 20},
-    {"name": "Dry Fodder (Paddy Straw)", "category": "roughage", "protein_pct": 3.5, "energy_kcal": 380, "cost_per_kg": 2.0, "dm_pct": 90},
-    {"name": "Concentrate Mix", "category": "concentrate", "protein_pct": 20.0, "energy_kcal": 2800, "cost_per_kg": 22.0, "dm_pct": 90},
-    {"name": "Groundnut Cake", "category": "concentrate", "protein_pct": 45.0, "energy_kcal": 2600, "cost_per_kg": 35.0, "dm_pct": 92},
-    {"name": "Rice Bran", "category": "concentrate", "protein_pct": 13.0, "energy_kcal": 2400, "cost_per_kg": 15.0, "dm_pct": 90},
-    {"name": "Mineral Mixture", "category": "mineral", "protein_pct": 0.0, "energy_kcal": 0, "cost_per_kg": 60.0, "dm_pct": 95},
+    {
+        "name": "Green Fodder (Napier)",
+        "category": "roughage",
+        "protein_pct": 8.0,
+        "energy_kcal": 450,
+        "cost_per_kg": 3.0,
+        "dm_pct": 20,
+    },
+    {
+        "name": "Dry Fodder (Paddy Straw)",
+        "category": "roughage",
+        "protein_pct": 3.5,
+        "energy_kcal": 380,
+        "cost_per_kg": 2.0,
+        "dm_pct": 90,
+    },
+    {
+        "name": "Concentrate Mix",
+        "category": "concentrate",
+        "protein_pct": 20.0,
+        "energy_kcal": 2800,
+        "cost_per_kg": 22.0,
+        "dm_pct": 90,
+    },
+    {
+        "name": "Groundnut Cake",
+        "category": "concentrate",
+        "protein_pct": 45.0,
+        "energy_kcal": 2600,
+        "cost_per_kg": 35.0,
+        "dm_pct": 92,
+    },
+    {
+        "name": "Rice Bran",
+        "category": "concentrate",
+        "protein_pct": 13.0,
+        "energy_kcal": 2400,
+        "cost_per_kg": 15.0,
+        "dm_pct": 90,
+    },
+    {
+        "name": "Mineral Mixture",
+        "category": "mineral",
+        "protein_pct": 0.0,
+        "energy_kcal": 0,
+        "cost_per_kg": 60.0,
+        "dm_pct": 95,
+    },
 ]
 
 
@@ -56,8 +98,8 @@ def calculate_ration(
     standards = FEEDING_STANDARDS.get(species_key, FEEDING_STANDARDS["cattle"])
     stage_standards = standards.get(lactation_stage, standards.get(None, standards.get("dry")))
 
-    # Total daily dry matter requirement
-    total_dm_kg = weight_kg * stage_standards["dm_pct_bw"] / 100
+    # Total daily dry matter requirement (cast to float in case weight_kg is Decimal)
+    total_dm_kg = float(weight_kg) * stage_standards["dm_pct_bw"] / 100
 
     # Split: 60% roughage, 35% concentrate, 5% mineral
     roughage_dm = total_dm_kg * 0.60
@@ -89,7 +131,9 @@ def calculate_ration(
     total_cost += min_kg * 60.0
 
     # Estimate protein and energy balance
-    total_protein = (green_fresh_kg * 0.20 * 8.0 + dry_kg * 0.90 * 3.5 + conc_kg * 0.90 * 20.0) / 100
+    total_protein = (
+        green_fresh_kg * 0.20 * 8.0 + dry_kg * 0.90 * 3.5 + conc_kg * 0.90 * 20.0
+    ) / 100
     required_protein = total_dm_kg * stage_standards["cp_pct"] / 100
     protein_diff = total_protein - required_protein
 
@@ -100,7 +144,9 @@ def calculate_ration(
     else:
         protein_balance = "Balanced"
 
-    energy_balance = "Adequate" if lactation_stage != "early" else "Marginal — consider extra concentrate"
+    energy_balance = (
+        "Adequate" if lactation_stage != "early" else "Marginal — consider extra concentrate"
+    )
 
     return RationResult(
         ingredients=ingredients,

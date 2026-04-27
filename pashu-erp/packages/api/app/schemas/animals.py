@@ -1,18 +1,10 @@
-import re
 from datetime import date, datetime
 from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-_HTML_TAG_RE = re.compile(r"<[^>]+>")
-
-
-def _strip_html(v: str | None) -> str | None:
-    """Remove HTML tags from a string value."""
-    if v is None:
-        return v
-    return _HTML_TAG_RE.sub("", v).strip()
+from app.schemas.validators import strip_html as _strip_html
 
 
 class Species(str, Enum):
@@ -105,3 +97,10 @@ class AnimalRead(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class AnimalListResponse(BaseModel):
+    data: list[AnimalRead]
+    total: int
+    limit: int
+    offset: int

@@ -12,7 +12,11 @@
     "build": "CI=true npx expo export --platform web"
   },
   "dependencies": {
+    "@babel/runtime": "^7.29.2",
     "@expo/metro-runtime": "~4.0.1",
+    "@react-native-async-storage/async-storage": "~2.1.0",
+    "@react-native-community/netinfo": "^11.4.1",
+    "@tanstack/react-query": "^5.62.0",
     "expo": "~52.0.0",
     "expo-asset": "~11.0.5",
     "expo-av": "~15.0.2",
@@ -25,12 +29,15 @@
     "expo-secure-store": "~14.0.0",
     "expo-speech": "~13.0.1",
     "expo-status-bar": "~2.0.1",
+    "expo-updates": "~0.27.0",
     "i18next": "^23.11.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-i18next": "^14.1.0",
     "react-native": "0.76.3",
     "react-native-paper": "^5.12.0",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.24.0",
     "react-native-web": "~0.19.13"
   },
   "devDependencies": {

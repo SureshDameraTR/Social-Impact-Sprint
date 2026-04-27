@@ -2,7 +2,6 @@
 
 from unittest.mock import AsyncMock
 
-import pytest
 from httpx import AsyncClient
 
 
@@ -24,9 +23,7 @@ def _valid_onboarding_payload() -> dict:
 
 
 class TestCompleteOnboarding:
-    async def test_complete_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_complete_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST with valid data returns 200."""
         resp = await client.post(
             "/v1/onboarding/complete",
@@ -46,9 +43,7 @@ class TestCompleteOnboarding:
         resp = await client.post("/v1/onboarding/complete", json=payload)
         assert resp.status_code == 422
 
-    async def test_complete_minimal_data(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_complete_minimal_data(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST with only required fields returns 200."""
         resp = await client.post(
             "/v1/onboarding/complete",

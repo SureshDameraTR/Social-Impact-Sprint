@@ -5,7 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
-class AlertSeverity(str, Enum):
+class CommunityAlertSeverity(str, Enum):
     low = "low"
     moderate = "moderate"
     severe = "severe"
@@ -17,7 +17,7 @@ class CommunityAlertCreate(BaseModel):
     lat: float = Field(..., ge=-90, le=90)
     lon: float = Field(..., ge=-180, le=180)
     radius_km: float = Field(default=5.0, gt=0)
-    severity: AlertSeverity
+    severity: CommunityAlertSeverity
 
 
 class CommunityAlertRead(BaseModel):
@@ -27,7 +27,7 @@ class CommunityAlertRead(BaseModel):
     lat: float
     lon: float
     radius_km: float
-    severity: AlertSeverity
+    severity: CommunityAlertSeverity
     verified: bool
     created_at: datetime
     expires_at: datetime | None = None

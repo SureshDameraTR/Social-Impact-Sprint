@@ -1,11 +1,12 @@
 """Tests for the NDDB ration calculator (app.services.feed_calculator)."""
 
+from decimal import Decimal
+
 from app.schemas.feed import RationResult
 from app.services.feed_calculator import FEEDING_STANDARDS, calculate_ration
 
 
 class TestBasicCalculation:
-
     def test_returns_ration_result(self):
         result = calculate_ration("cattle", 400.0)
         assert isinstance(result, RationResult)
@@ -41,7 +42,6 @@ class TestBasicCalculation:
 
 
 class TestLactationStages:
-
     def test_early_lactation_higher_dm(self):
         """Early lactation needs 3.5% BW vs 2.0% for dry."""
         early = calculate_ration("cattle", 400.0, "early")
@@ -73,7 +73,6 @@ class TestLactationStages:
 
 
 class TestSpecies:
-
     def test_goat_30kg(self):
         result = calculate_ration("goat", 30.0)
         assert result.total_cost_per_day > 0
@@ -100,10 +99,13 @@ class TestSpecies:
 
 
 class TestProteinBalance:
-
     def test_protein_balance_string(self):
         result = calculate_ration("cattle", 400.0, "dry")
-        assert result.protein_balance in ["Balanced"] or "Surplus" in result.protein_balance or "Deficit" in result.protein_balance
+        assert (
+            result.protein_balance in ["Balanced"]
+            or "Surplus" in result.protein_balance
+            or "Deficit" in result.protein_balance
+        )
 
     def test_surplus_protein_noted(self):
         """Dry cattle with low CP requirement should show surplus."""
@@ -119,7 +121,6 @@ class TestProteinBalance:
 
 
 class TestEdgeCases:
-
     def test_very_small_weight(self):
         """A very small animal should still produce valid results."""
         result = calculate_ration("goat", 5.0)
@@ -132,13 +133,14 @@ class TestEdgeCases:
         result = calculate_ration("cattle", 800.0)
         half = calculate_ration("cattle", 400.0)
         # Cost should roughly double (not exact due to mineral minimum)
-        assert result.total_cost_per_day > half.total_cost_per_day * 1.5
+        assert result.total_cost_per_day > half.total_cost_per_day * Decimal("1.5")
 
     def test_mineral_minimum(self):
         """Mineral mixture should be at least 0.05 kg."""
         result = calculate_ration("poultry", 2.0)
-        mineral = next(i for i in result.ingredients if "Mineral" in i.name)
-        assert mineral.daily_qty_kg >= 0.05
+        mineral = next((i for i in result.ingredients if "Mineral" in i.name), None)
+        assert mineral is not None, "Expected Mineral ingredient not found"
+        assert mineral.daily_qty_kg >= Decimal("0.05")
 
     def test_feeding_standards_integrity(self):
         """All species in standards should have required keys."""

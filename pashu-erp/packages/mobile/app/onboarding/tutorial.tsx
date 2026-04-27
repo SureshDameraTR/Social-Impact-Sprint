@@ -1,11 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { View, StyleSheet, FlatList, Dimensions, ViewToken } from 'react-native';
+import { View, StyleSheet, FlatList, useWindowDimensions, ViewToken } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
-import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS } from '../../src/config/theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { SPACING, TOUCH_TARGET_MIN, CARD_BORDER_RADIUS, colors } from '../../src/config/theme';
 
 interface TutorialSlide {
   key: string;
@@ -41,6 +39,7 @@ const SLIDES: TutorialSlide[] = [
 
 export default function TutorialScreen() {
   const { t } = useTranslation();
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -180,11 +179,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#BDBDBD',
   },
   dotActive: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: colors.primary,
     width: 24,
   },
   getStarted: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: colors.primary,
     borderRadius: CARD_BORDER_RADIUS,
     width: '100%',
   },
@@ -197,7 +196,7 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     borderRadius: CARD_BORDER_RADIUS,
-    borderColor: '#2E7D32',
+    borderColor: colors.primary,
     width: '100%',
   },
   nextContent: {

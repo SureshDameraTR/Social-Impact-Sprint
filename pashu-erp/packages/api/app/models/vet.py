@@ -1,11 +1,11 @@
 import enum
-from datetime import date, datetime
+from datetime import date
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, String, Text, func, text
+from sqlalchemy import Date, Enum, ForeignKey, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import AuditMixin, Base, SoftDeleteMixin
+from app.models.base import AuditMixin, Base, SoftDeleteMixin, TimestampMixin
 
 
 class ConsultationStatus(str, enum.Enum):
@@ -27,7 +27,7 @@ class ConsultationChannel(str, enum.Enum):
     referral = "referral"
 
 
-class VetConsultation(AuditMixin, SoftDeleteMixin, Base):
+class VetConsultation(TimestampMixin, AuditMixin, SoftDeleteMixin, Base):
     __tablename__ = "vet_consultations"
 
     id: Mapped[str] = mapped_column(
@@ -65,12 +65,6 @@ class VetConsultation(AuditMixin, SoftDeleteMixin, Base):
     follow_up_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     video_call_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     district: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
 
     # Relationships
     animal = relationship("Animal", lazy="noload")

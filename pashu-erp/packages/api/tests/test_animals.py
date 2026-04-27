@@ -2,17 +2,16 @@
 
 import uuid
 from datetime import date, datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from httpx import AsyncClient
 
 from tests.conftest import FARMER_USER_ID
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _mock_animal(user_id: str = FARMER_USER_ID) -> MagicMock:
     animal = MagicMock()
@@ -51,9 +50,7 @@ def _valid_animal_payload() -> dict:
 
 
 class TestCreateAnimal:
-    async def test_create_animal_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_create_animal_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """POST with valid data returns 201."""
         resp = await client.post("/v1/animals", json=_valid_animal_payload())
         assert resp.status_code == 201
@@ -97,9 +94,7 @@ class TestCreateAnimal:
 
 
 class TestListAnimals:
-    async def test_list_animals_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_list_animals_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET returns 200 with paginated data."""
         # Mock count query
         count_result = MagicMock()
@@ -143,9 +138,7 @@ class TestListAnimals:
 
 
 class TestGetAnimal:
-    async def test_get_animal_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_animal_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with valid ID returns 200."""
         animal = _mock_animal()
         result = MagicMock()
@@ -155,9 +148,7 @@ class TestGetAnimal:
         resp = await client.get(f"/v1/animals/{animal.id}")
         assert resp.status_code == 200
 
-    async def test_get_animal_not_found(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_animal_not_found(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET with nonexistent ID returns 404."""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
@@ -166,9 +157,7 @@ class TestGetAnimal:
         resp = await client.get(f"/v1/animals/{uuid.uuid4()}")
         assert resp.status_code == 404
 
-    async def test_get_animal_forbidden(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_get_animal_forbidden(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """GET on another user's animal returns 403."""
         animal = _mock_animal(user_id=str(uuid.uuid4()))
         result = MagicMock()
@@ -178,6 +167,42 @@ class TestGetAnimal:
         resp = await client.get(f"/v1/animals/{animal.id}")
         assert resp.status_code == 403
 
+    async def test_vet_same_district_allowed(
+        self, client_as_vet: AsyncClient, mock_db: AsyncMock
+    ) -> None:
+        """Vet accessing animal owned by farmer in same district returns 200."""
+        owner_id = str(uuid.uuid4())
+        animal = _mock_animal(user_id=owner_id)
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = animal
+        mock_db.execute = AsyncMock(return_value=result)
+
+        # Mock db.get to return owner with same village_code prefix
+        owner = MagicMock()
+        owner.village_code = "629002"  # same prefix "62" as vet's "629001"
+        mock_db.get = AsyncMock(return_value=owner)
+
+        resp = await client_as_vet.get(f"/v1/animals/{animal.id}")
+        assert resp.status_code == 200
+
+    async def test_vet_different_district_forbidden(
+        self, client_as_vet: AsyncClient, mock_db: AsyncMock
+    ) -> None:
+        """Vet accessing animal owned by farmer in different district returns 403."""
+        owner_id = str(uuid.uuid4())
+        animal = _mock_animal(user_id=owner_id)
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = animal
+        mock_db.execute = AsyncMock(return_value=result)
+
+        # Mock db.get to return owner with different village_code prefix
+        owner = MagicMock()
+        owner.village_code = "990001"  # different prefix "99" vs vet's "62"
+        mock_db.get = AsyncMock(return_value=owner)
+
+        resp = await client_as_vet.get(f"/v1/animals/{animal.id}")
+        assert resp.status_code == 403
+
 
 # ---------------------------------------------------------------------------
 # PATCH /v1/animals/{id} — Update
@@ -185,9 +210,7 @@ class TestGetAnimal:
 
 
 class TestUpdateAnimal:
-    async def test_update_animal_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_update_animal_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """PATCH with valid data returns 200."""
         animal = _mock_animal()
         result = MagicMock()
@@ -200,9 +223,7 @@ class TestUpdateAnimal:
         )
         assert resp.status_code == 200
 
-    async def test_update_animal_not_found(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_update_animal_not_found(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """PATCH on nonexistent animal returns 404."""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
@@ -221,9 +242,7 @@ class TestUpdateAnimal:
 
 
 class TestDeleteAnimal:
-    async def test_delete_animal_success(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_delete_animal_success(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """DELETE returns 204."""
         animal = _mock_animal()
         result = MagicMock()
@@ -233,9 +252,7 @@ class TestDeleteAnimal:
         resp = await client.delete(f"/v1/animals/{animal.id}")
         assert resp.status_code == 204
 
-    async def test_delete_animal_not_found(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_delete_animal_not_found(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """DELETE on nonexistent animal returns 404."""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
@@ -244,9 +261,7 @@ class TestDeleteAnimal:
         resp = await client.delete(f"/v1/animals/{uuid.uuid4()}")
         assert resp.status_code == 404
 
-    async def test_delete_animal_forbidden(
-        self, client: AsyncClient, mock_db: AsyncMock
-    ) -> None:
+    async def test_delete_animal_forbidden(self, client: AsyncClient, mock_db: AsyncMock) -> None:
         """DELETE on another user's animal returns 403."""
         animal = _mock_animal(user_id=str(uuid.uuid4()))
         result = MagicMock()

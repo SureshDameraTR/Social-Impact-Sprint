@@ -1,0 +1,31 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: no-commit-to-branch
+        args: ['--branch', 'main']
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: ['--fix']
+        files: ^pashu-erp/packages/api/
+      - id: ruff-format
+        files: ^pashu-erp/packages/api/
+
+  - repo: local
+    hooks:
+      - id: api-tests
+        name: API unit tests (fast)
+        entry: bash -c 'cd pashu-erp/packages/api && uv run pytest tests/ -x -q --timeout=30 -m "not integration"'
+        language: system
+        pass_filenames: false
+        files: ^pashu-erp/packages/api/
+        stages: [pre-push]

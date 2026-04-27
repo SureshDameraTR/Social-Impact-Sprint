@@ -34,7 +34,15 @@
     "listen": "સાંભળો",
     "english": "English",
     "hindi": "हिन्दी",
-    "kannada": "ಕನ್ನಡ"
+    "kannada": "ಕನ್ನಡ",
+    "updateAvailable": "નવું વર્ઝન ઉપલબ્ધ છે",
+    "updateRestart": "અપડેટ લાગુ કરવા રીસ્ટાર્ટ કરો",
+    "restart": "રીસ્ટાર્ટ",
+    "offlineBanner": "ઇન્ટરનેટ કનેક્શન નથી — જૂનો ડેટા બતાવવામાં આવી રહ્યો છે",
+    "syncingBanner": "{{count}} ફેરફારો મોકલવામાં આવી રહ્યા છે...",
+    "syncComplete": "બધા ફેરફારો મોકલાયા",
+    "savedOffline": "ઑફલાઈન સાચવ્યું — કનેક્ટ થયા પછી મોકલવામાં આવશે",
+    "pendingChanges": "બાકી"
   },
   "auth": {
     "enterPhone": "ફોન નંબર દાખલ કરો",

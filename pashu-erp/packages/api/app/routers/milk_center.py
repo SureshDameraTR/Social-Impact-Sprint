@@ -1,6 +1,7 @@
 """Milk collection center management endpoints."""
 
 import hashlib
+import hmac
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from uuid import UUID
@@ -9,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.milk import MilkCollectionCenter, MilkCollectionRecord
@@ -55,7 +57,12 @@ async def get_my_center(
     center = result.scalar_one_or_none()
     if center is None:
         raise HTTPException(status_code=404, detail="No centre assigned")
-    return {"id": str(center.id), "name": center.name, "code": center.code, "district": center.district}
+    return {
+        "id": str(center.id),
+        "name": center.name,
+        "code": center.code,
+        "district": center.district,
+    }
 
 
 @router.post("/receive", status_code=status.HTTP_201_CREATED, response_model=MilkReceiveResponse)
@@ -67,7 +74,9 @@ async def receive_milk(
     """Record milk receipt with quality parameters and auto-calculated rate."""
     # Verify center exists
     center_result = await db.execute(
-        select(MilkCollectionCenter).where(MilkCollectionCenter.id == body.center_id, MilkCollectionCenter.deleted_at.is_(None))
+        select(MilkCollectionCenter).where(
+            MilkCollectionCenter.id == body.center_id, MilkCollectionCenter.deleted_at.is_(None)
+        )
     )
     center = center_result.scalar_one_or_none()
     if center is None:
@@ -96,11 +105,11 @@ async def receive_milk(
         "id": str(record.id),
         "center_id": str(body.center_id),
         "farmer_user_id": str(body.farmer_user_id),
-        "quantity_liters": float(qty),
+        "quantity_liters": qty,
         "fat_pct": body.fat_pct,
         "snf_pct": body.snf_pct,
-        "rate_per_liter": float(rate),
-        "total_amount": float(total_amount),
+        "rate_per_liter": rate,
+        "total_amount": total_amount,
         "shift": body.shift,
         "collected_at": record.collected_at.isoformat() if record.collected_at else None,
     }
@@ -113,6 +122,20 @@ async def get_daily_report(
     db: AsyncSession = Depends(get_db),
 ):
     """Get daily milk collection report for a center."""
+    # Verify the milk_center user is assigned to this center
+    if current_user.role == "milk_center":
+        center_result = await db.execute(
+            select(MilkCollectionCenter).where(
+                MilkCollectionCenter.id == center_id,
+                MilkCollectionCenter.deleted_at.is_(None),
+            )
+        )
+        center = center_result.scalar_one_or_none()
+        if center is None:
+            raise HTTPException(status_code=404, detail="Milk center not found")
+        if str(center.manager_user_id) != str(current_user.id):
+            raise HTTPException(status_code=403, detail="Access denied to this centre")
+
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     today_end = today_start + timedelta(days=1)
 
@@ -167,17 +190,18 @@ async def get_daily_report(
 
     avg_fat = (
         (overall_fat_sum / overall_count).quantize(Decimal("0.01"))
-        if overall_count else Decimal("0")
+        if overall_count
+        else Decimal("0")
     )
     avg_snf = (
         (overall_snf_sum / overall_count).quantize(Decimal("0.01"))
-        if overall_count else Decimal("0")
+        if overall_count
+        else Decimal("0")
     )
 
     # Total distinct farmers across shifts
     farmer_count_result = await db.execute(
-        select(func.count(func.distinct(MilkCollectionRecord.farmer_user_id)))
-        .where(
+        select(func.count(func.distinct(MilkCollectionRecord.farmer_user_id))).where(
             MilkCollectionRecord.center_id == center_id,
             MilkCollectionRecord.collected_at >= today_start,
             MilkCollectionRecord.collected_at < today_end,
@@ -206,12 +230,26 @@ async def get_daily_report(
 async def get_farmer_settlements(
     center_id: UUID,
     days: int = Query(15, ge=1, le=90),
-    skip: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     current_user: User = Depends(require_milk_center_staff),
     db: AsyncSession = Depends(get_db),
 ):
     """Get payment settlement summary per farmer for a billing period."""
+    # Verify the milk_center user is assigned to this center
+    if current_user.role == "milk_center":
+        center_result = await db.execute(
+            select(MilkCollectionCenter).where(
+                MilkCollectionCenter.id == center_id,
+                MilkCollectionCenter.deleted_at.is_(None),
+            )
+        )
+        center = center_result.scalar_one_or_none()
+        if center is None:
+            raise HTTPException(status_code=404, detail="Milk center not found")
+        if str(center.manager_user_id) != str(current_user.id):
+            raise HTTPException(status_code=403, detail="Access denied to this centre")
+
     since = datetime.now(timezone.utc) - timedelta(days=days)
 
     # Aggregate by farmer in SQL via GROUP BY
@@ -231,7 +269,7 @@ async def get_farmer_settlements(
         )
         .group_by(MilkCollectionRecord.farmer_user_id)
         .order_by(func.sum(MilkCollectionRecord.total_amount).desc())
-        .offset(skip)
+        .offset(offset)
         .limit(limit)
     )
     rows = agg_result.all()
@@ -241,14 +279,16 @@ async def get_farmer_settlements(
     for row in rows:
         amt = Decimal(str(row.total_amount)).quantize(Decimal("0.01"))
         total_payout += amt
-        result_list.append({
-            "farmer_user_id": str(row.farmer_user_id),
-            "total_liters": float(Decimal(str(row.total_liters)).quantize(Decimal("0.01"))),
-            "total_amount_inr": float(amt),
-            "deliveries": row.deliveries,
-            "avg_fat_pct": float(Decimal(str(row.avg_fat or 0)).quantize(Decimal("0.01"))),
-            "avg_snf_pct": float(Decimal(str(row.avg_snf or 0)).quantize(Decimal("0.01"))),
-        })
+        result_list.append(
+            {
+                "farmer_user_id": str(row.farmer_user_id),
+                "total_liters": float(Decimal(str(row.total_liters)).quantize(Decimal("0.01"))),
+                "total_amount_inr": float(amt),
+                "deliveries": row.deliveries,
+                "avg_fat_pct": float(Decimal(str(row.avg_fat or 0)).quantize(Decimal("0.01"))),
+                "avg_snf_pct": float(Decimal(str(row.avg_snf or 0)).quantize(Decimal("0.01"))),
+            }
+        )
 
     return {
         "center_id": str(center_id),
@@ -301,17 +341,26 @@ async def search_farmers(
     ]
 
 
-@router.post("/farmers/enroll", status_code=status.HTTP_201_CREATED, response_model=QuickEnrollResponse)
+@router.post(
+    "/farmers/enroll", status_code=status.HTTP_201_CREATED, response_model=QuickEnrollResponse
+)
 async def quick_enroll_farmer(
     body: QuickEnrollRequest,
     current_user: User = Depends(require_milk_center_staff),
     db: AsyncSession = Depends(get_db),
 ):
     """Quick-enroll a new farmer at the collection centre."""
-    aadhaar_hash = hashlib.sha256(body.aadhaar.encode()).hexdigest()
+    aadhaar_hash = hmac.new(
+        settings.aadhaar_hash_secret.encode(),
+        body.aadhaar.encode(),
+        hashlib.sha256,
+    ).hexdigest()
 
     dup_result = await db.execute(
-        select(User).where(User.deleted_at.is_(None), or_(User.phone == body.phone, User.aadhaar_hash == aadhaar_hash))
+        select(User).where(
+            User.deleted_at.is_(None),
+            or_(User.phone == body.phone, User.aadhaar_hash == aadhaar_hash),
+        )
     )
     dup = dup_result.scalar_one_or_none()
     if dup:

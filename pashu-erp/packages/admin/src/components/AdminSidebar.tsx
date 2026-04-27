@@ -12,7 +12,14 @@ import {
   Typography,
   Avatar,
   Divider,
+  Drawer,
+  AppBar,
+  Toolbar,
+  IconButton,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import PetsIcon from '@mui/icons-material/Pets';
@@ -112,8 +119,11 @@ const SIDEBAR_WIDTH = 260;
 
 function AdminSidebar() {
   const pathname = usePathname();
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
   const { data: identity } = useGetIdentity<UserIdentity>();
   const [role, setRole] = useState<string>('admin');
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     if (identity?.role) {
@@ -121,11 +131,16 @@ function AdminSidebar() {
     }
   }, [identity?.role]);
 
+  // Close mobile drawer on navigation
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   const navSections = role === 'vet' ? vetNavSections : adminNavSections;
   const displayName = identity?.name ?? (role === 'vet' ? 'Veterinarian' : 'Admin');
   const displayRole = role === 'vet' ? 'District Veterinarian' : 'District Admin';
 
-  return (
+  const sidebarContent = (
     <Box
       role="navigation"
       aria-label="Main navigation"
@@ -136,10 +151,6 @@ function AdminSidebar() {
         bgcolor: colors.sidebarBg,
         display: 'flex',
         flexDirection: 'column',
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        zIndex: 1200,
         overflowY: 'auto',
         overflowX: 'hidden',
         '&::-webkit-scrollbar': { width: 4 },
@@ -163,12 +174,12 @@ function AdminSidebar() {
               justifyContent: 'center',
             }}
           >
-            <PetsIcon sx={{ color: '#fff', fontSize: 22 }} />
+            <PetsIcon sx={{ color: 'common.white', fontSize: 22 }} />
           </Box>
           <Box>
             <Typography
               sx={{
-                color: '#fff',
+                color: 'common.white',
                 fontWeight: 700,
                 fontSize: '16px',
                 lineHeight: 1.2,
@@ -259,7 +270,7 @@ function AdminSidebar() {
                       primaryTypographyProps={{
                         fontSize: '13px',
                         fontWeight: isActive ? 600 : 400,
-                        color: isActive ? '#fff' : colors.sidebarText,
+                        color: isActive ? 'common.white' : colors.sidebarText,
                       }}
                     />
                   </ListItemButton>
@@ -287,7 +298,7 @@ function AdminSidebar() {
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography
             sx={{
-              color: '#fff',
+              color: 'common.white',
               fontSize: '12.5px',
               fontWeight: 600,
               lineHeight: 1.2,
@@ -310,6 +321,50 @@ function AdminSidebar() {
         </Box>
       </Box>
     </Box>
+  );
+
+  return (
+    <>
+      {!isDesktop && (
+        <AppBar
+          position="fixed"
+          sx={{
+            zIndex: theme.zIndex.drawer + 1,
+            bgcolor: colors.sidebarBg,
+          }}
+        >
+          <Toolbar>
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Toggle navigation menu"
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              PashuRaksha
+            </Typography>
+          </Toolbar>
+        </AppBar>
+      )}
+      <Drawer
+        variant={isDesktop ? 'permanent' : 'temporary'}
+        open={isDesktop || mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        sx={{
+          width: SIDEBAR_WIDTH,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: SIDEBAR_WIDTH,
+            boxSizing: 'border-box',
+            border: 'none',
+          },
+        }}
+      >
+        {sidebarContent}
+      </Drawer>
+    </>
   );
 }
 

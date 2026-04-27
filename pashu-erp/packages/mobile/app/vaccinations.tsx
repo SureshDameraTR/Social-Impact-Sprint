@@ -34,8 +34,40 @@ export default function VaccinationsScreen() {
   const fetchVaccinations = useCallback(() => {
     setLoading(true);
     setError(null);
-    api.get<VaccRecord[]>('/vaccinations/due')
-      .then(res => setRecords(res))
+    Promise.all([
+      api.get<any>('/vaccinations/due'),
+      api.get<any>('/animals'),
+    ])
+      .then(([vaccRes, animalsRes]) => {
+        const vaccData = Array.isArray(vaccRes) ? vaccRes : vaccRes.data ?? [];
+        const animalsData = Array.isArray(animalsRes) ? animalsRes : animalsRes.data ?? [];
+        const animalMap = new Map<string, { name: string; species: string }>();
+        for (const a of animalsData) {
+          animalMap.set(a.id, { name: a.name || a.tag_number || 'Unknown', species: a.species || 'cattle' });
+        }
+        const SPECIES_EMOJI: Record<string, string> = { cattle: '\uD83D\uDC04', goat: '\uD83D\uDC10', sheep: '\uD83D\uDC11', poultry: '\uD83D\uDC14' };
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const mapped: VaccRecord[] = vaccData.map((v: any) => {
+          const animal = animalMap.get(v.animal_id);
+          const dueDate = v.next_due ? new Date(v.next_due) : null;
+          const daysUntil = dueDate ? Math.ceil((dueDate.getTime() - today.getTime()) / 86400000) : 0;
+          let status: VaccStatus = 'due';
+          if (daysUntil < 0) status = 'overdue';
+          else if (daysUntil <= 0 && v.administered_on) status = 'done';
+          return {
+            id: v.id,
+            animalName: animal?.name ?? 'Animal',
+            species: animal?.species ?? 'cattle',
+            speciesEmoji: SPECIES_EMOJI[animal?.species ?? 'cattle'] ?? '\uD83D\uDC04',
+            vaccineName: v.vaccine_name ?? '',
+            dueDate: v.next_due ?? '',
+            status,
+            daysUntil,
+          };
+        });
+        setRecords(mapped);
+      })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -53,7 +85,7 @@ export default function VaccinationsScreen() {
     } catch {
       Alert.alert(
         t('common.error'),
-        t('vaccinations.markDoneFailed') ?? 'Failed to mark vaccination as done. Please try again.'
+        t('vaccinations.markDoneFailed')
       );
     }
   }, []);
@@ -206,7 +238,7 @@ export default function VaccinationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surface,
   },
   content: {
     padding: SPACING.md,

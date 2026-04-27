@@ -52,8 +52,8 @@ export default function CommunityAlertsScreen() {
   const fetchAlerts = useCallback(() => {
     setLoading(true);
     setError(null);
-    api.get<DiseaseAlert[]>('/alerts/nearby')
-      .then(res => setAlerts(res))
+    api.get<any>('/alerts/nearby?lat=15.46&lon=75.01')
+      .then(res => setAlerts(Array.isArray(res) ? res : res.data ?? []))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -277,7 +277,7 @@ export default function CommunityAlertsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surface,
   },
   content: {
     padding: SPACING.md,

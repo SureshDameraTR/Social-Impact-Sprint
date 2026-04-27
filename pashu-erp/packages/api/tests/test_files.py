@@ -1,16 +1,20 @@
 """Unit tests for File upload/download endpoints — /v1/files."""
 
-import io
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
-import pytest
 from httpx import AsyncClient
-
 
 # ---------------------------------------------------------------------------
 # POST /v1/files — Upload
 # ---------------------------------------------------------------------------
+
+
+# Valid JPEG file content (starts with JPEG magic bytes FF D8 FF)
+_JPEG_HEADER = b"\xff\xd8\xff\xe0" + b"\x00" * 100
+
+# Valid PNG file content (starts with PNG magic bytes)
+_PNG_HEADER = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
 
 
 class TestUploadFile:
@@ -22,11 +26,18 @@ class TestUploadFile:
             return_value={
                 "file_id": "abc-123",
                 "url": "http://storage/files/abc-123",
+                "filename": "test.jpg",
+                "content_type": "image/jpeg",
+                "size_bytes": 104,
+                "category": "photo",
+                "entity_type": "animal",
+                "entity_id": "animal-uuid-here",
+                "created_at": "2026-04-16T00:00:00Z",
             },
         ):
             resp = await client.post(
                 "/v1/files",
-                files={"file": ("test.jpg", b"fake image data", "image/jpeg")},
+                files={"file": ("test.jpg", _JPEG_HEADER, "image/jpeg")},
                 data={
                     "category": "photo",
                     "entity_type": "animal",
@@ -44,7 +55,7 @@ class TestUploadFile:
         ):
             resp = await client.post(
                 "/v1/files",
-                files={"file": ("test.jpg", b"data", "image/jpeg")},
+                files={"file": ("test.jpg", _JPEG_HEADER, "image/jpeg")},
                 data={
                     "category": "photo",
                     "entity_type": "animal",
@@ -118,7 +129,5 @@ class TestListFiles:
             new_callable=AsyncMock,
             return_value={"data": [], "total": 0},
         ):
-            resp = await client.get(
-                "/v1/files?entity_type=animal&entity_id=uuid-here"
-            )
+            resp = await client.get("/v1/files?entity_type=animal&entity_id=uuid-here")
             assert resp.status_code == 200

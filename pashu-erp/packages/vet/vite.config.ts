@@ -1,5 +1,7 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig({
   plugins: [react()],
@@ -10,6 +12,14 @@ export default defineConfig({
         target: "http://localhost:8000",
         changeOrigin: true,
       },
+    },
+  },
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./src/__tests__/setup.ts"],
+    globals: true,
+    alias: {
+      "^@mui/icons-material/(.*)$": path.resolve(__dirname, "src/__tests__/stub-icon.tsx"),
     },
   },
 });

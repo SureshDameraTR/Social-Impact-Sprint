@@ -79,16 +79,16 @@ export default function Dashboard() {
         ) : stats ? (
           <>
             <Grid item xs={6} md={3}>
-              <StatCard label="Pending Cases" value={stats.pending_cases} icon={<PendingActionsIcon />} color="#e65100" />
+              <StatCard label="Pending Cases" value={stats.pending_cases} icon={<PendingActionsIcon />} color={colors.urgent.text} />
             </Grid>
             <Grid item xs={6} md={3}>
-              <StatCard label="Diagnosed Today" value={stats.diagnosed_today} icon={<CheckCircleIcon />} color="#2e7d32" />
+              <StatCard label="Diagnosed Today" value={stats.diagnosed_today} icon={<CheckCircleIcon />} color={colors.diagnosed.text} />
             </Grid>
             <Grid item xs={6} md={3}>
-              <StatCard label="District Animals" value={stats.district_animals} icon={<PetsIcon />} color="#1565c0" />
+              <StatCard label="District Animals" value={stats.district_animals} icon={<PetsIcon />} color={colors.in_review.text} />
             </Grid>
             <Grid item xs={6} md={3}>
-              <StatCard label="Active Alerts" value={stats.active_alerts} icon={<WarningAmberIcon />} color="#c62828" />
+              <StatCard label="Active Alerts" value={stats.active_alerts} icon={<WarningAmberIcon />} color={colors.emergency.text} />
             </Grid>
           </>
         ) : null}

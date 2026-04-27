@@ -25,9 +25,7 @@ async def list_farmers(
     count_result = await db.execute(select(func.count()).select_from(base.subquery()))
     total = count_result.scalar() or 0
 
-    result = await db.execute(
-        base.order_by(User.created_at.desc()).offset(offset).limit(limit)
-    )
+    result = await db.execute(base.order_by(User.created_at.desc()).offset(offset).limit(limit))
     users = result.scalars().all()
 
     # Get animal counts in one query
@@ -40,16 +38,18 @@ async def list_farmers(
 
     data = []
     for u in users:
-        data.append({
-            "id": str(u.id),
-            "name": u.name,
-            "phone": u.phone,
-            "district": u.location_district,
-            "state": u.location_state,
-            "village_code": u.village_code,
-            "animals_count": animal_counts.get(str(u.id), 0),
-            "registered_date": u.created_at.isoformat() if u.created_at else None,
-        })
+        data.append(
+            {
+                "id": str(u.id),
+                "name": u.name,
+                "phone": u.phone,
+                "district": u.location_district,
+                "state": u.location_state,
+                "village_code": u.village_code,
+                "animals_count": animal_counts.get(str(u.id), 0),
+                "registered_date": u.created_at.isoformat() if u.created_at else None,
+            }
+        )
 
     return {"data": data, "total": total, "limit": limit, "offset": offset}
 
@@ -61,7 +61,9 @@ async def get_profile(
 ):
     """Get the authenticated user's profile with summary stats."""
     animal_count_result = await db.execute(
-        select(func.count()).select_from(Animal).where(Animal.user_id == current_user.id, Animal.deleted_at.is_(None))
+        select(func.count())
+        .select_from(Animal)
+        .where(Animal.user_id == current_user.id, Animal.deleted_at.is_(None))
     )
     animal_count = animal_count_result.scalar() or 0
 

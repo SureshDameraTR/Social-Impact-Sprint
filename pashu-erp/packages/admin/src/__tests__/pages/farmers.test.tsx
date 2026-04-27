@@ -15,8 +15,6 @@ const mockFarmers = [
   { id: '3', name: 'Suresh Gowda', phone: '9000000001', district: 'Hassan', village: 'Sakleshpur', animalCount: 7, createdAt: '2023-11-20' },
 ];
 
-// Dynamic import of the page
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const FarmersPage = require('../../app/farmers/page').default;
 
 const wrap = (ui: React.ReactElement) => (

@@ -22,14 +22,15 @@ import {
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import EmptyState from "../components/EmptyState";
+import { colors } from "../theme";
 import { fmtDateTime } from "../utils/format";
 import { getDashboardAlerts, verifyAlert, type AlertItem, type HealthEvent } from "../api/vet";
 
 const SEVERITY_COLORS: Record<string, { bg: string; text: string }> = {
-  critical: { bg: "#ffebee", text: "#c62828" },
-  high: { bg: "#fff3e0", text: "#e65100" },
-  medium: { bg: "#fff8e1", text: "#f57f17" },
-  low: { bg: "#e8f5e9", text: "#2e7d32" },
+  critical: { bg: colors.emergency.bg, text: colors.emergency.text },
+  high: { bg: colors.urgent.bg, text: colors.urgent.text },
+  medium: { bg: colors.pending.bg, text: colors.pending.text },
+  low: { bg: colors.diagnosed.bg, text: colors.diagnosed.text },
 };
 
 export default function Alerts() {
@@ -85,7 +86,7 @@ export default function Alerts() {
 
   const riskBadge = (score: number | null) => {
     if (score === null) return "—";
-    const color = score >= 0.7 ? "#c62828" : score >= 0.4 ? "#e65100" : "#2e7d32";
+    const color = score >= 0.7 ? colors.emergency.text : score >= 0.4 ? colors.urgent.text : colors.diagnosed.text;
     return (
       <Chip
         label={`${(score * 100).toFixed(0)}%`}
@@ -176,7 +177,7 @@ export default function Alerts() {
         <EmptyState title="No health events" subtitle="No recent health events in your district" />
       ) : (
         <TableContainer component={Paper} variant="outlined">
-          <Table>
+          <Table aria-label="Health events">
             <TableHead>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700 }}>Animal ID</TableCell>

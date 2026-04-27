@@ -10,9 +10,33 @@ import sys
 from datetime import datetime, timezone
 
 import httpx
+import pytest
 
 BASE_URL = "http://localhost:8000"
 MOCK_OTP = "123456"
+
+
+def _api_ready() -> bool:
+    """Check if the local API server is reachable AND has seeded data.
+
+    The demo scenarios require docker compose up with seeded data.
+    We check the health endpoint returns the expected schema.
+    """
+    try:
+        r = httpx.get(f"{BASE_URL}/health", timeout=2)
+        if r.status_code != 200:
+            return False
+        body = r.json()
+        return body.get("service") == "pashuraksha-api"
+    except (httpx.ConnectError, httpx.TimeoutException, OSError, Exception):
+        return False
+
+
+pytestmark = pytest.mark.skipif(
+    not _api_ready(),
+    reason="Local API server not running or not ready at localhost:8000 "
+    "(requires docker compose up with seeded data)",
+)
 
 
 class TestDemoScenarios:
@@ -24,9 +48,13 @@ class TestDemoScenarios:
 
     def _get_farmer_token(self) -> str:
         """Login as farmer Lakshmi."""
-        r = httpx.post(f"{BASE_URL}/v1/auth/verify-otp", json={
-            "phone": "+919900000002", "otp": MOCK_OTP,
-        })
+        r = httpx.post(
+            f"{BASE_URL}/v1/auth/verify-otp",
+            json={
+                "phone": "+919900000002",
+                "otp": MOCK_OTP,
+            },
+        )
         assert r.status_code == 200, f"Farmer auth failed: {r.text}"
         data = r.json()
         assert "access_token" in data
@@ -35,9 +63,13 @@ class TestDemoScenarios:
 
     def _get_admin_token(self) -> str:
         """Login as admin Deepak."""
-        r = httpx.post(f"{BASE_URL}/v1/auth/verify-otp", json={
-            "phone": "+919900000001", "otp": MOCK_OTP,
-        })
+        r = httpx.post(
+            f"{BASE_URL}/v1/auth/verify-otp",
+            json={
+                "phone": "+919900000001",
+                "otp": MOCK_OTP,
+            },
+        )
         assert r.status_code == 200, f"Admin auth failed: {r.text}"
         data = r.json()
         assert data["role"] == "admin"
@@ -45,9 +77,13 @@ class TestDemoScenarios:
 
     def _get_farmer_user_id(self) -> str:
         """Return the seeded farmer's user_id."""
-        r = httpx.post(f"{BASE_URL}/v1/auth/verify-otp", json={
-            "phone": "+919900000002", "otp": MOCK_OTP,
-        })
+        r = httpx.post(
+            f"{BASE_URL}/v1/auth/verify-otp",
+            json={
+                "phone": "+919900000002",
+                "otp": MOCK_OTP,
+            },
+        )
         assert r.status_code == 200
         return r.json()["user_id"]
 
@@ -60,17 +96,24 @@ class TestDemoScenarios:
 
     def test_scenario_1_request_otp(self):
         """OTP request returns success message."""
-        r = httpx.post(f"{BASE_URL}/v1/auth/request-otp", json={
-            "phone": "+919900000099",
-        })
+        r = httpx.post(
+            f"{BASE_URL}/v1/auth/request-otp",
+            json={
+                "phone": "+919900000099",
+            },
+        )
         assert r.status_code == 200
         assert "OTP sent" in r.json()["message"]
 
     def test_scenario_1_verify_otp_creates_user(self):
         """Verifying OTP auto-creates a farmer account and returns a JWT."""
-        r = httpx.post(f"{BASE_URL}/v1/auth/verify-otp", json={
-            "phone": "+919900000099", "otp": MOCK_OTP,
-        })
+        r = httpx.post(
+            f"{BASE_URL}/v1/auth/verify-otp",
+            json={
+                "phone": "+919900000099",
+                "otp": MOCK_OTP,
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["access_token"]
@@ -79,16 +122,24 @@ class TestDemoScenarios:
 
     def test_scenario_1_invalid_otp_rejected(self):
         """Wrong OTP is rejected with 401."""
-        r = httpx.post(f"{BASE_URL}/v1/auth/verify-otp", json={
-            "phone": "+919900000002", "otp": "000000",
-        })
+        r = httpx.post(
+            f"{BASE_URL}/v1/auth/verify-otp",
+            json={
+                "phone": "+919900000002",
+                "otp": "000000",
+            },
+        )
         assert r.status_code == 401
 
     def test_scenario_1_new_user_animals_empty(self):
         """A freshly-created farmer has no animals."""
-        r = httpx.post(f"{BASE_URL}/v1/auth/verify-otp", json={
-            "phone": "+919900000098", "otp": MOCK_OTP,
-        })
+        r = httpx.post(
+            f"{BASE_URL}/v1/auth/verify-otp",
+            json={
+                "phone": "+919900000098",
+                "otp": MOCK_OTP,
+            },
+        )
         token = r.json()["access_token"]
         r = httpx.get(f"{BASE_URL}/v1/animals", headers=self._auth(token))
         assert r.status_code == 200
@@ -114,12 +165,16 @@ class TestDemoScenarios:
             # Use the first animal if no cattle found
             cow = animals[0]
 
-        r = httpx.post(f"{BASE_URL}/v1/milk/yield", headers=headers, json={
-            "animal_id": cow["id"],
-            "quantity_liters": 5.0,
-            "session": "morning",
-            "notes": "Voice input test",
-        })
+        r = httpx.post(
+            f"{BASE_URL}/v1/milk/yield",
+            headers=headers,
+            json={
+                "animal_id": cow["id"],
+                "quantity_liters": 5.0,
+                "session": "morning",
+                "notes": "Voice input test",
+            },
+        )
         assert r.status_code == 201, f"Milk record failed: {r.text}"
         data = r.json()
         assert data["quantity_liters"] == 5.0
@@ -160,12 +215,16 @@ class TestDemoScenarios:
         assert len(animals) > 0
         cow = next((a for a in animals if a.get("species") == "cattle"), animals[0])
 
-        r = httpx.post(f"{BASE_URL}/v1/health/log", headers=headers, json={
-            "animal_id": cow["id"],
-            "event_type": "symptom",
-            "description": "Cow has fever and swollen udder",
-            "symptoms": ["fever", "swollen_udder", "reduced_milk"],
-        })
+        r = httpx.post(
+            f"{BASE_URL}/v1/health/log",
+            headers=headers,
+            json={
+                "animal_id": cow["id"],
+                "event_type": "symptom",
+                "description": "Cow has fever and swollen udder",
+                "symptoms": ["fever", "swollen_udder", "reduced_milk"],
+            },
+        )
         assert r.status_code == 201, f"Health log failed: {r.text}"
         data = r.json()
         assert "ai_risk_score" in data
@@ -264,14 +323,18 @@ class TestDemoScenarios:
         token = self._get_farmer_token()
         headers = self._auth(token)
 
-        r = httpx.post(f"{BASE_URL}/v1/marketplace/sell", headers=headers, json={
-            "product_type": "milk",
-            "quantity": 10.0,
-            "unit": "liters",
-            "price_per_unit": 31.50,
-            "buyer_name": "KMF Center",
-            "sold_at": datetime.now(timezone.utc).isoformat(),
-        })
+        r = httpx.post(
+            f"{BASE_URL}/v1/marketplace/sell",
+            headers=headers,
+            json={
+                "product_type": "milk",
+                "quantity": 10.0,
+                "unit": "liters",
+                "price_per_unit": 31.50,
+                "buyer_name": "KMF Center",
+                "sold_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
         assert r.status_code == 201, f"Sell milk failed: {r.text}"
         data = r.json()
         assert data["total_amount"] == 315.0
@@ -281,13 +344,17 @@ class TestDemoScenarios:
         token = self._get_farmer_token()
         headers = self._auth(token)
 
-        r = httpx.post(f"{BASE_URL}/v1/marketplace/sell", headers=headers, json={
-            "product_type": "eggs",
-            "quantity": 20,
-            "unit": "pieces",
-            "price_per_unit": 6.0,
-            "sold_at": datetime.now(timezone.utc).isoformat(),
-        })
+        r = httpx.post(
+            f"{BASE_URL}/v1/marketplace/sell",
+            headers=headers,
+            json={
+                "product_type": "eggs",
+                "quantity": 20,
+                "unit": "pieces",
+                "price_per_unit": 6.0,
+                "sold_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
         assert r.status_code == 201, f"Sell eggs failed: {r.text}"
         data = r.json()
         assert data["total_amount"] == 120.0

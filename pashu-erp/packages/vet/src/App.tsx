@@ -11,8 +11,27 @@ import NavBar from "./components/NavBar";
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
+      <Box
+        component="a"
+        href="#main-content"
+        sx={{
+          position: 'absolute',
+          left: '-9999px',
+          top: 'auto',
+          zIndex: 9999,
+          bgcolor: '#1565c0',
+          color: '#fff',
+          p: '8px 16px',
+          textDecoration: 'none',
+          fontWeight: 600,
+          fontSize: 14,
+          '&:focus': { position: 'static', display: 'block' },
+        }}
+      >
+        Skip to main content
+      </Box>
       <NavBar />
-      <Box component="main">{children}</Box>
+      <Box component="main" id="main-content">{children}</Box>
     </AuthGuard>
   );
 }

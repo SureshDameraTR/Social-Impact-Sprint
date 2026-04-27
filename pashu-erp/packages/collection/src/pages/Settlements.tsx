@@ -96,7 +96,7 @@ export default function Settlements() {
       </Box>
 
       {loading && (
-        <Box display="flex" justifyContent="center" py={6}>
+        <Box display="flex" justifyContent="center" py={6} role="status" aria-label="Loading settlements">
           <CircularProgress />
         </Box>
       )}
@@ -106,7 +106,7 @@ export default function Settlements() {
       {!loading && !error && data && (
         <>
           <TableContainer component={Paper}>
-            <Table size="small">
+            <Table size="small" aria-label="Farmer settlements">
               <TableHead>
                 <TableRow>
                   <TableCell>#</TableCell>
@@ -124,9 +124,9 @@ export default function Settlements() {
                     <TableCell>{idx + 1}</TableCell>
                     <TableCell>{s.farmer_user_id.slice(0, 8)}</TableCell>
                     <TableCell align="right">{s.deliveries}</TableCell>
-                    <TableCell align="right">{s.total_liters.toFixed(1)}</TableCell>
-                    <TableCell align="right">{s.avg_fat_pct.toFixed(1)}</TableCell>
-                    <TableCell align="right">{s.avg_snf_pct.toFixed(1)}</TableCell>
+                    <TableCell align="right">{Number(s.total_liters).toFixed(1)}</TableCell>
+                    <TableCell align="right">{Number(s.avg_fat_pct).toFixed(1)}</TableCell>
+                    <TableCell align="right">{Number(s.avg_snf_pct).toFixed(1)}</TableCell>
                     <TableCell align="right">
                       {inrFormatter.format(s.total_amount_inr)}
                     </TableCell>

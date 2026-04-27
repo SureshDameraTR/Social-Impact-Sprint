@@ -7,7 +7,6 @@ from app.services.market_rates import get_all_market_rates
 
 
 class TestGetAllMarketRates:
-
     async def test_returns_rates_keyed_by_product(self):
         """Rates dict should be keyed by product name."""
         row1 = MagicMock()
