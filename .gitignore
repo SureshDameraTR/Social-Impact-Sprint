@@ -50,6 +50,13 @@ Thumbs.db
 # Claude Code
 .claude/
 
+# Project-local directories
+.githooks/
+.beads/
+prompts/
+reports/
+pashu-erp/reports/
+
 # Test artifacts and generated reports
 **/screenshots/
 coverage/
