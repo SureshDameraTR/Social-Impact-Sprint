@@ -62,10 +62,8 @@ runcmd:
   - chmod 600 /opt/pashuraksha/repo/pashu-erp/.env
   - chown ubuntu:ubuntu /opt/pashuraksha/repo/pashu-erp/.env
 
-  # Build admin (standalone → .next/standalone/)
+  # Build admin (Next.js server mode)
   - su - ubuntu -c "cd /opt/pashuraksha/repo/pashu-erp/packages/admin && pnpm install && NEXT_PUBLIC_API_URL=https://${subdomain_prefix}api.${domain} npx next build"
-  - cp -r /opt/pashuraksha/repo/pashu-erp/packages/admin/.next/static /opt/pashuraksha/repo/pashu-erp/packages/admin/.next/standalone/.next/static
-  - cp -r /opt/pashuraksha/repo/pashu-erp/packages/admin/public /opt/pashuraksha/repo/pashu-erp/packages/admin/.next/standalone/public 2>/dev/null || true
 
   # Build collection centre (Vite → dist/)
   - su - ubuntu -c "cd /opt/pashuraksha/repo/pashu-erp/packages/collection && pnpm install && VITE_API_URL=https://${subdomain_prefix}api.${domain} npx vite build"
@@ -99,11 +97,11 @@ runcmd:
     [Service]
     Type=simple
     User=ubuntu
-    WorkingDirectory=/opt/pashuraksha/repo/pashu-erp/packages/admin/.next/standalone
+    WorkingDirectory=/opt/pashuraksha/repo/pashu-erp/packages/admin
     Environment=PORT=3000
     Environment=HOSTNAME=127.0.0.1
     Environment=NEXT_PUBLIC_API_URL=https://${subdomain_prefix}api.${domain}
-    ExecStart=/usr/bin/node server.js
+    ExecStart=/usr/bin/npx next start -p 3000
     Restart=always
     RestartSec=5
 
@@ -232,8 +230,6 @@ runcmd:
     cd "$REPO_DIR/pashu-erp/packages/admin"
     pnpm install --frozen-lockfile
     NEXT_PUBLIC_API_URL=$API_URL npx next build
-    cp -r .next/static .next/standalone/.next/static
-    cp -r public .next/standalone/public 2>/dev/null || true
     sudo systemctl restart pashuraksha-admin
     echo "=== Rebuilding collection ==="
     cd "$REPO_DIR/pashu-erp/packages/collection"
