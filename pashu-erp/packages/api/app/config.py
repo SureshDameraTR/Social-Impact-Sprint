@@ -39,6 +39,25 @@ class Settings(BaseSettings):
     # CSRF token max age (seconds) — defaults to 24 hours
     csrf_token_max_age_seconds: int = 86400
 
+    # Open-Meteo (free, no key)
+    open_meteo_base_url: str = "https://api.open-meteo.com"
+    weather_cache_ttl_seconds: int = 10800
+
+    # data.gov.in
+    data_gov_in_api_key: str = ""
+    data_gov_in_base_url: str = "https://api.data.gov.in"
+
+    # S3 / MinIO
+    s3_endpoint_url: str = ""
+    s3_bucket_name: str = "pashuraksha"
+    s3_access_key: str = ""
+    s3_secret_key: str = ""
+    s3_region: str = "ap-south-1"
+    s3_presigned_url_expiry: int = 3600
+
+    # Refresh jobs
+    refresh_log_level: str = "INFO"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
