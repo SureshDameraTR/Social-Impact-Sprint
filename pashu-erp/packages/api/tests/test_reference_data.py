@@ -1,3 +1,7 @@
+import importlib
+import sys
+import types
+
 from app.models.breed import Breed, SpeciesRef
 from app.models.domain_knowledge import DiseaseRule, FeedStandard, VaccinationScheduleEntry
 from app.models.location import District, State, SubDistrict, Village
@@ -98,3 +102,51 @@ class TestDomainKnowledgeModels:
             source="NDDB Feeding Standards 2023",
         )
         assert std.dm_intake_pct_body_weight == 3.5
+
+
+# Avoid triggering app.schemas.__init__ (which re-exports all sibling schemas
+# and hits a pre-existing Pydantic Decimal constraint bug in milk.py).
+# Seed the package in sys.modules as a bare namespace so importlib only loads
+# the reference submodule.
+if "app.schemas" not in sys.modules:
+    _pkg = types.ModuleType("app.schemas")
+    _pkg.__path__ = [__import__("app").__path__[0] + "/schemas"]
+    _pkg.__package__ = "app.schemas"
+    sys.modules["app.schemas"] = _pkg
+
+_ref = importlib.import_module("app.schemas.reference")
+StateRead = _ref.StateRead
+DistrictRead = _ref.DistrictRead
+SubDistrictRead = _ref.SubDistrictRead
+VillageRead = _ref.VillageRead
+SpeciesRead = _ref.SpeciesRead
+BreedRead = _ref.BreedRead
+DiseaseRuleRead = _ref.DiseaseRuleRead
+VaccinationScheduleRead = _ref.VaccinationScheduleRead
+FeedStandardRead = _ref.FeedStandardRead
+LocationHierarchyResponse = _ref.LocationHierarchyResponse
+
+
+class TestReferenceSchemas:
+    def test_state_read_from_attributes(self):
+        schema = StateRead.model_validate(
+            {"lgd_code": 29, "name": "Karnataka", "name_local": "ಕರ್ನಾಟಕ"},
+        )
+        assert schema.lgd_code == 29
+
+    def test_location_hierarchy_response(self):
+        resp = LocationHierarchyResponse.model_validate(
+            {"data": [{"lgd_code": 29, "name": "Karnataka", "name_local": None}], "total": 1},
+        )
+        assert resp.total == 1
+        assert len(resp.data) == 1
+
+    def test_breed_read(self):
+        schema = BreedRead.model_validate({
+            "id": "00000000-0000-0000-0000-000000000001",
+            "name": "Hallikar", "name_local": "ಹಳ್ಳಿಕಾರ್",
+            "species_code": "cattle", "origin": "Karnataka",
+            "nbagr_code": "INDIA_CATTLE_0600",
+            "is_indigenous": True,
+        })
+        assert schema.name == "Hallikar"
