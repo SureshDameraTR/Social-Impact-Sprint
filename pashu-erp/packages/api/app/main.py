@@ -22,6 +22,7 @@ from app.middleware.rate_limit import get_client_ip, limiter
 from app.middleware.request_logging import RequestLoggingMiddleware
 from app.routers import (
     admin,
+    admin_refresh,
     advisory,
     alerts,
     animals,
@@ -226,6 +227,17 @@ async def lifespan(app: FastAPI):
             presigned_expiry=settings.s3_presigned_url_expiry,
         )
 
+    # Initialize data.gov.in client (for admin refresh endpoints)
+    if settings.data_gov_in_api_key:
+        from app.services.data_gov_client import DataGovClient
+
+        http_client = await get_http_client()
+        app.state.data_gov_client = DataGovClient(
+            http_client=http_client,
+            api_key=settings.data_gov_in_api_key,
+            base_url=settings.data_gov_in_base_url,
+        )
+
     yield
     if hasattr(app.state, "s3_client_ctx"):
         await app.state.s3_client_ctx.__aexit__(None, None, None)
@@ -299,6 +311,7 @@ def create_app() -> FastAPI:
     app.include_router(vet.router)
     app.include_router(consent.router)
     app.include_router(storage.router)
+    app.include_router(admin_refresh.router)
 
     @app.exception_handler(RateLimitExceeded)
     async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
