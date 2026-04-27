@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "export",
+  output: "standalone",
   transpilePackages: ["react-leaflet", "@react-leaflet/core", "leaflet"],
 };
 

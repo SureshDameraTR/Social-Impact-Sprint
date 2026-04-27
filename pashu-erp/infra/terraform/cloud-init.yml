@@ -62,9 +62,10 @@ runcmd:
   - chmod 600 /opt/pashuraksha/repo/pashu-erp/.env
   - chown ubuntu:ubuntu /opt/pashuraksha/repo/pashu-erp/.env
 
-  # Build admin (static export → out/)
+  # Build admin (standalone → .next/standalone/)
   - su - ubuntu -c "cd /opt/pashuraksha/repo/pashu-erp/packages/admin && pnpm install && NEXT_PUBLIC_API_URL=https://${subdomain_prefix}api.${domain} npx next build"
-  - cp -r /opt/pashuraksha/repo/pashu-erp/packages/admin/out/* /var/www/admin/
+  - cp -r /opt/pashuraksha/repo/pashu-erp/packages/admin/.next/static /opt/pashuraksha/repo/pashu-erp/packages/admin/.next/standalone/.next/static
+  - cp -r /opt/pashuraksha/repo/pashu-erp/packages/admin/public /opt/pashuraksha/repo/pashu-erp/packages/admin/.next/standalone/public 2>/dev/null || true
 
   # Build collection centre (Vite → dist/)
   - su - ubuntu -c "cd /opt/pashuraksha/repo/pashu-erp/packages/collection && pnpm install && VITE_API_URL=https://${subdomain_prefix}api.${domain} npx vite build"
@@ -74,12 +75,44 @@ runcmd:
   - su - ubuntu -c "cd /opt/pashuraksha/repo/pashu-erp/packages/vet && pnpm install && VITE_API_URL=https://${subdomain_prefix}api.${domain} npx vite build"
   - cp -r /opt/pashuraksha/repo/pashu-erp/packages/vet/dist/* /var/www/vet/
 
+  # Add swap (t3.micro has only 1GB RAM)
+  - fallocate -l 1G /swapfile
+  - chmod 600 /swapfile
+  - mkswap /swapfile
+  - swapon /swapfile
+  - echo '/swapfile none swap sw 0 0' >> /etc/fstab
+
   # Start backend containers
   - su - ubuntu -c "cd /opt/pashuraksha/repo/pashu-erp && docker compose up -d db mock-backends api"
 
   # Wait for DB health + run migrations
   - sleep 20
-  - su - ubuntu -c "cd /opt/pashuraksha/repo/pashu-erp && docker compose exec -T api alembic upgrade head"
+  - su - ubuntu -c "cd /opt/pashuraksha/repo/pashu-erp && docker compose exec -T api python -m alembic upgrade head"
+
+  # Admin standalone server (systemd)
+  - |
+    cat > /etc/systemd/system/pashuraksha-admin.service <<SVCEOF
+    [Unit]
+    Description=PashuRaksha Admin (Next.js standalone)
+    After=network.target
+
+    [Service]
+    Type=simple
+    User=ubuntu
+    WorkingDirectory=/opt/pashuraksha/repo/pashu-erp/packages/admin/.next/standalone
+    Environment=PORT=3000
+    Environment=HOSTNAME=127.0.0.1
+    Environment=NEXT_PUBLIC_API_URL=https://${subdomain_prefix}api.${domain}
+    ExecStart=/usr/bin/node server.js
+    Restart=always
+    RestartSec=5
+
+    [Install]
+    WantedBy=multi-user.target
+    SVCEOF
+  - systemctl daemon-reload
+  - systemctl enable pashuraksha-admin
+  - systemctl start pashuraksha-admin
 
   # Caddyfile
   - |
@@ -99,17 +132,13 @@ runcmd:
     }
 
     ${subdomain_prefix}admin.${domain} {
-        root * /var/www/admin
-        file_server
-        try_files {path} /index.html
+        reverse_proxy localhost:3000
         header {
-            Cache-Control "public, max-age=3600"
             X-Content-Type-Options nosniff
             X-Frame-Options DENY
             Referrer-Policy strict-origin-when-cross-origin
             Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=()"
             Cross-Origin-Opener-Policy same-origin
-            Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; connect-src 'self' https://${subdomain_prefix}api.${domain}; frame-ancestors 'none'"
             -Server
         }
         log {
@@ -203,7 +232,9 @@ runcmd:
     cd "$REPO_DIR/pashu-erp/packages/admin"
     pnpm install --frozen-lockfile
     NEXT_PUBLIC_API_URL=$API_URL npx next build
-    cp -r out/* /var/www/admin/
+    cp -r .next/static .next/standalone/.next/static
+    cp -r public .next/standalone/public 2>/dev/null || true
+    sudo systemctl restart pashuraksha-admin
     echo "=== Rebuilding collection ==="
     cd "$REPO_DIR/pashu-erp/packages/collection"
     pnpm install --frozen-lockfile
