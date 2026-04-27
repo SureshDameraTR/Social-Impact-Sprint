@@ -286,3 +286,34 @@ def get_due_vaccinations(
                 )
 
     return due
+
+
+async def get_vaccination_schedule_from_db(species: str, db) -> list[dict]:
+    """Try DB first, fall back to hardcoded VACCINATION_CALENDAR."""
+    from sqlalchemy import select
+
+    from app.models.domain_knowledge import VaccinationScheduleEntry
+
+    rows = (
+        await db.execute(
+            select(VaccinationScheduleEntry).where(
+                VaccinationScheduleEntry.species_code == species.lower(),
+                VaccinationScheduleEntry.is_active.is_(True),
+            )
+        )
+    ).scalars().all()
+
+    if rows:
+        return [
+            {
+                "vaccine": r.vaccine_name,
+                "first_dose_months": r.first_dose_months,
+                "first_dose_days": r.first_dose_days,
+                "repeat_interval_months": r.repeat_interval_months,
+                "mandatory": r.is_mandatory,
+                "notes": r.notes,
+            }
+            for r in rows
+        ]
+
+    return VACCINATION_CALENDAR.get(species.lower(), [])

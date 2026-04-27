@@ -1058,3 +1058,34 @@ def evaluate_symptoms(species: str, symptoms: list[str]) -> dict:
         "risk_score": round(risk_score, 2),
         "recommended_action": recommended_action,
     }
+
+
+async def get_disease_rules_from_db(species: str, db) -> list[dict]:
+    """Try DB first, fall back to hardcoded DISEASE_RULES."""
+    from sqlalchemy import select
+
+    from app.models.domain_knowledge import DiseaseRule
+
+    rows = (
+        await db.execute(
+            select(DiseaseRule).where(
+                DiseaseRule.species_code == species.lower(),
+                DiseaseRule.is_active.is_(True),
+            )
+        )
+    ).scalars().all()
+
+    if rows:
+        return [
+            {
+                "disease": r.disease_name,
+                "symptoms": r.symptoms,
+                "min_match": r.min_match,
+                "risk_level": r.risk_level,
+                "action": r.action,
+                "source": r.source,
+            }
+            for r in rows
+        ]
+
+    return DISEASE_RULES.get(species.lower(), [])
