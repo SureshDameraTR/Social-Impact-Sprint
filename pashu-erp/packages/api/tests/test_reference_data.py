@@ -10,6 +10,11 @@ from httpx import ASGITransport, AsyncClient
 from app.models.breed import Breed, SpeciesRef
 from app.models.domain_knowledge import DiseaseRule, FeedStandard, VaccinationScheduleEntry
 from app.models.location import District, State, SubDistrict, Village
+from app.services.seed_reference import (
+    get_seed_breeds,
+    get_seed_karnataka_districts,
+    get_seed_species,
+)
 
 
 class TestLocationModels:
@@ -223,3 +228,22 @@ class TestReferenceLocationEndpoints:
         assert resp.status_code == 200
         body = resp.json()
         assert body["data"][0]["name"] == "Mysuru"
+
+
+class TestSeedData:
+    def test_seed_species_returns_all_five(self):
+        species = get_seed_species()
+        codes = [s["code"] for s in species]
+        assert set(codes) == {"cattle", "buffalo", "goat", "sheep", "poultry"}
+
+    def test_seed_breeds_covers_all_species(self):
+        breeds = get_seed_breeds()
+        species_covered = {b["species_code"] for b in breeds}
+        assert species_covered == {"cattle", "buffalo", "goat", "sheep", "poultry"}
+
+    def test_seed_karnataka_districts_has_31(self):
+        districts = get_seed_karnataka_districts()
+        assert len(districts) == 31
+        names = [d["name"] for d in districts]
+        assert "Mysuru" in names
+        assert "Vijayanagara" in names
